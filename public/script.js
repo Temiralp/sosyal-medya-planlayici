@@ -683,12 +683,12 @@ function renderPostsTable(posts) {
             <td class="content-cell">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div style="flex: 1;">${contentDisplay}</div>
-                    <button class="btn btn-info btn-sm copy-btn" onclick="copyContent('${contentDisplay
-                      .replace(/'/g, "\\'")
-                      .replace(
-                        /"/g,
-                        "&quot;"
-                      )}', this)" title="İçeriği kopyala" style="margin-left: 10px; flex-shrink: 0;">
+                    <button class="btn btn-info btn-sm copy-btn" 
+                            data-content="${contentDisplay
+                              .replace(/"/g, "&quot;")
+                              .replace(/'/g, "&#39;")}" 
+                            title="İçeriği kopyala" 
+                            style="margin-left: 10px; flex-shrink: 0;">
                         📋 Kopyala
                     </button>
                 </div>
@@ -818,13 +818,32 @@ function renderPostsTable(posts) {
     tbody.appendChild(detailTr);
   });
 
+  // Kopyalama butonlarına event listener ekle
+  const copyButtons = document.querySelectorAll(".copy-btn");
+  copyButtons.forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const content = this.getAttribute("data-content");
+      copyContent(content, this);
+    });
+  });
+
   console.log("Tablo güncellendi");
 }
 
 // İçeriği kopyala
 function copyContent(text, buttonElement) {
+  // Önce HTML özel karakterlerini decode et
+  let decodedText = text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
   // HTML'i formatı koruyarak temizle
-  let cleanText = text
+  let cleanText = decodedText
     // <br> ve <br/> etiketlerini satır arası ile değiştir
     .replace(/<br\s*\/?>/gi, "\n")
     // <p> etiketlerini satır arası ile değiştir
@@ -835,13 +854,6 @@ function copyContent(text, buttonElement) {
     .replace(/<div[^>]*>/gi, "")
     // Diğer HTML etiketlerini kaldır
     .replace(/<[^>]*>/g, "")
-    // HTML özel karakterlerini çöz
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
     // Fazla satır aralarını temizle ama formatı koru
     .replace(/\n\s*\n\s*\n/g, "\n\n")
     .trim();
