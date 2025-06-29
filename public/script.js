@@ -636,11 +636,13 @@ function renderPostsTable(posts) {
     return;
   }
 
-  posts.sort(
-    (a, b) =>
-      new Date(`${a.scheduledDate} ${a.scheduledTime}`) -
-      new Date(`${b.scheduledDate} ${b.scheduledTime}`)
-  );
+  // En son oluşturulan paylaşımları ilk sırada göster
+  posts.sort((a, b) => {
+    // Önce createdAt alanına göre sırala (yeniden eskiye)
+    const dateA = new Date(a.createdAt || a.id); // Eğer createdAt yoksa id'yi kullan
+    const dateB = new Date(b.createdAt || b.id);
+    return dateB - dateA; // Büyükten küçüğe (yeniden eskiye)
+  });
 
   posts.forEach((post) => {
     // Ana satır
