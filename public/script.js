@@ -96,6 +96,41 @@ function setupEventListeners() {
     exportBtn.addEventListener("click", exportData);
     console.log("Export button listener eklendi");
   }
+
+  // Content type radio buttons
+  const contentTypeRadios = document.querySelectorAll(
+    'input[name="contentType"]'
+  );
+  contentTypeRadios.forEach((radio) => {
+    radio.addEventListener("change", handleContentTypeChange);
+  });
+  console.log("Content type listeners eklendi");
+}
+
+// İçerik türü değiştiğinde
+function handleContentTypeChange(event) {
+  const contentType = event.target.value;
+  const postContent = document.getElementById("postContent");
+  const storyContent = document.getElementById("storyContent");
+  const contentTextarea = document.getElementById("content");
+  const storyLink = document.getElementById("storyLink");
+  const storyLinkTitle = document.getElementById("storyLinkTitle");
+
+  if (contentType === "post") {
+    postContent.style.display = "block";
+    storyContent.style.display = "none";
+    contentTextarea.required = true;
+    storyLink.required = false;
+    storyLinkTitle.required = false;
+  } else if (contentType === "story") {
+    postContent.style.display = "none";
+    storyContent.style.display = "block";
+    contentTextarea.required = false;
+    storyLink.required = true;
+    storyLinkTitle.required = true;
+  }
+
+  console.log(`İçerik türü değişti: ${contentType}`);
 }
 
 // Hesap seçimi UI'ı oluştur
@@ -255,20 +290,42 @@ async function handleFormSubmit(event) {
   event.preventDefault();
   console.log("Form gönderiliyor...");
 
+  const contentType = document.querySelector(
+    'input[name="contentType"]:checked'
+  ).value;
   const content = document.getElementById("content").value;
+  const storyLink = document.getElementById("storyLink").value;
+  const storyLinkTitle = document.getElementById("storyLinkTitle").value;
   const scheduledDate = document.getElementById("scheduledDate").value;
   const scheduledTime = document.getElementById("scheduledTime").value;
   const fileInput = document.getElementById("fileInput");
 
   console.log("Form verileri:", {
+    contentType,
     content,
+    storyLink,
+    storyLinkTitle,
     scheduledDate,
     scheduledTime,
     selectedAccounts: selectedAccounts.length,
   });
 
-  if (!content || !scheduledDate || !scheduledTime) {
-    showMessage("Lütfen tüm alanları doldurun!", "error");
+  // Validation
+  if (!scheduledDate || !scheduledTime) {
+    showMessage("Lütfen tarih ve saat alanlarını doldurun!", "error");
+    return;
+  }
+
+  if (contentType === "post" && !content) {
+    showMessage("Lütfen post içeriğini yazın!", "error");
+    return;
+  }
+
+  if (contentType === "story" && (!storyLink || !storyLinkTitle)) {
+    showMessage(
+      "Lütfen story için link ve başlık alanlarını doldurun!",
+      "error"
+    );
     return;
   }
 
@@ -278,7 +335,10 @@ async function handleFormSubmit(event) {
   }
 
   const formData = new FormData();
+  formData.append("contentType", contentType);
   formData.append("content", content);
+  formData.append("storyLink", storyLink);
+  formData.append("storyLinkTitle", storyLinkTitle);
   formData.append("scheduledDate", scheduledDate);
   formData.append("scheduledTime", scheduledTime);
   formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
@@ -318,6 +378,21 @@ function resetForm() {
   document.getElementById("postForm").reset();
   selectedAccounts = [];
   clearAll();
+
+  // Post/Story alanlarını sıfırla
+  const postContent = document.getElementById("postContent");
+  const storyContent = document.getElementById("storyContent");
+  postContent.style.display = "block";
+  storyContent.style.display = "none";
+
+  // Required alanlarını sıfırla
+  const contentTextarea = document.getElementById("content");
+  const storyLink = document.getElementById("storyLink");
+  const storyLinkTitle = document.getElementById("storyLinkTitle");
+  contentTextarea.required = true;
+  storyLink.required = false;
+  storyLinkTitle.required = false;
+
   const preview = document.getElementById("filePreview");
   if (preview) preview.style.display = "none";
 }
@@ -469,23 +544,49 @@ function renderPostsTable(posts) {
       : 0;
     const totalCount = post.selectedAccounts ? post.selectedAccounts.length : 0;
 
+    // İçerik türüne göre içerik metni
+    let contentDisplay = "";
+    if (post.contentType === "story") {
+      contentDisplay = post.storyLinkTitle
+        ? `<strong>📱 Story:</strong> ${post.storyLinkTitle}${
+            post.storyLink
+              ? `<br><small><a href="${post.storyLink}" target="_blank">${post.storyLink}</a></small>`
+              : ""
+          }`
+        : "<strong>📱 Story</strong>";
+    } else {
+      contentDisplay = post.content || "-";
+    }
+
     tr.innerHTML = `
             <td>
                 <span class="toggle-arrow" onclick="toggleRow(${
                   post.id
                 })">▶</span>
             </td>
-            <td class="content-cell">${post.content}</td>
+            <td>
+                <span class="content-type-badge ${
+                  post.contentType === "story" ? "story" : "post"
+                }">
+                    ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
+                </span>
+            </td>
+            <td class="content-cell">${contentDisplay}</td>
             <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
             <td>${post.scheduledTime}</td>
             <td>
                 ${
                   post.fileName
-                    ? `<a href="/uploads/${
-                        post.fileName
-                      }" target="_blank" class="file-link">📎 ${
+                    ? `<div>
+                        <a href="/uploads/${
+                          post.fileName
+                        }" target="_blank" class="file-link">📎 ${
                         post.originalName || post.fileName
-                      }</a>`
+                      }</a>
+                        <a href="/uploads/${
+                          post.fileName
+                        }" download class="download-btn">⬇️ İndir</a>
+                       </div>`
                     : '<span style="color: #999;">-</span>'
                 }
             </td>
@@ -582,7 +683,7 @@ function renderPostsTable(posts) {
 
     detailTr.innerHTML = `
             <td></td>
-            <td colspan="7">
+            <td colspan="8">
                 <div class="accounts-detail show" onclick="event.stopPropagation();">
                     <div class="account-progress">
                         ${accountsHtml}

@@ -14,15 +14,49 @@
       <div class="card">
         <div id="messageContainer"></div>
         <form id="postForm" enctype="multipart/form-data">
+          <!-- Post/Story Seçimi -->
+          <div class="content-type-section">
+            <label>İçerik Türü</label>
+            <div class="content-type-options">
+              <label class="radio-option">
+                <input type="radio" name="contentType" value="post" checked />
+                <span>📝 Post</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="contentType" value="story" />
+                <span>📱 Story</span>
+              </label>
+            </div>
+          </div>
+
           <div class="form-grid">
-            <div>
+            <!-- Post İçeriği -->
+            <div id="postContent">
               <label>İçerik</label>
               <textarea
                 id="content"
                 placeholder="Paylaşacağınız post metnini buraya yazın..."
-                required
               ></textarea>
             </div>
+
+            <!-- Story İçeriği -->
+            <div id="storyContent" style="display: none">
+              <div class="story-fields">
+                <div>
+                  <label>Link URL'si</label>
+                  <input type="url" id="storyLink" placeholder="https://..." />
+                </div>
+                <div>
+                  <label>Link Başlığı</label>
+                  <input
+                    type="text"
+                    id="storyLinkTitle"
+                    placeholder="Link başlığını buraya yazın..."
+                  />
+                </div>
+              </div>
+            </div>
+
             <div>
               <label>Tarih</label>
               <input type="date" id="scheduledDate" required />
@@ -150,6 +184,7 @@
             <thead>
               <tr>
                 <th width="30px"></th>
+                <th>Tür</th>
                 <th>İçerik</th>
                 <th>Tarih</th>
                 <th>Saat</th>
@@ -163,7 +198,7 @@
             <tbody>
               <tr>
                 <td
-                  colspan="8"
+                  colspan="9"
                   style="text-align: center; padding: 30px; color: #666"
                 >
                   Henüz paylaşım yok

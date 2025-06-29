@@ -45,6 +45,81 @@ h3 {
   border: 1px solid #e0e6ed;
 }
 
+/* Content Type Selection */
+.content-type-section {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e0e6ed;
+}
+
+.content-type-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.content-type-options {
+  display: flex;
+  gap: 15px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid #e0e6ed;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.radio-option:hover {
+  border-color: #3498db;
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+}
+
+.radio-option input[type="radio"]:checked + span {
+  color: #3498db;
+  font-weight: 600;
+}
+
+.radio-option:has(input:checked) {
+  border-color: #3498db;
+  background: #e3f2fd;
+}
+
+/* Story Fields */
+.story-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.story-fields input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.story-fields label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #555;
+  font-size: 13px;
+}
+
 /* Form Styling */
 .form-grid {
   display: grid;
@@ -381,6 +456,24 @@ tr:hover {
   text-decoration: underline;
 }
 
+.download-btn {
+  background: #27ae60;
+  color: white;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.download-btn:hover {
+  background: #219a52;
+  text-decoration: none;
+}
+
 /* Toggle Arrow */
 .toggle-arrow {
   cursor: pointer;
@@ -439,6 +532,24 @@ tr:hover {
   font-size: 11px;
   font-weight: 500;
   color: #666;
+}
+
+.content-type-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.content-type-badge.post {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.content-type-badge.story {
+  background: #fce4ec;
+  color: #c2185b;
 }
 
 /* Platform Groups */
@@ -500,6 +611,20 @@ tr:hover {
   .form-grid {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .content-type-options {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .radio-option {
+    justify-content: center;
+  }
+
+  .story-fields {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .account-header {
