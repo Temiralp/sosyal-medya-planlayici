@@ -396,6 +396,34 @@ h3 {
   color: #555;
 }
 
+/* Tümü checkbox'ı için özel stil */
+.select-all-checkbox {
+  background-color: #e8f4f8;
+  border: 1px solid #3498db;
+  border-radius: 4px;
+  padding: 3px 6px;
+  margin-right: 10px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.select-all-checkbox:hover {
+  background-color: #d1ecf1;
+  border-color: #2980b9;
+}
+
+.select-all-label {
+  color: #2980b9 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+.select-all-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+}
+
 /* Table Styling */
 .table-container {
   overflow-x: auto;

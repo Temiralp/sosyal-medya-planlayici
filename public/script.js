@@ -172,6 +172,27 @@ function createAccountItem(account) {
   const platformsDiv = document.createElement("div");
   platformsDiv.className = "platforms";
 
+  // Tümü checkbox'ı ekle
+  const selectAllDiv = document.createElement("div");
+  selectAllDiv.className = "platform-checkbox select-all-checkbox";
+
+  const selectAllCheckbox = document.createElement("input");
+  selectAllCheckbox.type = "checkbox";
+  selectAllCheckbox.id = `${account}-selectAll`;
+  selectAllCheckbox.addEventListener("change", (e) =>
+    handleSelectAllForAccount(e, account)
+  );
+
+  const selectAllLabel = document.createElement("label");
+  selectAllLabel.htmlFor = `${account}-selectAll`;
+  selectAllLabel.textContent = "Tümü";
+  selectAllLabel.className = "select-all-label";
+
+  selectAllDiv.appendChild(selectAllCheckbox);
+  selectAllDiv.appendChild(selectAllLabel);
+  platformsDiv.appendChild(selectAllDiv);
+
+  // Platform checkbox'larını ekle
   platforms.forEach((platform) => {
     const checkboxDiv = document.createElement("div");
     checkboxDiv.className = "platform-checkbox";
@@ -179,7 +200,9 @@ function createAccountItem(account) {
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.id = `${account}-${platform}`;
-    checkbox.addEventListener("change", handleAccountSelection);
+    checkbox.addEventListener("change", (e) =>
+      handleAccountSelection(e, account)
+    );
 
     const label = document.createElement("label");
     label.htmlFor = `${account}-${platform}`;
@@ -196,8 +219,69 @@ function createAccountItem(account) {
   return div;
 }
 
+// Her hesap için "Tümü" checkbox'ı tıklandığında
+function handleSelectAllForAccount(event, account) {
+  const isChecked = event.target.checked;
+
+  // O hesabın tüm platform checkbox'larını seç/seçme
+  platforms.forEach((platform) => {
+    const platformCheckbox = document.getElementById(`${account}-${platform}`);
+    if (platformCheckbox) {
+      platformCheckbox.checked = isChecked;
+    }
+  });
+
+  // Seçili hesapları güncelle
+  updateSelectedAccountsForAccount(account);
+  updateSelectedCount();
+}
+
+// Tek platform checkbox'ı değiştiğinde "Tümü" checkbox'ını güncelle
+function updateSelectAllCheckbox(account) {
+  const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
+  if (!selectAllCheckbox) return;
+
+  // O hesabın tüm platform checkbox'larının durumunu kontrol et
+  const platformCheckboxes = platforms
+    .map((platform) => document.getElementById(`${account}-${platform}`))
+    .filter((cb) => cb !== null);
+
+  const checkedCount = platformCheckboxes.filter((cb) => cb.checked).length;
+  const totalCount = platformCheckboxes.length;
+
+  if (checkedCount === 0) {
+    // Hiçbiri seçili değil
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = false;
+  } else if (checkedCount === totalCount) {
+    // Hepsi seçili
+    selectAllCheckbox.checked = true;
+    selectAllCheckbox.indeterminate = false;
+  } else {
+    // Bazıları seçili
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.indeterminate = true;
+  }
+}
+
+// Bir hesabın seçili platform sayısını güncelle
+function updateSelectedAccountsForAccount(account) {
+  // O hesaba ait olan mevcut seçimleri temizle
+  selectedAccounts = selectedAccounts.filter(
+    (accountKey) => !accountKey.startsWith(`${account}-`)
+  );
+
+  // Seçili platformları yeniden ekle
+  platforms.forEach((platform) => {
+    const checkbox = document.getElementById(`${account}-${platform}`);
+    if (checkbox && checkbox.checked) {
+      selectedAccounts.push(`${account}-${platform}`);
+    }
+  });
+}
+
 // Hesap seçimi değiştiğinde
-function handleAccountSelection(event) {
+function handleAccountSelection(event, account) {
   const accountKey = event.target.id;
 
   if (event.target.checked) {
@@ -208,6 +292,8 @@ function handleAccountSelection(event) {
     selectedAccounts = selectedAccounts.filter((acc) => acc !== accountKey);
   }
 
+  // "Tümü" checkbox'ını güncelle
+  updateSelectAllCheckbox(account);
   updateSelectedCount();
   console.log(`Seçili hesaplar: ${selectedAccounts.length}`);
 }
@@ -233,6 +319,12 @@ function selectAll() {
         const checkbox = document.getElementById(accountKey);
         if (checkbox) checkbox.checked = true;
       });
+      // "Tümü" checkbox'larını da seç
+      const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+      }
     });
   updateSelectedCount();
 }
@@ -248,6 +340,12 @@ function clearAll() {
         const checkbox = document.getElementById(`${account}-${platform}`);
         if (checkbox) checkbox.checked = false;
       });
+      // "Tümü" checkbox'larını da temizle
+      const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
+      if (selectAllCheckbox) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+      }
     });
   updateSelectedCount();
 }
@@ -266,6 +364,12 @@ function selectGroup(groupKey) {
       const checkbox = document.getElementById(accountKey);
       if (checkbox) checkbox.checked = true;
     });
+    // "Tümü" checkbox'larını da güncelle
+    const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    }
   });
   updateSelectedCount();
 }
