@@ -615,9 +615,19 @@ function renderPostsTable(posts) {
             </td>
             <td>${post.createdAt ? post.createdAt : "-"}</td>
             <td>
-                <button class="btn btn-danger btn-sm" onclick="deletePost(${
-                  post.id
-                })">🗑️ Sil</button>
+                <div class="action-buttons">
+                    <button class="btn btn-info btn-sm copy-btn" onclick="copyContent('${contentDisplay
+                      .replace(/'/g, "\\'")
+                      .replace(
+                        /"/g,
+                        "&quot;"
+                      )}', this)" title="İçeriği kopyala">
+                        📋 Kopyala
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deletePost(${
+                      post.id
+                    })">🗑️ Sil</button>
+                </div>
             </td>
         `;
     tbody.appendChild(tr);
@@ -699,6 +709,82 @@ function renderPostsTable(posts) {
   });
 
   console.log("Tablo güncellendi");
+}
+
+// İçeriği kopyala
+function copyContent(text, buttonElement) {
+  // HTML'i formatı koruyarak temizle
+  let cleanText = text
+    // <br> ve <br/> etiketlerini satır arası ile değiştir
+    .replace(/<br\s*\/?>/gi, "\n")
+    // <p> etiketlerini satır arası ile değiştir
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<p[^>]*>/gi, "")
+    // <div> etiketlerini satır arası ile değiştir
+    .replace(/<\/div>/gi, "\n")
+    .replace(/<div[^>]*>/gi, "")
+    // Diğer HTML etiketlerini kaldır
+    .replace(/<[^>]*>/g, "")
+    // HTML özel karakterlerini çöz
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    // Fazla satır aralarını temizle ama formatı koru
+    .replace(/\n\s*\n\s*\n/g, "\n\n")
+    .trim();
+
+  const plainText = cleanText;
+
+  // Kopyalama işlemi
+  navigator.clipboard
+    .writeText(plainText)
+    .then(() => {
+      // Buton görünümünü değiştir
+      const originalText = buttonElement.textContent;
+      buttonElement.textContent = "✓ Kopyalandı";
+      buttonElement.classList.add("copied");
+
+      // 2 saniye sonra orijinal haline dön
+      setTimeout(() => {
+        buttonElement.textContent = originalText;
+        buttonElement.classList.remove("copied");
+      }, 2000);
+
+      console.log("İçerik kopyalandı:", plainText);
+    })
+    .catch((err) => {
+      console.error("Kopyalama hatası:", err);
+
+      // Fallback: eski yöntem
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = plainText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        // Buton görünümünü değiştir
+        const originalText = buttonElement.textContent;
+        buttonElement.textContent = "✓ Kopyalandı";
+        buttonElement.classList.add("copied");
+
+        setTimeout(() => {
+          buttonElement.textContent = originalText;
+          buttonElement.classList.remove("copied");
+        }, 2000);
+
+        console.log("İçerik kopyalandı (fallback):", plainText);
+      } catch (fallbackErr) {
+        console.error("Fallback kopyalama da başarısız:", fallbackErr);
+        alert(
+          "Kopyalama işlemi başarısız oldu. Lütfen manuel olarak kopyalayın."
+        );
+      }
+    });
 }
 
 // Durum güncelle
