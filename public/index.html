@@ -1,119 +1,173 @@
 <!DOCTYPE html>
 <html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sosyal Medya Planlayıcısı</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="container">
-        <h1>📱 Sosyal Medya Planlayıcısı</h1>
+      <h1>📱 Sosyal Medya Planlayıcısı</h1>
 
-        <!-- Form -->
-        <div class="card">
-            <div id="messageContainer"></div>
-            <form id="postForm" enctype="multipart/form-data">
-                <div class="form-grid">
-                    <div>
-                        <label>İçerik</label>
-                        <textarea id="content" placeholder="Ne paylaşacaksınız..." required></textarea>
-                    </div>
-                    <div>
-                        <label>Tarih</label>
-                        <input type="date" id="scheduledDate" required>
-                    </div>
-                    <div>
-                        <label>Saat</label>
-                        <input type="time" id="scheduledTime" required>
-                    </div>
-                </div>
-                
-                <div class="file-section">
-                    <label>Dosya Yükle</label>
-                    <input type="file" id="fileInput" accept="image/*,video/*" class="file-input">
-                    <div id="filePreview" class="file-preview"></div>
-                </div>
+      <!-- Form -->
+      <div class="card">
+        <div id="messageContainer"></div>
+        <form id="postForm" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div>
+              <label>İçerik</label>
+              <textarea
+                id="content"
+                placeholder="Ne paylaşacaksınız..."
+                required
+              ></textarea>
+            </div>
+            <div>
+              <label>Tarih</label>
+              <input type="date" id="scheduledDate" required />
+            </div>
+            <div>
+              <label>Saat</label>
+              <input type="time" id="scheduledTime" required />
+            </div>
+          </div>
 
-                <div class="form-bottom">
-                    <span id="selectedCount">0 hesap seçili</span>
-                    <div class="form-buttons">
-                        <button type="button" id="exportBtn" class="btn btn-secondary">📥 Dışa Aktar</button>
-                        <button type="submit" class="btn btn-primary">📤 Paylaşımı Planla</button>
-                    </div>
-                </div>
-            </form>
+          <div class="file-section">
+            <label>Dosya Yükle</label>
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/*,video/*"
+              class="file-input"
+            />
+            <div id="filePreview" class="file-preview"></div>
+          </div>
+
+          <div class="form-bottom">
+            <span id="selectedCount">0 hesap seçili</span>
+            <div class="form-buttons">
+              <button type="button" id="exportBtn" class="btn btn-secondary">
+                📥 Dışa Aktar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                📤 Paylaşımı Planla
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Hesap Seçimi -->
+      <div class="card">
+        <div class="account-header">
+          <h2>📋 Hesap Seçimi</h2>
+          <div class="group-buttons">
+            <button
+              type="button"
+              class="btn btn-success btn-sm"
+              onclick="selectAll()"
+            >
+              Tümünü Seç
+            </button>
+            <button
+              type="button"
+              class="btn btn-info btn-sm"
+              onclick="selectGroup('avm')"
+            >
+              🏢 AVM Hesapları
+            </button>
+            <button
+              type="button"
+              class="btn btn-purple btn-sm"
+              onclick="selectGroup('park')"
+            >
+              🌳 Park Hesapları
+            </button>
+            <button
+              type="button"
+              class="btn btn-orange btn-sm"
+              onclick="selectGroup('konsept')"
+            >
+              🍴 Konsept
+            </button>
+            <button
+              type="button"
+              class="btn btn-gray btn-sm"
+              onclick="selectGroup('markalar')"
+            >
+              🏷️ Markalar
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger btn-sm"
+              onclick="clearAll()"
+            >
+              Temizle
+            </button>
+          </div>
         </div>
 
-        <!-- Hesap Seçimi -->
-        <div class="card">
-            <div class="account-header">
-                <h2>📋 Hesap Seçimi</h2>
-                <div class="group-buttons">
-                    <button type="button" class="btn btn-success btn-sm" onclick="selectAll()">Tümünü Seç</button>
-                    <button type="button" class="btn btn-info btn-sm" onclick="selectGroup('avm')">🏢 AVM Hesapları</button>
-                    <button type="button" class="btn btn-purple btn-sm" onclick="selectGroup('park')">🌳 Park Hesapları</button>
-                    <button type="button" class="btn btn-orange btn-sm" onclick="selectGroup('konsept')">🍴 Konsept</button>
-                    <button type="button" class="btn btn-gray btn-sm" onclick="selectGroup('diger')">🏭 Diğer</button>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="clearAll()">Temizle</button>
-                </div>
-            </div>
+        <div class="account-groups">
+          <!-- AVM Hesapları -->
+          <div class="account-group">
+            <h3 class="group-title avm-title">🏢 AVM Hesapları</h3>
+            <div class="accounts-list" id="avmAccounts"></div>
+          </div>
 
-            <div class="account-groups">
-                <!-- AVM Hesapları -->
-                <div class="account-group">
-                    <h3 class="group-title avm-title">🏢 AVM Hesapları</h3>
-                    <div class="accounts-list" id="avmAccounts"></div>
-                </div>
+          <!-- Park Hesapları -->
+          <div class="account-group">
+            <h3 class="group-title park-title">🌳 Park Hesapları</h3>
+            <div class="accounts-list" id="parkAccounts"></div>
+          </div>
 
-                <!-- Park Hesapları -->
-                <div class="account-group">
-                    <h3 class="group-title park-title">🌳 Park Hesapları</h3>
-                    <div class="accounts-list" id="parkAccounts"></div>
-                </div>
+          <!-- Konsept Hesapları -->
+          <div class="account-group">
+            <h3 class="group-title konsept-title">🍴 Konsept Hesapları</h3>
+            <div class="accounts-list" id="konceptAccounts"></div>
+          </div>
 
-                <!-- Konsept Hesapları -->
-                <div class="account-group">
-                    <h3 class="group-title konsept-title">🍴 Konsept Hesapları</h3>
-                 <div class="accounts-list" id="konceptAccounts"></div>
-                </div>
-
-                <!-- Diğer Hesaplar -->
-                <div class="account-group">
-                    <h3 class="group-title diger-title">🏭 Diğer Hesaplar</h3>
-                    <div class="accounts-list" id="digerAccounts"></div>
-                </div>
-            </div>
+          <!-- Marka Hesapları -->
+          <div class="account-group">
+            <h3 class="group-title markalar-title">🏷️ Marka Hesapları</h3>
+            <div class="accounts-list" id="markalarAccounts"></div>
+          </div>
         </div>
+      </div>
 
-        <!-- Paylaşım Listesi -->
-        <div class="card">
-            <h2>📋 Paylaşım Listesi (<span id="postCount">0</span>)</h2>
-            <div class="table-container">
-                <table id="postsTable">
-                    <thead>
-                        <tr>
-                            <th width="30px"></th>
-                            <th>İçerik</th>
-                            <th>Tarih</th>
-                            <th>Saat</th>
-                            <th>Dosya</th>
-                            <th>Progress</th>
-                            <th>Durum</th>
-                            <th>Oluşturulma Tarihi</th>
-                            <th>İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+      <!-- Paylaşım Listesi -->
+      <div class="card">
+        <h2>📋 Paylaşım Listesi (<span id="postCount">0</span>)</h2>
+        <div class="table-container">
+          <table id="postsTable">
+            <thead>
+              <tr>
+                <th width="30px"></th>
+                <th>İçerik</th>
+                <th>Tarih</th>
+                <th>Saat</th>
+                <th>Dosya</th>
+                <th>Progress</th>
+                <th>Durum</th>
+                <th>Oluşturulma Tarihi</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  colspan="8"
+                  style="text-align: center; padding: 30px; color: #666"
+                >
+                  Henüz paylaşım yok
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
