@@ -294,6 +294,7 @@ async function handleFormSubmit(event) {
     'input[name="contentType"]:checked'
   ).value;
   const content = document.getElementById("content").value;
+  const notes = document.getElementById("notes").value;
   const storyLink = document.getElementById("storyLink").value;
   const storyLinkTitle = document.getElementById("storyLinkTitle").value;
   const scheduledDate = document.getElementById("scheduledDate").value;
@@ -303,6 +304,7 @@ async function handleFormSubmit(event) {
   console.log("Form verileri:", {
     contentType,
     content,
+    notes,
     storyLink,
     storyLinkTitle,
     scheduledDate,
@@ -337,6 +339,7 @@ async function handleFormSubmit(event) {
   const formData = new FormData();
   formData.append("contentType", contentType);
   formData.append("content", content);
+  formData.append("notes", notes);
   formData.append("storyLink", storyLink);
   formData.append("storyLinkTitle", storyLinkTitle);
   formData.append("scheduledDate", scheduledDate);
@@ -524,7 +527,7 @@ function renderPostsTable(posts) {
   if (posts.length === 0) {
     const tr = document.createElement("tr");
     tr.innerHTML =
-      '<td colspan="8" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>';
+      '<td colspan="10" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -572,6 +575,7 @@ function renderPostsTable(posts) {
                 </span>
             </td>
             <td class="content-cell">${contentDisplay}</td>
+            <td class="content-cell">${post.notes || "-"}</td>
             <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
             <td>${post.scheduledTime}</td>
             <td>
@@ -683,7 +687,7 @@ function renderPostsTable(posts) {
 
     detailTr.innerHTML = `
             <td></td>
-            <td colspan="8">
+            <td colspan="9">
                 <div class="accounts-detail show" onclick="event.stopPropagation();">
                     <div class="account-progress">
                         ${accountsHtml}

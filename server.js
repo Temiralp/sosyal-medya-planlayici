@@ -83,6 +83,7 @@ app.post("/api/posts", upload.single("file"), (req, res) => {
     const {
       contentType,
       content,
+      notes,
       storyLink,
       storyLinkTitle,
       scheduledDate,
@@ -94,6 +95,7 @@ app.post("/api/posts", upload.single("file"), (req, res) => {
       id: Date.now(),
       contentType: contentType || "post",
       content: content || "",
+      notes: notes || "",
       storyLink: storyLink || "",
       storyLinkTitle: storyLinkTitle || "",
       scheduledDate,
