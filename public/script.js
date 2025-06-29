@@ -678,7 +678,19 @@ function renderPostsTable(posts) {
                     ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
                 </span>
             </td>
-            <td class="content-cell">${contentDisplay}</td>
+            <td class="content-cell">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">${contentDisplay}</div>
+                    <button class="btn btn-info btn-sm copy-btn" onclick="copyContent('${contentDisplay
+                      .replace(/'/g, "\\'")
+                      .replace(
+                        /"/g,
+                        "&quot;"
+                      )}', this)" title="İçeriği kopyala" style="margin-left: 10px; flex-shrink: 0;">
+                        📋 Kopyala
+                    </button>
+                </div>
+            </td>
             <td class="content-cell">${post.notes || "-"}</td>
             <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
             <td>${post.scheduledTime}</td>
@@ -720,14 +732,6 @@ function renderPostsTable(posts) {
             <td>${post.createdAt ? post.createdAt : "-"}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-info btn-sm copy-btn" onclick="copyContent('${contentDisplay
-                      .replace(/'/g, "\\'")
-                      .replace(
-                        /"/g,
-                        "&quot;"
-                      )}', this)" title="İçeriği kopyala">
-                        📋 Kopyala
-                    </button>
                     <button class="btn btn-danger btn-sm" onclick="deletePost(${
                       post.id
                     })">🗑️ Sil</button>
