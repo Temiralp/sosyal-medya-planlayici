@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const requiredElements = [
     "avmAccounts",
     "parkAccounts",
-    "konceptAccounts",
+    "konseptAccounts",
     "markalarAccounts",
   ];
   let allElementsExist = true;
