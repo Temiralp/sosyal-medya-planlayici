@@ -573,6 +573,33 @@ tr:hover {
   line-height: 1.4;
 }
 
+/* Story Content Styling */
+.story-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.story-title {
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.story-link {
+  margin-top: 4px;
+}
+
+.story-link a {
+  color: #3498db;
+  text-decoration: none;
+  word-break: break-all;
+  font-size: 10px;
+}
+
+.story-link a:hover {
+  text-decoration: underline;
+}
+
 .content-with-copy {
   display: flex;
   align-items: flex-start;

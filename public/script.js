@@ -839,13 +839,26 @@ function renderPostsTable(posts) {
     // İçerik türüne göre içerik metni
     let contentDisplay = "";
     if (post.contentType === "story") {
-      contentDisplay = post.storyLinkTitle
-        ? `<strong>📱 Story:</strong> ${post.storyLinkTitle}${
+      if (post.storyLinkTitle) {
+        contentDisplay = `<div class="story-content">
+          <div class="story-title"><strong>📱 Story:</strong> ${
+            post.storyLinkTitle
+          }</div>
+          ${
             post.storyLink
-              ? `<br><small><a href="${post.storyLink}" target="_blank">${post.storyLink}</a></small>`
+              ? `<div class="story-link"><small><a href="${
+                  post.storyLink
+                }" target="_blank" title="${post.storyLink}">${
+                  post.storyLink.length > 50
+                    ? post.storyLink.substring(0, 50) + "..."
+                    : post.storyLink
+                }</a></small></div>`
               : ""
-          }`
-        : "<strong>📱 Story</strong>";
+          }
+        </div>`;
+      } else {
+        contentDisplay = "<strong>📱 Story</strong>";
+      }
     } else {
       contentDisplay = post.content && post.content.trim() ? post.content : "-";
     }
