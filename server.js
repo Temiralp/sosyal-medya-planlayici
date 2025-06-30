@@ -42,12 +42,42 @@ const DATA_FILE = "./data/posts.json";
 const readPosts = () => {
   try {
     if (fs.existsSync(DATA_FILE)) {
+      console.log("Veri dosyası bulundu:", DATA_FILE);
+      const fileStats = fs.statSync(DATA_FILE);
+      console.log("Dosya boyutu:", fileStats.size, "bytes");
+
       const data = fs.readFileSync(DATA_FILE, "utf8");
-      return JSON.parse(data);
+      console.log("Dosya okundu, veri uzunluğu:", data.length, "karakter");
+
+      if (data.trim() === "") {
+        console.log("Dosya boş, boş dizi döndürülüyor");
+        return [];
+      }
+
+      const parsedData = JSON.parse(data);
+      console.log("JSON parse edildi, post sayısı:", parsedData.length);
+      return parsedData;
+    } else {
+      console.log("Veri dosyası bulunamadı, boş dizi döndürülüyor");
+      return [];
     }
-    return [];
   } catch (error) {
-    console.error("Veri okuma hatası:", error);
+    console.error("Veri okuma hatası detayı:", error);
+    console.error("Error code:", error.code);
+    console.error("Error path:", error.path);
+
+    // Eğer dosya bozuksa yedek al ve sıfırla
+    if (error instanceof SyntaxError) {
+      console.error("JSON parse hatası, dosya bozuk olabilir");
+      try {
+        const backupFile = DATA_FILE + ".backup." + Date.now();
+        fs.copyFileSync(DATA_FILE, backupFile);
+        console.log("Bozuk dosya yedeklendi:", backupFile);
+      } catch (backupError) {
+        console.error("Yedekleme hatası:", backupError);
+      }
+    }
+
     return [];
   }
 };
@@ -55,10 +85,34 @@ const readPosts = () => {
 // Veri yazma fonksiyonu
 const writePosts = (posts) => {
   try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(posts, null, 2));
-    return true;
+    // Veri dizininin var olduğundan emin ol
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log("Data klasörü oluşturuldu:", dir);
+    }
+
+    // JSON'u string'e çevir
+    const jsonData = JSON.stringify(posts, null, 2);
+    console.log("JSON veri boyutu:", jsonData.length, "karakter");
+
+    // Dosyaya yaz
+    fs.writeFileSync(DATA_FILE, jsonData, "utf8");
+    console.log("Veri başarıyla yazıldı:", DATA_FILE);
+
+    // Yazılan veriyi doğrula
+    if (fs.existsSync(DATA_FILE)) {
+      const fileSize = fs.statSync(DATA_FILE).size;
+      console.log("Dosya boyutu:", fileSize, "bytes");
+      return true;
+    } else {
+      console.error("Dosya yazıldıktan sonra bulunamadı");
+      return false;
+    }
   } catch (error) {
-    console.error("Veri yazma hatası:", error);
+    console.error("Veri yazma hatası detayı:", error);
+    console.error("Error code:", error.code);
+    console.error("Error path:", error.path);
     return false;
   }
 };
@@ -78,49 +132,107 @@ app.get("/api/posts", (req, res) => {
 });
 
 // Yeni post ekle
-app.post("/api/posts", upload.single("file"), (req, res) => {
-  try {
-    const {
-      contentType,
-      content,
-      notes,
-      storyLink,
-      storyLinkTitle,
-      scheduledDate,
-      scheduledTime,
-      selectedAccounts,
-    } = req.body;
+app.post(
+  "/api/posts",
+  upload.fields([{ name: "files", maxCount: 10 }]),
+  (req, res) => {
+    try {
+      console.log("POST /api/posts isteği alındı");
+      console.log("Request body:", req.body);
+      console.log("Request files:", req.files);
 
-    const newPost = {
-      id: Date.now(),
-      contentType: contentType || "post",
-      content: content || "",
-      notes: notes || "",
-      storyLink: storyLink || "",
-      storyLinkTitle: storyLinkTitle || "",
-      scheduledDate,
-      scheduledTime,
-      selectedAccounts: JSON.parse(selectedAccounts || "[]"),
-      completedAccounts: [], // Yeni alan
-      fileName: req.file ? req.file.filename : null,
-      originalName: req.file ? req.file.originalname : null,
-      status: "planlandı",
-      createdAt: new Date().toLocaleString("tr-TR"),
-    };
+      const {
+        contentType,
+        content,
+        notes,
+        storyLink,
+        storyLinkTitle,
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts,
+      } = req.body;
 
-    const posts = readPosts();
-    posts.push(newPost);
+      // Validasyon kontrolleri
+      if (!scheduledDate || !scheduledTime) {
+        console.error("Eksik tarih/saat bilgisi");
+        return res.status(400).json({
+          success: false,
+          message: "Tarih ve saat alanları zorunludur",
+        });
+      }
 
-    if (writePosts(posts)) {
-      res.json({ success: true, post: newPost });
-    } else {
-      res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+      // selectedAccounts parse etmeyi dene
+      let parsedAccounts = [];
+      try {
+        parsedAccounts = JSON.parse(selectedAccounts || "[]");
+        console.log("Parsed accounts:", parsedAccounts);
+      } catch (parseError) {
+        console.error("selectedAccounts parse hatası:", parseError);
+        console.error("selectedAccounts değeri:", selectedAccounts);
+        return res.status(400).json({
+          success: false,
+          message: "Hesap seçimi format hatası",
+        });
+      }
+
+      // Dosya bilgilerini birden fazla dosya için hazırla
+      const uploadedFiles = req.files && req.files.files ? req.files.files : [];
+      const files = uploadedFiles.map((file) => ({
+        fileName: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+      }));
+
+      console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
+      console.log("Dosya bilgileri:", files);
+
+      const newPost = {
+        id: Date.now(),
+        contentType: contentType || "post",
+        content: content || "",
+        notes: notes || "",
+        storyLink: storyLink || "",
+        storyLinkTitle: storyLinkTitle || "",
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts: parsedAccounts,
+        completedAccounts: [], // Yeni alan
+        files: files, // Birden fazla dosya desteği
+        // Geriye uyumluluk için eski alanları koru (tek dosya varsa)
+        fileName: files.length > 0 ? files[0].fileName : null,
+        originalName: files.length > 0 ? files[0].originalName : null,
+        status: "planlandı",
+        createdAt: new Date().toLocaleString("tr-TR"),
+      };
+
+      console.log("Yeni post objesi oluşturuldu:", newPost);
+
+      const posts = readPosts();
+      console.log("Mevcut post sayısı:", posts.length);
+
+      posts.push(newPost);
+
+      const writeResult = writePosts(posts);
+      console.log("Veri yazma sonucu:", writeResult);
+
+      if (writeResult) {
+        console.log("Post başarıyla kaydedildi");
+        res.json({ success: true, post: newPost });
+      } else {
+        console.error("Veri yazma hatası");
+        res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+      }
+    } catch (error) {
+      console.error("Post ekleme hatası - Detay:", error);
+      console.error("Hata yığını:", error.stack);
+      res.status(500).json({
+        success: false,
+        message: "Sunucu hatası: " + error.message,
+      });
     }
-  } catch (error) {
-    console.error("Post ekleme hatası:", error);
-    res.status(500).json({ success: false, message: "Sunucu hatası" });
   }
-});
+);
 
 // Post durumunu güncelle
 app.put("/api/posts/:id/status", (req, res) => {
@@ -207,8 +319,19 @@ app.delete("/api/posts/:id", (req, res) => {
         .json({ success: false, message: "Post bulunamadı" });
     }
 
-    // Dosyayı sil
+    // Dosyaları sil
     const post = posts[postIndex];
+
+    // Yeni format: birden fazla dosya
+    if (post.files && Array.isArray(post.files)) {
+      post.files.forEach((file) => {
+        if (file.fileName && fs.existsSync(`uploads/${file.fileName}`)) {
+          fs.unlinkSync(`uploads/${file.fileName}`);
+        }
+      });
+    }
+
+    // Eski format: tek dosya (geriye uyumluluk)
     if (post.fileName && fs.existsSync(`uploads/${post.fileName}`)) {
       fs.unlinkSync(`uploads/${post.fileName}`);
     }

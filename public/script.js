@@ -376,14 +376,38 @@ function selectGroup(groupKey) {
 
 // Dosya seçimi
 function handleFileSelect(event) {
-  console.log("Dosya seçildi");
-  const file = event.target.files[0];
+  console.log("Dosya(lar) seçildi");
+  const files = event.target.files;
   const preview = document.getElementById("filePreview");
 
-  if (file) {
-    preview.textContent = `📎 Seçilen dosya: ${file.name}`;
+  if (files && files.length > 0) {
+    // Birden fazla dosya için önizleme oluştur
+    let previewHTML = '<div class="file-list">';
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB cinsinden
+      const fileType = file.type.includes("image") ? "🖼️" : "🎬";
+
+      previewHTML += `
+        <div class="file-item">
+          <span class="file-icon">${fileType}</span>
+          <span class="file-name">${file.name}</span>
+          <span class="file-size">(${fileSize} MB)</span>
+        </div>
+      `;
+    }
+
+    previewHTML += "</div>";
+    previewHTML += `<div class="file-count">📎 Toplam ${files.length} dosya seçildi</div>`;
+
+    preview.innerHTML = previewHTML;
     preview.style.display = "block";
-    console.log(`Dosya: ${file.name}`);
+
+    console.log(
+      `${files.length} dosya seçildi:`,
+      Array.from(files).map((f) => f.name)
+    );
   } else {
     preview.style.display = "none";
   }
@@ -393,6 +417,15 @@ function handleFileSelect(event) {
 async function handleFormSubmit(event) {
   event.preventDefault();
   console.log("Form gönderiliyor...");
+
+  // Submit butonunu bul ve loading durumuna geçir
+  const submitButton = document.querySelector('button[type="submit"]');
+  const originalButtonText = submitButton.innerHTML;
+
+  // Butonu devre dışı bırak ve loading mesajı göster
+  submitButton.disabled = true;
+  submitButton.innerHTML = "⏳ Biraz bekleyin...";
+  submitButton.style.opacity = "0.7";
 
   const contentType = document.querySelector(
     'input[name="contentType"]:checked'
@@ -416,18 +449,28 @@ async function handleFormSubmit(event) {
     selectedAccounts: selectedAccounts.length,
   });
 
+  // Butonu eski haline döndüren fonksiyon
+  const resetSubmitButton = () => {
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonText;
+    submitButton.style.opacity = "1";
+  };
+
   // Validation
   if (!scheduledDate || !scheduledTime) {
+    resetSubmitButton();
     showMessage("Lütfen tarih ve saat alanlarını doldurun!", "error");
     return;
   }
 
   if (contentType === "post" && !content) {
+    resetSubmitButton();
     showMessage("Lütfen post içeriğini yazın!", "error");
     return;
   }
 
   if (contentType === "story" && (!storyLink || !storyLinkTitle)) {
+    resetSubmitButton();
     showMessage(
       "Lütfen story için link ve başlık alanlarını doldurun!",
       "error"
@@ -436,6 +479,7 @@ async function handleFormSubmit(event) {
   }
 
   if (selectedAccounts.length === 0) {
+    resetSubmitButton();
     showMessage("En az bir hesap seçin!", "error");
     return;
   }
@@ -450,30 +494,142 @@ async function handleFormSubmit(event) {
   formData.append("scheduledTime", scheduledTime);
   formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
 
-  if (fileInput.files[0]) {
-    formData.append("file", fileInput.files[0]);
-    console.log("Dosya eklendi");
+  // Birden fazla dosya ekleme
+  if (fileInput.files && fileInput.files.length > 0) {
+    for (let i = 0; i < fileInput.files.length; i++) {
+      formData.append("files", fileInput.files[i]);
+    }
+    console.log(`${fileInput.files.length} dosya eklendi`);
   }
 
   try {
     console.log("API'ye gönderiliyor...");
-    const response = await fetch("/api/posts", {
-      method: "POST",
-      body: formData,
+
+    // Progress bar'ı göster
+    const progressContainer = document.getElementById("uploadProgress");
+    const progressFill = document.getElementById("progressFill");
+    const progressText = document.getElementById("progressText");
+    const progressPercent = document.getElementById("progressPercent");
+    const uploadSpeed = document.getElementById("uploadSpeed");
+
+    // Dosya varsa progress bar'ı göster
+    if (fileInput.files && fileInput.files.length > 0) {
+      progressContainer.style.display = "block";
+      progressFill.style.width = "0%";
+      progressPercent.textContent = "0%";
+      progressText.textContent = "Dosyalar yükleniyor...";
+      uploadSpeed.textContent = "";
+    }
+
+    // XMLHttpRequest ile progress tracking
+    const xhr = new XMLHttpRequest();
+    let startTime = Date.now();
+    let lastLoaded = 0;
+
+    // Progress event listener
+    xhr.upload.addEventListener("progress", function (e) {
+      if (e.lengthComputable) {
+        const percentComplete = Math.round((e.loaded / e.total) * 100);
+        const currentTime = Date.now();
+        const timeElapsed = (currentTime - startTime) / 1000; // saniye
+        const bytesPerSecond = e.loaded / timeElapsed;
+        const mbPerSecond = (bytesPerSecond / (1024 * 1024)).toFixed(2);
+
+        // Progress bar'ı güncelle
+        progressFill.style.width = percentComplete + "%";
+        progressPercent.textContent = percentComplete + "%";
+
+        if (percentComplete < 100) {
+          progressText.textContent = `Dosyalar yükleniyor... (${formatFileSize(
+            e.loaded
+          )} / ${formatFileSize(e.total)})`;
+          uploadSpeed.textContent = `Yükleme hızı: ${mbPerSecond} MB/s`;
+        } else {
+          progressText.textContent = "Yükleme tamamlandı, işleniyor...";
+          uploadSpeed.textContent = "";
+        }
+      }
     });
 
-    console.log("API yanıtı alındı:", response.status);
-    const result = await response.json();
-    console.log("API sonucu:", result);
+    // Response handler
+    xhr.onload = function () {
+      try {
+        // HTTP status kontrolü önce yap
+        if (xhr.status !== 200) {
+          progressContainer.style.display = "none";
+          resetSubmitButton();
+          console.error("HTTP Hatası:", xhr.status, xhr.statusText);
+          console.error("Sunucu yanıtı:", xhr.responseText);
+          showMessage(
+            `Sunucu hatası (${xhr.status}): ${xhr.statusText}`,
+            "error"
+          );
+          return;
+        }
 
-    if (result.success) {
-      showMessage("Paylaşım başarıyla planlandı!", "success");
-      resetForm();
-      loadPosts();
-    } else {
-      showMessage("Hata: " + result.message, "error");
-    }
+        // JSON parse etmeyi dene
+        let result;
+        try {
+          result = JSON.parse(xhr.responseText);
+        } catch (parseError) {
+          progressContainer.style.display = "none";
+          resetSubmitButton();
+          console.error("JSON parse hatası:", parseError);
+          console.error("Sunucu yanıtı:", xhr.responseText);
+          showMessage("Sunucu yanıt formatı hatalı!", "error");
+          return;
+        }
+
+        console.log("API sonucu:", result);
+
+        if (result.success) {
+          progressText.textContent = "Paylaşım başarıyla planlandı!";
+          showMessage("Paylaşım başarıyla planlandı!", "success");
+          resetSubmitButton();
+          resetForm();
+          loadPosts();
+
+          // Progress bar'ı 2 saniye sonra gizle
+          setTimeout(() => {
+            progressContainer.style.display = "none";
+          }, 2000);
+        } else {
+          progressContainer.style.display = "none";
+          resetSubmitButton();
+          showMessage(
+            "Hata: " + (result.message || "Bilinmeyen hata"),
+            "error"
+          );
+        }
+      } catch (error) {
+        progressContainer.style.display = "none";
+        resetSubmitButton();
+        console.error("Response handler hatası:", error);
+        showMessage("İstek işleme hatası!", "error");
+      }
+    };
+
+    // Error handler
+    xhr.onerror = function () {
+      progressContainer.style.display = "none";
+      resetSubmitButton(); // Butonu eski haline döndür
+      console.error("Upload hatası");
+      showMessage("Yükleme hatası!", "error");
+    };
+
+    // Abort handler
+    xhr.onabort = function () {
+      progressContainer.style.display = "none";
+      resetSubmitButton(); // Butonu eski haline döndür
+      showMessage("Yükleme iptal edildi!", "error");
+    };
+
+    // Send request
+    xhr.open("POST", "/api/posts");
+    xhr.send(formData);
   } catch (error) {
+    document.getElementById("uploadProgress").style.display = "none";
+    resetSubmitButton(); // Butonu eski haline döndür
     console.error("API Hatası:", error);
     showMessage("Sunucu hatası!", "error");
   }
@@ -482,6 +638,15 @@ async function handleFormSubmit(event) {
 // Form sıfırla
 function resetForm() {
   console.log("Form sıfırlanıyor...");
+
+  // Submit butonunu eski haline döndür (güvenlik için)
+  const submitButton = document.querySelector('button[type="submit"]');
+  if (submitButton) {
+    submitButton.disabled = false;
+    submitButton.innerHTML = "📤 Paylaşımı Planla";
+    submitButton.style.opacity = "1";
+  }
+
   document.getElementById("postForm").reset();
   selectedAccounts = [];
   clearAll();
@@ -500,8 +665,23 @@ function resetForm() {
   storyLink.required = false;
   storyLinkTitle.required = false;
 
+  // File preview ve progress bar'ı gizle
   const preview = document.getElementById("filePreview");
   if (preview) preview.style.display = "none";
+
+  const progressContainer = document.getElementById("uploadProgress");
+  if (progressContainer) progressContainer.style.display = "none";
+}
+
+// Dosya boyutunu formatla
+function formatFileSize(bytes) {
+  if (bytes === 0) return "0 Bytes";
+
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
 // Mesaj göster
@@ -697,20 +877,61 @@ function renderPostsTable(posts) {
             <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
             <td>${post.scheduledTime}</td>
             <td>
-                ${
-                  post.fileName
-                    ? `<div>
+                ${(() => {
+                  // Yeni format: birden fazla dosya
+                  if (
+                    post.files &&
+                    Array.isArray(post.files) &&
+                    post.files.length > 0
+                  ) {
+                    let filesHtml = '<div class="files-list">';
+                    post.files.forEach((file, index) => {
+                      const fileType =
+                        file.mimetype && file.mimetype.includes("image")
+                          ? "🖼️"
+                          : "🎬";
+                      const fileSize = file.size
+                        ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                        : "";
+                      filesHtml += `
+                        <div class="file-item-table">
+                          <span class="file-icon">${fileType}</span>
+                          <a href="/uploads/${
+                            file.fileName
+                          }" target="_blank" class="file-link">
+                            ${file.originalName || file.fileName}
+                          </a>
+                          <span class="file-size-table">${fileSize}</span>
+                          <a href="/uploads/${
+                            file.fileName
+                          }" download class="download-btn">⬇️</a>
+                        </div>
+                      `;
+                    });
+                    filesHtml += "</div>";
+                    if (post.files.length > 1) {
+                      filesHtml += `<div class="files-count">${post.files.length} dosya</div>`;
+                    }
+                    return filesHtml;
+                  }
+                  // Eski format: tek dosya (geriye uyumluluk)
+                  else if (post.fileName) {
+                    return `<div>
                         <a href="/uploads/${
                           post.fileName
                         }" target="_blank" class="file-link">📎 ${
-                        post.originalName || post.fileName
-                      }</a>
+                      post.originalName || post.fileName
+                    }</a>
                         <a href="/uploads/${
                           post.fileName
                         }" download class="download-btn">⬇️ İndir</a>
-                       </div>`
-                    : '<span style="color: #999;">-</span>'
-                }
+                       </div>`;
+                  }
+                  // Dosya yok
+                  else {
+                    return '<span style="color: #999;">-</span>';
+                  }
+                })()}
             </td>
             <td class="progress-text">${completedCount}/${totalCount}</td>
             <td>
