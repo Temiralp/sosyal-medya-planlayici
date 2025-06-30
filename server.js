@@ -152,12 +152,38 @@ app.post(
         selectedAccounts,
       } = req.body;
 
+      // Veriyi temizle (boşluk karakterlerini kaldır)
+      const cleanContent = (content || "").trim();
+      const cleanNotes = (notes || "").trim();
+      const cleanStoryLink = (storyLink || "").trim();
+      const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
+
       // Validasyon kontrolleri
       if (!scheduledDate || !scheduledTime) {
         console.error("Eksik tarih/saat bilgisi");
         return res.status(400).json({
           success: false,
           message: "Tarih ve saat alanları zorunludur",
+        });
+      }
+
+      // İçerik türüne göre validasyon
+      if (contentType === "post" && !cleanContent) {
+        console.error("Post içeriği boş");
+        return res.status(400).json({
+          success: false,
+          message: "Post içeriği gereklidir",
+        });
+      }
+
+      if (
+        contentType === "story" &&
+        (!cleanStoryLink || !cleanStoryLinkTitle)
+      ) {
+        console.error("Story bilgileri eksik");
+        return res.status(400).json({
+          success: false,
+          message: "Story için link ve başlık gereklidir",
         });
       }
 
@@ -190,10 +216,10 @@ app.post(
       const newPost = {
         id: Date.now(),
         contentType: contentType || "post",
-        content: content || "",
-        notes: notes || "",
-        storyLink: storyLink || "",
-        storyLinkTitle: storyLinkTitle || "",
+        content: cleanContent,
+        notes: cleanNotes,
+        storyLink: cleanStoryLink,
+        storyLinkTitle: cleanStoryLinkTitle,
         scheduledDate,
         scheduledTime,
         selectedAccounts: parsedAccounts,

@@ -463,13 +463,16 @@ async function handleFormSubmit(event) {
     return;
   }
 
-  if (contentType === "post" && !content) {
+  if (contentType === "post" && !content.trim()) {
     resetSubmitButton();
     showMessage("Lütfen post içeriğini yazın!", "error");
     return;
   }
 
-  if (contentType === "story" && (!storyLink || !storyLinkTitle)) {
+  if (
+    contentType === "story" &&
+    (!storyLink.trim() || !storyLinkTitle.trim())
+  ) {
     resetSubmitButton();
     showMessage(
       "Lütfen story için link ve başlık alanlarını doldurun!",
@@ -486,10 +489,10 @@ async function handleFormSubmit(event) {
 
   const formData = new FormData();
   formData.append("contentType", contentType);
-  formData.append("content", content);
-  formData.append("notes", notes);
-  formData.append("storyLink", storyLink);
-  formData.append("storyLinkTitle", storyLinkTitle);
+  formData.append("content", content.trim());
+  formData.append("notes", notes.trim());
+  formData.append("storyLink", storyLink.trim());
+  formData.append("storyLinkTitle", storyLinkTitle.trim());
   formData.append("scheduledDate", scheduledDate);
   formData.append("scheduledTime", scheduledTime);
   formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
@@ -844,7 +847,7 @@ function renderPostsTable(posts) {
           }`
         : "<strong>📱 Story</strong>";
     } else {
-      contentDisplay = post.content || "-";
+      contentDisplay = post.content && post.content.trim() ? post.content : "-";
     }
 
     tr.innerHTML = `
@@ -873,7 +876,9 @@ function renderPostsTable(posts) {
                     </button>
                 </div>
             </td>
-            <td class="content-cell">${post.notes || "-"}</td>
+            <td class="content-cell">${
+              post.notes && post.notes.trim() ? post.notes : "-"
+            }</td>
             <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
             <td>${post.scheduledTime}</td>
             <td>
