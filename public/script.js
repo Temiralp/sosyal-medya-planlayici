@@ -860,53 +860,75 @@ function copyContent(text, buttonElement) {
 
   const plainText = cleanText;
 
-  // Kopyalama işlemi
-  navigator.clipboard
-    .writeText(plainText)
-    .then(() => {
-      // Buton görünümünü değiştir
-      const originalText = buttonElement.textContent;
-      buttonElement.textContent = "✓ Kopyalandı";
-      buttonElement.classList.add("copied");
+  // Buton görünümünü değiştiren fonksiyon
+  function updateButtonSuccess() {
+    const originalText = buttonElement.textContent;
+    buttonElement.textContent = "✓ Kopyalandı";
+    buttonElement.classList.add("copied");
 
-      // 2 saniye sonra orijinal haline dön
-      setTimeout(() => {
-        buttonElement.textContent = originalText;
-        buttonElement.classList.remove("copied");
-      }, 2000);
+    setTimeout(() => {
+      buttonElement.textContent = originalText;
+      buttonElement.classList.remove("copied");
+    }, 2000);
+  }
 
-      console.log("İçerik kopyalandı:", plainText);
-    })
-    .catch((err) => {
-      console.error("Kopyalama hatası:", err);
+  // Modern clipboard API desteğini kontrol et
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    // Modern API kullan
+    navigator.clipboard
+      .writeText(plainText)
+      .then(() => {
+        updateButtonSuccess();
+        console.log("İçerik kopyalandı (modern API):", plainText);
+      })
+      .catch((err) => {
+        console.error("Modern clipboard API hatası:", err);
+        // Modern API başarısız olursa fallback'e geç
+        copyWithFallback(plainText, updateButtonSuccess);
+      });
+  } else {
+    // Direkt fallback kullan
+    console.log("Modern clipboard API desteklenmiyor, fallback kullanılıyor");
+    copyWithFallback(plainText, updateButtonSuccess);
+  }
 
-      // Fallback: eski yöntem
-      try {
-        const textArea = document.createElement("textarea");
-        textArea.value = plainText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
+  // Fallback kopyalama fonksiyonu
+  function copyWithFallback(text, successCallback) {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
 
-        // Buton görünümünü değiştir
-        const originalText = buttonElement.textContent;
-        buttonElement.textContent = "✓ Kopyalandı";
-        buttonElement.classList.add("copied");
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
 
-        setTimeout(() => {
-          buttonElement.textContent = originalText;
-          buttonElement.classList.remove("copied");
-        }, 2000);
-
-        console.log("İçerik kopyalandı (fallback):", plainText);
-      } catch (fallbackErr) {
-        console.error("Fallback kopyalama da başarısız:", fallbackErr);
-        alert(
-          "Kopyalama işlemi başarısız oldu. Lütfen manuel olarak kopyalayın."
-        );
+      if (successful) {
+        successCallback();
+        console.log("İçerik kopyalandı (fallback):", text);
+      } else {
+        throw new Error("execCommand copy başarısız");
       }
-    });
+    } catch (fallbackErr) {
+      console.error("Fallback kopyalama da başarısız:", fallbackErr);
+
+      // Son çare: kullanıcıya prompt göster
+      const fallbackPrompt = confirm(
+        "Otomatik kopyalama başarısız oldu. İçeriği manuel olarak kopyalamak ister misiniz?"
+      );
+
+      if (fallbackPrompt) {
+        // Basit bir prompt ile içeriği göster
+        const shortText =
+          text.length > 200 ? text.substring(0, 200) + "..." : text;
+        prompt("Bu içeriği kopyalayın (Ctrl+C):", shortText);
+      }
+    }
+  }
 }
 
 // Durum güncelle
