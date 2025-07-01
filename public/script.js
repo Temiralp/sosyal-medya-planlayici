@@ -127,6 +127,18 @@ function setupEventListeners() {
     radio.addEventListener("change", handleContentTypeChange);
   });
   console.log("Content type listeners eklendi");
+
+  // Window resize için event listener
+  window.addEventListener("resize", function () {
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(function () {
+      // Sayfa yeniden render et
+      if (allPosts.length > 0) {
+        renderCurrentPagePosts();
+      }
+    }, 250);
+  });
+  console.log("Window resize listener eklendi");
 }
 
 // İçerik türü değiştiğinde
@@ -1021,18 +1033,29 @@ function renderPostsTable(posts) {
                       const fileSize = file.size
                         ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)`
                         : "";
+                      // Mobil cihazlar için dosya ismini kısalt
+                      const isMobile = window.innerWidth <= 768;
+                      const fileName = file.originalName || file.fileName;
+                      let displayName = fileName;
+
+                      if (isMobile && fileName.length > 25) {
+                        const extension = fileName.split(".").pop();
+                        const nameWithoutExt = fileName.replace(
+                          `.${extension}`,
+                          ""
+                        );
+                        displayName =
+                          nameWithoutExt.substring(0, 20) + "..." + extension;
+                      }
+
                       filesHtml += `
                         <div class="file-item-table">
                           <span class="file-icon">${fileType}</span>
-                          <a href="/uploads/${
-                            file.fileName
-                          }" target="_blank" class="file-link">
-                            ${file.originalName || file.fileName}
+                          <a href="/uploads/${file.fileName}" target="_blank" class="file-link" title="${fileName}">
+                            ${displayName}
                           </a>
                           <span class="file-size-table">${fileSize}</span>
-                          <a href="/uploads/${
-                            file.fileName
-                          }" download class="download-btn">⬇️</a>
+                          <a href="/uploads/${file.fileName}" download class="download-btn">⬇️</a>
                         </div>
                       `;
                     });
@@ -1044,15 +1067,23 @@ function renderPostsTable(posts) {
                   }
                   // Eski format: tek dosya (geriye uyumluluk)
                   else if (post.fileName) {
+                    const isMobile = window.innerWidth <= 768;
+                    const fileName = post.originalName || post.fileName;
+                    let displayName = fileName;
+
+                    if (isMobile && fileName.length > 25) {
+                      const extension = fileName.split(".").pop();
+                      const nameWithoutExt = fileName.replace(
+                        `.${extension}`,
+                        ""
+                      );
+                      displayName =
+                        nameWithoutExt.substring(0, 20) + "..." + extension;
+                    }
+
                     return `<div>
-                        <a href="/uploads/${
-                          post.fileName
-                        }" target="_blank" class="file-link">📎 ${
-                      post.originalName || post.fileName
-                    }</a>
-                        <a href="/uploads/${
-                          post.fileName
-                        }" download class="download-btn">⬇️ İndir</a>
+                        <a href="/uploads/${post.fileName}" target="_blank" class="file-link" title="${fileName}">📎 ${displayName}</a>
+                        <a href="/uploads/${post.fileName}" download class="download-btn">⬇️ İndir</a>
                        </div>`;
                   }
                   // Dosya yok
