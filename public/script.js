@@ -782,8 +782,10 @@ async function handleFormSubmit(event) {
 
     // Send request
     xhr.open("POST", "/api/posts");
+
     xhr.timeout = 1800000;
     xhr.ontimeout = function() {
+
       progressContainer.style.display = "none";
       resetSubmitButton();
       console.error("Upload timeout");
