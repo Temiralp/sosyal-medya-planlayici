@@ -520,5 +520,50 @@
     "originalName": "1751203856167-856670590.jpg",
     "status": "planlandı",
     "createdAt": "02.07.2025 01:02:04"
+  },
+  {
+    "id": 1751407868679,
+    "contentType": "post",
+    "title": "asglkşagsagslşlgsalş şla las lşgg lşagsl şlşa lşslşg laslşas lş şl",
+    "content": "lşfalgsalş lşas gşllaş lş lşgasglşslgş lşags lşlşas lşl şgaslaşl",
+    "notes": "flaöasö la sş alşslş alşlasglşgaşl lşag slşl şgsşlgalş slşasglşlşags",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "21:04",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [],
+    "files": [
+      {
+        "fileName": "1751407868465-998642724.jpg",
+        "originalName": "1751203856167-856670590.jpg",
+        "size": 218051,
+        "mimetype": "image/jpeg"
+      },
+      {
+        "fileName": "1751407868476-862101483.jpg",
+        "originalName": "1751209775384-722399121.jpg",
+        "size": 218051,
+        "mimetype": "image/jpeg"
+      },
+      {
+        "fileName": "1751407868478-85567142.mp4",
+        "originalName": "1751208624672-596103836.mp4",
+        "size": 99710895,
+        "mimetype": "video/mp4"
+      },
+      {
+        "fileName": "1751407868674-65150243.jpg",
+        "originalName": "1751396378280-126613843.jpg",
+        "size": 218051,
+        "mimetype": "image/jpeg"
+      }
+    ],
+    "fileName": "1751407868465-998642724.jpg",
+    "originalName": "1751203856167-856670590.jpg",
+    "status": "planlandı",
+    "createdAt": "02.07.2025 01:11:08"
   }
 ]

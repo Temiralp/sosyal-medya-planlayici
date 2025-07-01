@@ -1213,10 +1213,125 @@ function renderPostsTable(posts) {
     });
   });
 
+  // Uzun metinler için devamını oku işlevselliği ekle
+  setTimeout(() => {
+    // Story başlıkları için
+    tbody.querySelectorAll(".story-title").forEach((element) => {
+      addStoryTitleReadMore(element, 80);
+    });
+
+    // Normal post içerikleri için (story olmayan)
+    tbody.querySelectorAll(".content-cell").forEach((cell) => {
+      const contentDiv = cell.querySelector("div[style*='flex: 1']");
+      if (contentDiv && !contentDiv.querySelector(".story-content")) {
+        const textContent = contentDiv.textContent.trim();
+        if (textContent.length > 120 && textContent !== "-") {
+          addReadMoreFunctionality(contentDiv, 120);
+        }
+      }
+    });
+
+    // Notlar için (4. sütun)
+    tbody.querySelectorAll("tr").forEach((row) => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length > 3) {
+        const notesCell = cells[3]; // 4. sütun (0-bazlı index: 3)
+        if (notesCell && notesCell.classList.contains("content-cell")) {
+          const textContent = notesCell.textContent.trim();
+          if (textContent.length > 100 && textContent !== "-") {
+            addReadMoreFunctionality(notesCell, 100);
+          }
+        }
+      }
+    });
+  }, 0);
+
   console.log("Tablo güncellendi");
 }
 
 // Story başlığını kopyala
+// Uzun metinler için devamını oku/daha az göster işlevselliği
+function addReadMoreFunctionality(element, maxLength = 150) {
+  const fullText = element.textContent.trim();
+
+  if (fullText.length <= maxLength) {
+    return; // Kısa metinler için işlem yapma
+  }
+
+  const shortText = fullText.substring(0, maxLength);
+  let isExpanded = false;
+
+  const toggleButton = document.createElement("button");
+  toggleButton.className = "content-text-toggle";
+  toggleButton.type = "button";
+
+  function updateDisplay() {
+    if (isExpanded) {
+      element.textContent = fullText;
+      toggleButton.textContent = " Daha az göster";
+      element.classList.add("expanded");
+    } else {
+      element.textContent = shortText + "...";
+      toggleButton.textContent = " Devamını oku";
+      element.classList.remove("expanded");
+    }
+  }
+
+  toggleButton.addEventListener("click", function (e) {
+    e.stopPropagation();
+    isExpanded = !isExpanded;
+    updateDisplay();
+  });
+
+  // Başlangıç durumu
+  updateDisplay();
+  element.parentNode.insertBefore(toggleButton, element.nextSibling);
+}
+
+// Story başlıkları için özel işlevsellik
+function addStoryTitleReadMore(element, maxLength = 100) {
+  const fullText = element.innerHTML;
+  const textContent = element.textContent.trim();
+
+  if (textContent.length <= maxLength) {
+    return;
+  }
+
+  // Strong tag'ını koruyarak kısa metni oluştur
+  const strongPart = fullText.match(/<strong>.*?<\/strong>/);
+  const strongText = strongPart ? strongPart[0] : "";
+  const remainingText = fullText.replace(strongText, "").trim();
+  const shortRemainingText = remainingText.substring(0, maxLength - 20);
+
+  let isExpanded = false;
+
+  const toggleButton = document.createElement("button");
+  toggleButton.className = "content-text-toggle";
+  toggleButton.type = "button";
+  toggleButton.style.marginLeft = "5px";
+
+  function updateDisplay() {
+    if (isExpanded) {
+      element.innerHTML = fullText;
+      toggleButton.textContent = "Daha az";
+      element.classList.add("expanded");
+    } else {
+      element.innerHTML = strongText + " " + shortRemainingText + "...";
+      toggleButton.textContent = "Devamı";
+      element.classList.remove("expanded");
+    }
+  }
+
+  toggleButton.addEventListener("click", function (e) {
+    e.stopPropagation();
+    isExpanded = !isExpanded;
+    updateDisplay();
+  });
+
+  updateDisplay();
+  element.appendChild(toggleButton);
+}
+
 function copyStoryTitle(title, event) {
   event.preventDefault();
   event.stopPropagation();
@@ -1791,6 +1906,39 @@ function renderCurrentPagePosts() {
       copyContent(content, this);
     });
   });
+
+  // Uzun metinler için devamını oku işlevselliği ekle
+  setTimeout(() => {
+    // Story başlıkları için
+    tbody.querySelectorAll(".story-title").forEach((element) => {
+      addStoryTitleReadMore(element, 80);
+    });
+
+    // Normal post içerikleri için (story olmayan)
+    tbody.querySelectorAll(".content-cell").forEach((cell) => {
+      const contentDiv = cell.querySelector("div[style*='flex: 1']");
+      if (contentDiv && !contentDiv.querySelector(".story-content")) {
+        const textContent = contentDiv.textContent.trim();
+        if (textContent.length > 120 && textContent !== "-") {
+          addReadMoreFunctionality(contentDiv, 120);
+        }
+      }
+    });
+
+    // Notlar için (4. sütun)
+    tbody.querySelectorAll("tr").forEach((row) => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length > 3) {
+        const notesCell = cells[3]; // 4. sütun (0-bazlı index: 3)
+        if (notesCell && notesCell.classList.contains("content-cell")) {
+          const textContent = notesCell.textContent.trim();
+          if (textContent.length > 100 && textContent !== "-") {
+            addReadMoreFunctionality(notesCell, 100);
+          }
+        }
+      }
+    });
+  }, 0);
 
   console.log("Mevcut sayfa postları güncellendi");
 }
