@@ -176,16 +176,7 @@ app.post(
         });
       }
 
-      if (
-        contentType === "story" &&
-        (!cleanStoryLink || !cleanStoryLinkTitle)
-      ) {
-        console.error("Story bilgileri eksik");
-        return res.status(400).json({
-          success: false,
-          message: "Story için link ve başlık gereklidir",
-        });
-      }
+      // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
 
       // selectedAccounts parse etmeyi dene
       let parsedAccounts = [];

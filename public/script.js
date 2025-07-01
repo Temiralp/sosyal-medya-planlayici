@@ -132,8 +132,8 @@ function handleContentTypeChange(event) {
     postContent.style.display = "none";
     storyContent.style.display = "block";
     contentTextarea.required = false;
-    storyLink.required = true;
-    storyLinkTitle.required = true;
+    storyLink.required = false;
+    storyLinkTitle.required = false;
   }
 
   console.log(`İçerik türü değişti: ${contentType}`);
@@ -475,17 +475,7 @@ async function handleFormSubmit(event) {
     return;
   }
 
-  if (
-    contentType === "story" &&
-    (!storyLink.trim() || !storyLinkTitle.trim())
-  ) {
-    resetSubmitButton();
-    showMessage(
-      "Lütfen story için link ve başlık alanlarını doldurun!",
-      "error"
-    );
-    return;
-  }
+  // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
 
   if (selectedAccounts.length === 0) {
     resetSubmitButton();
