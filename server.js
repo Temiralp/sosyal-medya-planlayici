@@ -380,6 +380,68 @@ app.delete("/api/posts/:id", (req, res) => {
 // Yüklenen dosyaları serve et
 app.use("/uploads", express.static("uploads"));
 
+// Dosyaları orijinal isimleriyle indirme endpoint'i
+app.get("/api/download/:fileName", (req, res) => {
+  try {
+    const { fileName } = req.params;
+    const posts = readPosts();
+
+    // Dosyanın hangi post'a ait olduğunu bul
+    let fileInfo = null;
+    let originalName = null;
+
+    for (const post of posts) {
+      // Yeni format: birden fazla dosya
+      if (post.files && Array.isArray(post.files)) {
+        const file = post.files.find((f) => f.fileName === fileName);
+        if (file) {
+          fileInfo = file;
+          originalName = file.originalName;
+          break;
+        }
+      }
+
+      // Eski format: tek dosya (geriye uyumluluk)
+      if (post.fileName === fileName) {
+        originalName = post.originalName;
+        break;
+      }
+    }
+
+    if (!originalName) {
+      return res.status(404).json({
+        success: false,
+        message: "Dosya bulunamadı",
+      });
+    }
+
+    const filePath = path.join(__dirname, "uploads", fileName);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: "Dosya fiziksel olarak bulunamadı",
+      });
+    }
+
+    // Dosyayı orijinal ismiyle indirme için header'ları ayarla
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${originalName}"`
+    );
+    res.setHeader("Content-Type", "application/octet-stream");
+
+    // Dosyayı gönder
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error("Dosya indirme hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Sunucu hatası",
+    });
+  }
+});
+
 // Verileri JSON olarak dışa aktar
 app.get("/api/export", (req, res) => {
   const posts = readPosts();

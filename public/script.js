@@ -1055,7 +1055,7 @@ function renderPostsTable(posts) {
                             ${displayName}
                           </a>
                           <span class="file-size-table">${fileSize}</span>
-                          <a href="/uploads/${file.fileName}" download class="download-btn">⬇️</a>
+                          <a href="/api/download/${file.fileName}" download class="download-btn">⬇️</a>
                         </div>
                       `;
                     });
@@ -1083,7 +1083,7 @@ function renderPostsTable(posts) {
 
                     return `<div>
                         <a href="/uploads/${post.fileName}" target="_blank" class="file-link" title="${fileName}">📎 ${displayName}</a>
-                        <a href="/uploads/${post.fileName}" download class="download-btn">⬇️ İndir</a>
+                        <a href="/api/download/${post.fileName}" download class="download-btn">⬇️ İndir</a>
                        </div>`;
                   }
                   // Dosya yok
@@ -1649,7 +1649,7 @@ function renderCurrentPagePosts() {
                             ${file.originalName || file.fileName}
                           </a>
                           <span class="file-size-table">${fileSize}</span>
-                          <a href="/uploads/${
+                          <a href="/api/download/${
                             file.fileName
                           }" download class="download-btn">⬇️</a>
                         </div>
@@ -1669,7 +1669,7 @@ function renderCurrentPagePosts() {
                         }" target="_blank" class="file-link">📎 ${
                       post.originalName || post.fileName
                     }</a>
-                        <a href="/uploads/${
+                        <a href="/api/download/${
                           post.fileName
                         }" download class="download-btn">⬇️ İndir</a>
                        </div>`;
