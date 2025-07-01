@@ -151,12 +151,26 @@ app.get("/api/posts", (req, res) => {
   const posts = readPosts();
   res.json(posts);
 });
+const checkConnection = (req, res, next) => {
+  req.on('close', () => {
+    console.log('Client connection closed');
+    req.connectionClosed = true;
+  });
+  
+  req.on('error', (err) => {
+    console.error('Request error:', err.message);
+    req.connectionError = true;
+  });
+  
+  next();
+};
 
 // Yeni post ekle
 app.post(
-    "/api/posts",
-    upload.fields([{ name: "files", maxCount: 50 }]),
-    (req, res) => {
+  "/api/posts",
+  checkConnection,
+  upload.fields([{ name: "files", maxCount: 50 }]),
+  (req, res) => {
       try {
         console.log("POST /api/posts isteği alındı");
         console.log("Request body:", req.body);
@@ -184,27 +198,36 @@ app.post(
         // Validasyon kontrolleri
         if (!cleanTitle) {
           console.error("Başlık alanı boş");
-          return res.status(400).json({
-            success: false,
-            message: "Paylaşım başlığı zorunludur",
-          });
+          if (!req.connectionClosed && !res.headersSent) {
+            return res.status(400).json({
+              success: false,
+              message: "Paylaşım başlığı zorunludur",
+            });
+          }
+          return;
         }
 
         if (!scheduledDate || !scheduledTime) {
           console.error("Eksik tarih/saat bilgisi");
-          return res.status(400).json({
-            success: false,
-            message: "Tarih ve saat alanları zorunludur",
-          });
+          if (!req.connectionClosed && !res.headersSent) {
+            return res.status(400).json({
+              success: false,
+              message: "Tarih ve saat alanları zorunludur",
+            });
+          }
+          return;
         }
 
         // İçerik türüne göre validasyon
         if (contentType === "post" && !cleanContent) {
           console.error("Post içeriği boş");
-          return res.status(400).json({
-            success: false,
-            message: "Post içeriği gereklidir",
-          });
+          if (!req.connectionClosed && !res.headersSent) {
+            return res.status(400).json({
+              success: false,
+              message: "Post içeriği gereklidir",
+            });
+          }
+          return;
         }
 
         // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
@@ -217,10 +240,13 @@ app.post(
         } catch (parseError) {
           console.error("selectedAccounts parse hatası:", parseError);
           console.error("selectedAccounts değeri:", selectedAccounts);
-          return res.status(400).json({
-            success: false,
-            message: "Hesap seçimi format hatası",
-          });
+          if (!req.connectionClosed && !res.headersSent) {
+            return res.status(400).json({
+              success: false,
+              message: "Hesap seçimi format hatası",
+            });
+          }
+          return;
         }
 
         // Dosya bilgilerini birden fazla dosya için hazırla
@@ -233,7 +259,11 @@ app.post(
         }));
 
         console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
-        console.log("Dosya bilgileri:", files);
+        try {
+          console.log("Dosya bilgileri:", files);
+        } catch (err) {
+          console.error("Log hatası (güvenli şekilde devam ediliyor):", err.message);
+        }
 
         const newPost = {
           id: Date.now(),
@@ -264,21 +294,33 @@ app.post(
 
         const writeResult = writePosts(posts);
         console.log("Veri yazma sonucu:", writeResult);
+        if (req.connectionClosed || req.connectionError) {
+          console.log("Connection already closed, not sending response");
+          return;
+        }
 
         if (writeResult) {
           console.log("Post başarıyla kaydedildi");
-          res.json({ success: true, post: newPost });
+          if (!res.headersSent) {
+            res.json({ success: true, post: newPost });
+          }
         } else {
           console.error("Veri yazma hatası");
-          res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+          if (!res.headersSent) {
+            res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+          }
         }
       } catch (error) {
         console.error("Post ekleme hatası - Detay:", error);
         console.error("Hata yığını:", error.stack);
-        res.status(500).json({
-          success: false,
-          message: "Sunucu hatası: " + error.message,
-        });
+        if (!req.connectionClosed && !req.connectionError && !res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: "Sunucu hatası: " + error.message,
+          });
+        } else {
+          console.log("Connection closed, not sending error response");
+        }
       }
     }
 );
