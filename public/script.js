@@ -44,6 +44,17 @@ const postsPerPage = 10;
 let totalPages = 1;
 let allPosts = [];
 
+// Varsayılan tarihi ayarla
+function setDefaultDate() {
+  const scheduledDate = document.getElementById("scheduledDate");
+  if (scheduledDate) {
+    // Bugünün tarihini YYYY-MM-DD formatında al
+    const today = new Date().toISOString().split("T")[0];
+    scheduledDate.value = today;
+    console.log(`Varsayılan tarih ayarlandı: ${today}`);
+  }
+}
+
 // Sayfa yüklendiğinde
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM yüklendi, başlatılıyor...");
@@ -68,6 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   if (allElementsExist) {
+    setDefaultDate(); // Varsayılan tarihi ayarla
     initializeAccountSelection();
     loadPosts();
     setupEventListeners();
