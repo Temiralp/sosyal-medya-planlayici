@@ -38,6 +38,12 @@ const accountGroups = {
 const platforms = ["Instagram", "Facebook", "Twitter", "Youtube"];
 let selectedAccounts = [];
 
+// Sayfalama değişkenleri
+let currentPage = 1;
+const postsPerPage = 10;
+let totalPages = 1;
+let allPosts = [];
+
 // Sayfa yüklendiğinde
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM yüklendi, başlatılıyor...");
@@ -811,12 +817,33 @@ function renderPostsTable(posts) {
 
   tbody.innerHTML = "";
 
+  // Tüm postları saklayalım
+  allPosts = posts;
+
+  // Toplam sayfa sayısını hesaplayalım
+  totalPages = Math.ceil(posts.length / postsPerPage);
+
+  // Sayfa kontrolleri güncelleyelim
+  updatePaginationControls();
+
   if (posts.length === 0) {
     const tr = document.createElement("tr");
     tr.innerHTML =
-      '<td colspan="10" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>';
+      '<td colspan="11" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>';
     tbody.appendChild(tr);
+
+    // Sayfalama konteynerini gizleyelim
+    const paginationContainer = document.getElementById("paginationContainer");
+    if (paginationContainer) {
+      paginationContainer.style.display = "none";
+    }
     return;
+  }
+
+  // Sayfalama konteynerini gösterelim
+  const paginationContainer = document.getElementById("paginationContainer");
+  if (paginationContainer) {
+    paginationContainer.style.display = "flex";
   }
 
   // En son oluşturulan paylaşımları ilk sırada göster
@@ -852,7 +879,12 @@ function renderPostsTable(posts) {
     return dateB - dateA; // Büyükten küçüğe (yeniden eskiye)
   });
 
-  posts.forEach((post) => {
+  // Mevcut sayfa için postları filtreleyelim
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPagePosts = posts.slice(startIndex, endIndex);
+
+  currentPagePosts.forEach((post) => {
     // Ana satır
     const tr = document.createElement("tr");
 
@@ -1270,4 +1302,346 @@ async function loadPosts() {
     console.error("Post yükleme hatası:", error);
     showMessage("Postlar yüklenemedi!", "error");
   }
+}
+
+// Sayfalama fonksiyonları
+function goToPage(page) {
+  if (page < 1 || page > totalPages) {
+    return;
+  }
+
+  currentPage = page;
+
+  // Sadece tabloyu yeniden render et (tüm postları yeniden yüklemeden)
+  renderCurrentPagePosts();
+  updatePaginationControls();
+
+  console.log(`Sayfa ${currentPage}'e geçildi`);
+}
+
+function renderCurrentPagePosts() {
+  if (allPosts.length === 0) {
+    return;
+  }
+
+  const tbody = document.querySelector("#postsTable tbody");
+  if (!tbody) {
+    console.error("Tablo tbody bulunamadı");
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  // Mevcut sayfa için postları filtreleyelim
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPagePosts = allPosts.slice(startIndex, endIndex);
+
+  currentPagePosts.forEach((post) => {
+    // Ana satır
+    const tr = document.createElement("tr");
+
+    const completedCount = post.completedAccounts
+      ? post.completedAccounts.length
+      : 0;
+    const totalCount = post.selectedAccounts ? post.selectedAccounts.length : 0;
+
+    // İçerik türüne göre içerik metni
+    let contentDisplay = "";
+    if (post.contentType === "story") {
+      if (post.storyLinkTitle) {
+        contentDisplay = `<div class="story-content">
+          <div class="story-title"><strong>📱 Story:</strong> ${
+            post.storyLinkTitle
+          }</div>
+          ${
+            post.storyLink
+              ? `<div class="story-link"><small><a href="${
+                  post.storyLink
+                }" target="_blank" title="${post.storyLink}">${
+                  post.storyLink.length > 50
+                    ? post.storyLink.substring(0, 50) + "..."
+                    : post.storyLink
+                }</a></small></div>`
+              : ""
+          }
+        </div>`;
+      } else {
+        contentDisplay = "<strong>📱 Story</strong>";
+      }
+    } else {
+      contentDisplay = post.content && post.content.trim() ? post.content : "-";
+    }
+
+    tr.innerHTML = `
+            <td>
+                <span class="toggle-arrow" onclick="toggleRow(${
+                  post.id
+                })">▶</span>
+            </td>
+            <td>
+                <span class="content-type-badge ${
+                  post.contentType === "story" ? "story" : "post"
+                }">
+                    ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
+                </span>
+            </td>
+            <td class="content-cell">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">${contentDisplay}</div>
+                    <button class="btn btn-info btn-sm copy-btn" 
+                            data-content="${contentDisplay
+                              .replace(/"/g, "&quot;")
+                              .replace(/'/g, "&#39;")}" 
+                            title="İçeriği kopyala" 
+                            style="margin-left: 10px; flex-shrink: 0;">
+                        📋 Kopyala
+                    </button>
+                </div>
+            </td>
+            <td class="content-cell">${
+              post.notes && post.notes.trim() ? post.notes : "-"
+            }</td>
+            <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
+            <td>${post.scheduledTime}</td>
+            <td>
+                ${(() => {
+                  // Yeni format: birden fazla dosya
+                  if (
+                    post.files &&
+                    Array.isArray(post.files) &&
+                    post.files.length > 0
+                  ) {
+                    let filesHtml = '<div class="files-list">';
+                    post.files.forEach((file, index) => {
+                      const fileType =
+                        file.mimetype && file.mimetype.includes("image")
+                          ? "🖼️"
+                          : "🎬";
+                      const fileSize = file.size
+                        ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                        : "";
+                      filesHtml += `
+                        <div class="file-item-table">
+                          <span class="file-icon">${fileType}</span>
+                          <a href="/uploads/${
+                            file.fileName
+                          }" target="_blank" class="file-link">
+                            ${file.originalName || file.fileName}
+                          </a>
+                          <span class="file-size-table">${fileSize}</span>
+                          <a href="/uploads/${
+                            file.fileName
+                          }" download class="download-btn">⬇️</a>
+                        </div>
+                      `;
+                    });
+                    filesHtml += "</div>";
+                    if (post.files.length > 1) {
+                      filesHtml += `<div class="files-count">${post.files.length} dosya</div>`;
+                    }
+                    return filesHtml;
+                  }
+                  // Eski format: tek dosya (geriye uyumluluk)
+                  else if (post.fileName) {
+                    return `<div>
+                        <a href="/uploads/${
+                          post.fileName
+                        }" target="_blank" class="file-link">📎 ${
+                      post.originalName || post.fileName
+                    }</a>
+                        <a href="/uploads/${
+                          post.fileName
+                        }" download class="download-btn">⬇️ İndir</a>
+                       </div>`;
+                  }
+                  // Dosya yok
+                  else {
+                    return '<span style="color: #999;">-</span>';
+                  }
+                })()}
+            </td>
+            <td class="progress-text">${completedCount}/${totalCount}</td>
+            <td>
+                <select class="status-select status-${
+                  post.status
+                }" onchange="updateStatus(${post.id}, this.value)">
+                    <option value="planlandı" ${
+                      post.status === "planlandı" ? "selected" : ""
+                    }>📅 Planlandı</option>
+                    <option value="yapıldı" ${
+                      post.status === "yapıldı" ? "selected" : ""
+                    }>✅ Yapıldı</option>
+                    <option value="beklemede" ${
+                      post.status === "beklemede" ? "selected" : ""
+                    }>⏳ Beklemede</option>
+                    <option value="iptal" ${
+                      post.status === "iptal" ? "selected" : ""
+                    }>❌ İptal</option>
+                </select>
+            </td>
+            <td>${post.createdAt ? post.createdAt : "-"}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-danger btn-sm" onclick="deletePost(${
+                      post.id
+                    })" title="Sil">
+                        🗑️ Sil
+                    </button>
+                </div>
+            </td>
+        `;
+    tbody.appendChild(tr);
+
+    // Detay satırı
+    const detailTr = document.createElement("tr");
+    detailTr.id = `detail-${post.id}`;
+    detailTr.style.display = "none";
+
+    // Hesapları gruplara ayır
+    const accountGroups = {};
+    if (post.selectedAccounts) {
+      post.selectedAccounts.forEach((account) => {
+        const parts = account.split("-");
+        const accountName = parts[0];
+        const platform = parts[1];
+
+        if (!accountGroups[accountName]) {
+          accountGroups[accountName] = [];
+        }
+        accountGroups[accountName].push(platform);
+      });
+    }
+
+    let accountsHtml = "";
+    Object.keys(accountGroups).forEach((accountName) => {
+      const platforms = accountGroups[accountName];
+      accountsHtml += `
+                <div class="platform-group">
+                    <div class="platform-group-title">${accountName}</div>
+                    <div class="platform-accounts">
+                        ${platforms
+                          .map((platform) => {
+                            const accountKey = `${accountName}-${platform}`;
+                            const isCompleted =
+                              post.completedAccounts &&
+                              post.completedAccounts.includes(accountKey);
+                            return `
+                            <div class="account-progress-item">
+                                <input type="checkbox" 
+                                       id="progress-${post.id}-${accountKey}" 
+                                       ${isCompleted ? "checked" : ""} 
+                                       onchange="toggleAccountComplete(${
+                                         post.id
+                                       }, '${accountKey}', this, event)" />
+                                <label for="progress-${post.id}-${accountKey}">
+                                    ${platform}
+                                </label>
+                            </div>
+                        `;
+                          })
+                          .join("")}
+                    </div>
+                </div>
+            `;
+    });
+
+    detailTr.innerHTML = `
+            <td colspan="11">
+                <div class="accounts-detail show" onclick="event.stopPropagation();">
+                    <div class="account-progress">
+                        ${accountsHtml}
+                    </div>
+                </div>
+            </td>
+        `;
+    tbody.appendChild(detailTr);
+  });
+
+  // Kopyalama butonlarına event listener ekle
+  const copyButtons = document.querySelectorAll(".copy-btn");
+  copyButtons.forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const content = this.getAttribute("data-content");
+      copyContent(content, this);
+    });
+  });
+
+  console.log("Mevcut sayfa postları güncellendi");
+}
+
+function updatePaginationControls() {
+  // Sayfa bilgilerini güncelle
+  const pageInfo = document.getElementById("pageInfo");
+  if (pageInfo) {
+    pageInfo.textContent = `Sayfa ${currentPage} / ${totalPages}`;
+  }
+
+  const showingInfo = document.getElementById("showingInfo");
+  if (showingInfo) {
+    const startItem = (currentPage - 1) * postsPerPage + 1;
+    const endItem = Math.min(currentPage * postsPerPage, allPosts.length);
+    showingInfo.textContent = `${startItem}-${endItem} arası gösteriliyor, toplam ${allPosts.length} paylaşım`;
+  }
+
+  // Buton durumlarını güncelle
+  const firstPageBtn = document.getElementById("firstPageBtn");
+  const prevPageBtn = document.getElementById("prevPageBtn");
+  const nextPageBtn = document.getElementById("nextPageBtn");
+  const lastPageBtn = document.getElementById("lastPageBtn");
+
+  if (firstPageBtn) firstPageBtn.disabled = currentPage === 1;
+  if (prevPageBtn) prevPageBtn.disabled = currentPage === 1;
+  if (nextPageBtn) nextPageBtn.disabled = currentPage === totalPages;
+  if (lastPageBtn) lastPageBtn.disabled = currentPage === totalPages;
+
+  // Sayfa numaralarını oluştur
+  updatePageNumbers();
+}
+
+function updatePageNumbers() {
+  const pageNumbers = document.getElementById("pageNumbers");
+  if (!pageNumbers) return;
+
+  pageNumbers.innerHTML = "";
+
+  // Sayfa numarası göstermek için mantık
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, currentPage + 2);
+
+  // İlk sayfalar
+  if (startPage > 1) {
+    pageNumbers.appendChild(createPageButton(1));
+    if (startPage > 2) {
+      const dots = document.createElement("span");
+      dots.textContent = "...";
+      dots.className = "page-dots";
+      pageNumbers.appendChild(dots);
+    }
+  }
+
+  // Orta sayfalar
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.appendChild(createPageButton(i));
+  }
+
+  // Son sayfalar
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const dots = document.createElement("span");
+      dots.textContent = "...";
+      dots.className = "page-dots";
+      pageNumbers.appendChild(dots);
+    }
+    pageNumbers.appendChild(createPageButton(totalPages));
+  }
+}
+
+function createPageButton(pageNum) {
+  const button = document.createElement("button");
+  button.textContent = pageNum;
+  button.className = `page-number ${pageNum === currentPage ? "active" : ""}`;
+  button.onclick = () => goToPage(pageNum);
+  return button;
 }

@@ -205,7 +205,14 @@
 
       <!-- Paylaşım Listesi -->
       <div class="card">
-        <h2>📋 Paylaşım Listesi (<span id="postCount">0</span>)</h2>
+        <div class="posts-header">
+          <h2>📋 Paylaşım Listesi (<span id="postCount">0</span>)</h2>
+          <div class="posts-info">
+            <span id="pageInfo">Sayfa 1 / 1</span>
+            <span class="posts-per-page-info">Sayfa başına 10 paylaşım</span>
+          </div>
+        </div>
+
         <div class="table-container">
           <table id="postsTable">
             <thead>
@@ -226,7 +233,7 @@
             <tbody>
               <tr>
                 <td
-                  colspan="10"
+                  colspan="11"
                   style="text-align: center; padding: 30px; color: #666"
                 >
                   Henüz paylaşım yok
@@ -234,6 +241,52 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Sayfalama Kontrolleri -->
+        <div
+          class="pagination-container"
+          id="paginationContainer"
+          style="display: none"
+        >
+          <div class="pagination-info">
+            <span id="showingInfo"
+              >1-10 arası gösteriliyor, toplam 0 paylaşım</span
+            >
+          </div>
+          <div class="pagination-controls">
+            <button
+              id="firstPageBtn"
+              class="btn btn-secondary btn-sm"
+              onclick="goToPage(1)"
+            >
+              «« İlk
+            </button>
+            <button
+              id="prevPageBtn"
+              class="btn btn-secondary btn-sm"
+              onclick="goToPage(currentPage - 1)"
+            >
+              ‹ Önceki
+            </button>
+            <div class="page-numbers" id="pageNumbers">
+              <!-- Sayfa numaraları buraya gelecek -->
+            </div>
+            <button
+              id="nextPageBtn"
+              class="btn btn-secondary btn-sm"
+              onclick="goToPage(currentPage + 1)"
+            >
+              Sonraki ›
+            </button>
+            <button
+              id="lastPageBtn"
+              class="btn btn-secondary btn-sm"
+              onclick="goToPage(totalPages)"
+            >
+              Son »»
+            </button>
+          </div>
         </div>
       </div>
     </div>

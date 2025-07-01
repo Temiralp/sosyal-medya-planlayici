@@ -420,5 +420,25 @@
     "originalName": null,
     "status": "planlandı",
     "createdAt": "01.07.2025 21:15:35"
+  },
+  {
+    "id": 1751394665617,
+    "contentType": "post",
+    "content": "abc",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "1212-02-12",
+    "scheduledTime": "21:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram",
+      "Özdilek İzmir-Facebook"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 21:31:05"
   }
 ]

@@ -1047,3 +1047,133 @@ tr:hover {
   color: #666;
   text-align: center;
 }
+
+/* Sayfalama Stilleri */
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.posts-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.posts-info span {
+  font-size: 13px;
+  color: #666;
+}
+
+.posts-per-page-info {
+  font-weight: 500;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e6ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: #666;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-number {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #333;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  text-align: center;
+}
+
+.page-number:hover {
+  border-color: #3498db;
+  background: #f8f9fa;
+}
+
+.page-number.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.page-number.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Sayfalama Mobil Responsive */
+@media (max-width: 768px) {
+  .posts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .posts-info {
+    align-items: flex-start;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .page-numbers {
+    order: -1;
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination-controls {
+    gap: 4px;
+  }
+
+  .pagination-controls .btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .page-number {
+    padding: 4px 8px;
+    font-size: 11px;
+    min-width: 28px;
+  }
+}
