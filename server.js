@@ -13,13 +13,6 @@ app.use(express.json({ limit: '1gb' }));
 app.use(express.urlencoded({ limit: '1gb', extended: true }));
 app.use(express.static("public"));
 
-app.use((req, res, next) => {
-  if (req.path === '/api/posts' && req.method === 'POST') {
-    req.setTimeout(600000);
-    res.setTimeout(600000);
-  }
-  next();
-});
 
 // Klasörleri oluştur
 const createDirectories = () => {
