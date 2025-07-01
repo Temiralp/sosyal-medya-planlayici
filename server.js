@@ -143,6 +143,7 @@ app.post(
 
       const {
         contentType,
+        title,
         content,
         notes,
         storyLink,
@@ -153,12 +154,21 @@ app.post(
       } = req.body;
 
       // Veriyi temizle (boşluk karakterlerini kaldır)
+      const cleanTitle = (title || "").trim();
       const cleanContent = (content || "").trim();
       const cleanNotes = (notes || "").trim();
       const cleanStoryLink = (storyLink || "").trim();
       const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
 
       // Validasyon kontrolleri
+      if (!cleanTitle) {
+        console.error("Başlık alanı boş");
+        return res.status(400).json({
+          success: false,
+          message: "Paylaşım başlığı zorunludur",
+        });
+      }
+
       if (!scheduledDate || !scheduledTime) {
         console.error("Eksik tarih/saat bilgisi");
         return res.status(400).json({
@@ -207,6 +217,7 @@ app.post(
       const newPost = {
         id: Date.now(),
         contentType: contentType || "post",
+        title: cleanTitle,
         content: cleanContent,
         notes: cleanNotes,
         storyLink: cleanStoryLink,

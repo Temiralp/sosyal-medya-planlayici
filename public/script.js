@@ -448,6 +448,7 @@ async function handleFormSubmit(event) {
   const contentType = document.querySelector(
     'input[name="contentType"]:checked'
   ).value;
+  const title = document.getElementById("title").value;
   const content = document.getElementById("content").value;
   const notes = document.getElementById("notes").value;
   const storyLink = document.getElementById("storyLink").value;
@@ -458,6 +459,7 @@ async function handleFormSubmit(event) {
 
   console.log("Form verileri:", {
     contentType,
+    title,
     content,
     notes,
     storyLink,
@@ -475,6 +477,12 @@ async function handleFormSubmit(event) {
   };
 
   // Validation
+  if (!title.trim()) {
+    resetSubmitButton();
+    showMessage("Lütfen paylaşım başlığını yazın!", "error");
+    return;
+  }
+
   if (!scheduledDate || !scheduledTime) {
     resetSubmitButton();
     showMessage("Lütfen tarih ve saat alanlarını doldurun!", "error");
@@ -497,6 +505,7 @@ async function handleFormSubmit(event) {
 
   const formData = new FormData();
   formData.append("contentType", contentType);
+  formData.append("title", title.trim());
   formData.append("content", content.trim());
   formData.append("notes", notes.trim());
   formData.append("storyLink", storyLink.trim());
