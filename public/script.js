@@ -900,14 +900,20 @@ function renderPostsTable(posts) {
     if (post.contentType === "story") {
       if (post.storyLinkTitle) {
         contentDisplay = `<div class="story-content">
-          <div class="story-title"><strong>📱 Story:</strong> ${
-            post.storyLinkTitle
-          }</div>
+          <div class="story-title clickable-story-title" onclick="copyStoryTitle('${post.storyLinkTitle.replace(
+            /'/g,
+            "\\'"
+          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong>📱 Story:</strong> ${
+          post.storyLinkTitle
+        }</div>
           ${
             post.storyLink
               ? `<div class="story-link"><small><a href="${
                   post.storyLink
-                }" target="_blank" title="${post.storyLink}">${
+                }" onclick="copyStoryLink('${post.storyLink.replace(
+                  /'/g,
+                  "\\'"
+                )}', event)" title="Linki kopyalamak için tıklayın">${
                   post.storyLink.length > 50
                     ? post.storyLink.substring(0, 50) + "..."
                     : post.storyLink
@@ -1127,6 +1133,135 @@ function renderPostsTable(posts) {
   });
 
   console.log("Tablo güncellendi");
+}
+
+// Story başlığını kopyala
+function copyStoryTitle(title, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log("Story başlığı kopyalanıyor:", title);
+
+  // Modern clipboard API desteğini kontrol et
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(title)
+      .then(() => {
+        showCopyFeedback(event.target, "Başlık kopyalandı!");
+        console.log("Story başlığı kopyalandı:", title);
+      })
+      .catch((err) => {
+        console.error("Modern clipboard API hatası:", err);
+        copyWithFallbackMethod(title, () =>
+          showCopyFeedback(event.target, "Başlık kopyalandı!")
+        );
+      });
+  } else {
+    copyWithFallbackMethod(title, () =>
+      showCopyFeedback(event.target, "Başlık kopyalandı!")
+    );
+  }
+}
+
+// Story linkini kopyala
+function copyStoryLink(link, event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  console.log("Story linki kopyalanıyor:", link);
+
+  // Modern clipboard API desteğini kontrol et
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard
+      .writeText(link)
+      .then(() => {
+        showCopyFeedback(event.target, "Link kopyalandı!");
+        console.log("Story linki kopyalandı:", link);
+      })
+      .catch((err) => {
+        console.error("Modern clipboard API hatası:", err);
+        copyWithFallbackMethod(link, () =>
+          showCopyFeedback(event.target, "Link kopyalandı!")
+        );
+      });
+  } else {
+    copyWithFallbackMethod(link, () =>
+      showCopyFeedback(event.target, "Link kopyalandı!")
+    );
+  }
+}
+
+// Kopyalama geri bildirimi göster
+function showCopyFeedback(element, message) {
+  // Geçici tooltip oluştur
+  const tooltip = document.createElement("div");
+  tooltip.className = "copy-tooltip";
+  tooltip.textContent = message;
+  tooltip.style.position = "fixed";
+  tooltip.style.background = "#27ae60";
+  tooltip.style.color = "white";
+  tooltip.style.padding = "6px 12px";
+  tooltip.style.borderRadius = "4px";
+  tooltip.style.fontSize = "12px";
+  tooltip.style.zIndex = "10000";
+  tooltip.style.pointerEvents = "none";
+  tooltip.style.transform = "translateX(-50%)";
+
+  // Mobil cihazlarda dokunma konumunu kullan
+  const rect = element.getBoundingClientRect();
+  tooltip.style.left = rect.left + rect.width / 2 + "px";
+  tooltip.style.top = rect.top - 35 + "px";
+
+  document.body.appendChild(tooltip);
+
+  // Element'e geçici stil ekle
+  const originalBackground = element.style.background;
+  const originalColor = element.style.color;
+  element.style.background = "#27ae60";
+  element.style.color = "white";
+
+  setTimeout(() => {
+    document.body.removeChild(tooltip);
+    element.style.background = originalBackground;
+    element.style.color = originalColor;
+  }, 2000);
+}
+
+// Fallback kopyalama metodu
+function copyWithFallbackMethod(text, successCallback) {
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (successful) {
+      successCallback();
+      console.log("İçerik kopyalandı (fallback):", text);
+    } else {
+      throw new Error("execCommand copy başarısız");
+    }
+  } catch (fallbackErr) {
+    console.error("Fallback kopyalama da başarısız:", fallbackErr);
+
+    // Son çare: kullanıcıya prompt göster
+    const fallbackPrompt = confirm(
+      "Otomatik kopyalama başarısız oldu. İçeriği manuel olarak kopyalamak ister misiniz?"
+    );
+
+    if (fallbackPrompt) {
+      const shortText =
+        text.length > 200 ? text.substring(0, 200) + "..." : text;
+      prompt("Bu içeriği kopyalayın (Ctrl+C):", shortText);
+    }
+  }
 }
 
 // İçeriği kopyala
@@ -1353,14 +1488,20 @@ function renderCurrentPagePosts() {
     if (post.contentType === "story") {
       if (post.storyLinkTitle) {
         contentDisplay = `<div class="story-content">
-          <div class="story-title"><strong>📱 Story:</strong> ${
-            post.storyLinkTitle
-          }</div>
+          <div class="story-title clickable-story-title" onclick="copyStoryTitle('${post.storyLinkTitle.replace(
+            /'/g,
+            "\\'"
+          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong>📱 Story:</strong> ${
+          post.storyLinkTitle
+        }</div>
           ${
             post.storyLink
               ? `<div class="story-link"><small><a href="${
                   post.storyLink
-                }" target="_blank" title="${post.storyLink}">${
+                }" onclick="copyStoryLink('${post.storyLink.replace(
+                  /'/g,
+                  "\\'"
+                )}', event)" title="Linki kopyalamak için tıklayın">${
                   post.storyLink.length > 50
                     ? post.storyLink.substring(0, 50) + "..."
                     : post.storyLink

@@ -440,5 +440,33 @@
     "originalName": null,
     "status": "planlandı",
     "createdAt": "01.07.2025 21:31:05"
+  },
+  {
+    "id": 1751396403749,
+    "contentType": "story",
+    "content": "",
+    "notes": "saf",
+    "storyLink": "https://github.com/ebcengiz/ebc",
+    "storyLinkTitle": "söasfa",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "12:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "files": [
+      {
+        "fileName": "1751396403742-878091074.jpg",
+        "originalName": "1751203856167-856670590.jpg",
+        "size": 218051,
+        "mimetype": "image/jpeg"
+      }
+    ],
+    "fileName": "1751396403742-878091074.jpg",
+    "originalName": "1751203856167-856670590.jpg",
+    "status": "planlandı",
+    "createdAt": "01.07.2025 22:00:03"
   }
 ]

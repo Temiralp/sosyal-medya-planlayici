@@ -585,6 +585,28 @@ tr:hover {
   word-break: break-word;
 }
 
+.story-title.clickable-story-title {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.story-title.clickable-story-title:hover {
+  background-color: #e3f2fd;
+  transform: translateY(-1px);
+}
+
+.story-title.clickable-story-title:active {
+  transform: translateY(0);
+  background-color: #bbdefb;
+}
+
 .story-link {
   margin-top: 4px;
 }
@@ -594,10 +616,27 @@ tr:hover {
   text-decoration: none;
   word-break: break-all;
   font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 3px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  display: inline-block;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .story-link a:hover {
-  text-decoration: underline;
+  background-color: #e3f2fd;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.story-link a:active {
+  transform: translateY(0);
+  background-color: #bbdefb;
 }
 
 .content-with-copy {
@@ -1175,5 +1214,62 @@ tr:hover {
     padding: 4px 8px;
     font-size: 11px;
     min-width: 28px;
+  }
+
+  /* Story mobil uyumluluk */
+  .story-title.clickable-story-title {
+    padding: 8px 10px;
+    margin: -8px -10px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation;
+  }
+
+  .story-link a {
+    padding: 8px 10px;
+    margin: -8px -10px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    touch-action: manipulation;
+  }
+}
+
+/* Copy tooltip animasyonu */
+.copy-tooltip {
+  animation: fadeInOut 2s ease-in-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  15%,
+  85% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+/* Touch özelleştirmeleri */
+@media (hover: none) and (pointer: coarse) {
+  .story-title.clickable-story-title,
+  .story-link a {
+    padding: 12px 14px;
+    margin: -12px -14px;
+    min-height: 48px;
+  }
+
+  .story-title.clickable-story-title:hover,
+  .story-link a:hover {
+    transform: none;
+    background-color: #e3f2fd;
   }
 }
