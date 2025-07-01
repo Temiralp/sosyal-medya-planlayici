@@ -35,6 +35,7 @@
             <input
               type="text"
               id="title"
+              name="title"
               placeholder="Paylaşım başlığınızı buraya yazın..."
               required
             />
@@ -46,6 +47,7 @@
               <label>İçerik</label>
               <textarea
                 id="content"
+                name="content"
                 placeholder="Paylaşacağınız post metnini buraya yazın..."
               ></textarea>
             </div>
@@ -55,13 +57,14 @@
               <div class="story-fields">
                 <div>
                   <label>Link URL'si</label>
-                  <input type="url" id="storyLink" placeholder="https://..." />
+                  <input type="url" id="storyLink" name="storyLink" placeholder="https://..." />
                 </div>
                 <div>
                   <label>Link Başlığı</label>
                   <input
                     type="text"
                     id="storyLinkTitle"
+                    name="storyLinkTitle"
                     placeholder="Link başlığını buraya yazın..."
                   />
                 </div>
@@ -70,11 +73,11 @@
 
             <div>
               <label>Tarih</label>
-              <input type="date" id="scheduledDate" required />
+              <input type="date" id="scheduledDate" name="scheduledDate" required />
             </div>
             <div>
               <label>Saat</label>
-              <input type="time" id="scheduledTime" required />
+              <input type="time" id="scheduledTime" name="scheduledTime" required />
             </div>
           </div>
 
@@ -83,6 +86,7 @@
             <label for="notes">📝 Paylaşım Notu</label>
             <textarea
               id="notes"
+              name="notes"
               placeholder="Bu paylaşım için özel notlarınızı buraya yazabilirsiniz..."
               rows="3"
             ></textarea>
@@ -93,6 +97,7 @@
             <input
               type="file"
               id="fileInput"
+              name="files"
               accept="image/*,video/*"
               class="file-input"
               multiple
@@ -192,13 +197,6 @@
             <h3 class="group-title park-title">🌳 Park Hesapları</h3>
             <div class="accounts-list" id="parkAccounts"></div>
           </div>
-
-          <!-- ESKİ KONSEPT HESAPLARI - YORUM SATIRINA ALINDI
-          <div class="account-group">
-            <h3 class="group-title konsept-title">🍴 Konsept Hesapları</h3>
-            <div class="accounts-list" id="konceptAccounts"></div>
-          </div>
-          -->
 
           <!-- Konsept Hesapları -->
           <div class="account-group">

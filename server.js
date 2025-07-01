@@ -135,7 +135,7 @@ app.get("/api/posts", (req, res) => {
 // Yeni post ekle
 app.post(
   "/api/posts",
-  upload.fields([{ name: "files", maxCount: 10 }]),
+  upload.fields([{ name: "files", maxCount: 50 }]),
   (req, res) => {
     try {
       console.log("POST /api/posts isteği alındı");
