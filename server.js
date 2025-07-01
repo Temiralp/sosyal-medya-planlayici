@@ -40,7 +40,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 1024,
@@ -52,7 +52,7 @@ const upload = multer({
     const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|mkv|pdf|doc|docx/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     } else {
@@ -159,133 +159,133 @@ app.get("/api/posts", (req, res) => {
 
 // Yeni post ekle
 app.post(
-  "/api/posts",
-  upload.fields([{ name: "files", maxCount: 50 }]),
-  (req, res) => {
-    try {
-      console.log("POST /api/posts isteği alındı");
-      console.log("Request body:", req.body);
-      console.log("Request files:", req.files);
-
-      const {
-        contentType,
-        title,
-        content,
-        notes,
-        storyLink,
-        storyLinkTitle,
-        scheduledDate,
-        scheduledTime,
-        selectedAccounts,
-      } = req.body;
-
-      // Veriyi temizle (boşluk karakterlerini kaldır)
-      const cleanTitle = (title || "").trim();
-      const cleanContent = (content || "").trim();
-      const cleanNotes = (notes || "").trim();
-      const cleanStoryLink = (storyLink || "").trim();
-      const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
-
-      // Validasyon kontrolleri
-      if (!cleanTitle) {
-        console.error("Başlık alanı boş");
-        return res.status(400).json({
-          success: false,
-          message: "Paylaşım başlığı zorunludur",
-        });
-      }
-
-      if (!scheduledDate || !scheduledTime) {
-        console.error("Eksik tarih/saat bilgisi");
-        return res.status(400).json({
-          success: false,
-          message: "Tarih ve saat alanları zorunludur",
-        });
-      }
-
-      // İçerik türüne göre validasyon
-      if (contentType === "post" && !cleanContent) {
-        console.error("Post içeriği boş");
-        return res.status(400).json({
-          success: false,
-          message: "Post içeriği gereklidir",
-        });
-      }
-
-      // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
-
-      // selectedAccounts parse etmeyi dene
-      let parsedAccounts = [];
+    "/api/posts",
+    upload.fields([{ name: "files", maxCount: 50 }]),
+    (req, res) => {
       try {
-        parsedAccounts = JSON.parse(selectedAccounts || "[]");
-        console.log("Parsed accounts:", parsedAccounts);
-      } catch (parseError) {
-        console.error("selectedAccounts parse hatası:", parseError);
-        console.error("selectedAccounts değeri:", selectedAccounts);
-        return res.status(400).json({
+        console.log("POST /api/posts isteği alındı");
+        console.log("Request body:", req.body);
+        console.log("Request files:", req.files);
+
+        const {
+          contentType,
+          title,
+          content,
+          notes,
+          storyLink,
+          storyLinkTitle,
+          scheduledDate,
+          scheduledTime,
+          selectedAccounts,
+        } = req.body;
+
+        // Veriyi temizle (boşluk karakterlerini kaldır)
+        const cleanTitle = (title || "").trim();
+        const cleanContent = (content || "").trim();
+        const cleanNotes = (notes || "").trim();
+        const cleanStoryLink = (storyLink || "").trim();
+        const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
+
+        // Validasyon kontrolleri
+        if (!cleanTitle) {
+          console.error("Başlık alanı boş");
+          return res.status(400).json({
+            success: false,
+            message: "Paylaşım başlığı zorunludur",
+          });
+        }
+
+        if (!scheduledDate || !scheduledTime) {
+          console.error("Eksik tarih/saat bilgisi");
+          return res.status(400).json({
+            success: false,
+            message: "Tarih ve saat alanları zorunludur",
+          });
+        }
+
+        // İçerik türüne göre validasyon
+        if (contentType === "post" && !cleanContent) {
+          console.error("Post içeriği boş");
+          return res.status(400).json({
+            success: false,
+            message: "Post içeriği gereklidir",
+          });
+        }
+
+        // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
+
+        // selectedAccounts parse etmeyi dene
+        let parsedAccounts = [];
+        try {
+          parsedAccounts = JSON.parse(selectedAccounts || "[]");
+          console.log("Parsed accounts:", parsedAccounts);
+        } catch (parseError) {
+          console.error("selectedAccounts parse hatası:", parseError);
+          console.error("selectedAccounts değeri:", selectedAccounts);
+          return res.status(400).json({
+            success: false,
+            message: "Hesap seçimi format hatası",
+          });
+        }
+
+        // Dosya bilgilerini birden fazla dosya için hazırla
+        const uploadedFiles = req.files && req.files.files ? req.files.files : [];
+        const files = uploadedFiles.map((file) => ({
+          fileName: file.filename,
+          originalName: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+        }));
+
+        console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
+        console.log("Dosya bilgileri:", files);
+
+        const newPost = {
+          id: Date.now(),
+          contentType: contentType || "post",
+          title: cleanTitle,
+          content: cleanContent,
+          notes: cleanNotes,
+          storyLink: cleanStoryLink,
+          storyLinkTitle: cleanStoryLinkTitle,
+          scheduledDate,
+          scheduledTime,
+          selectedAccounts: parsedAccounts,
+          completedAccounts: [], // Yeni alan
+          files: files, // Birden fazla dosya desteği
+          // Geriye uyumluluk için eski alanları koru (tek dosya varsa)
+          fileName: files.length > 0 ? files[0].fileName : null,
+          originalName: files.length > 0 ? files[0].originalName : null,
+          status: "planlandı",
+          createdAt: new Date().toLocaleString("tr-TR"),
+        };
+
+        console.log("Yeni post objesi oluşturuldu:", newPost);
+
+        const posts = readPosts();
+        console.log("Mevcut post sayısı:", posts.length);
+
+        posts.push(newPost);
+
+        const writeResult = writePosts(posts);
+        console.log("Veri yazma sonucu:", writeResult);
+
+        if (writeResult) {
+          console.log("Post başarıyla kaydedildi");
+          res.json({ success: true, post: newPost });
+        } else {
+          console.error("Veri yazma hatası");
+          res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+        }
+      } catch (error) {
+        console.error("Post ekleme hatası - Detay:", error);
+        console.error("Hata yığını:", error.stack);
+        res.status(500).json({
           success: false,
-          message: "Hesap seçimi format hatası",
+          message: "Sunucu hatası: " + error.message,
         });
       }
-
-      // Dosya bilgilerini birden fazla dosya için hazırla
-      const uploadedFiles = req.files && req.files.files ? req.files.files : [];
-      const files = uploadedFiles.map((file) => ({
-        fileName: file.filename,
-        originalName: file.originalname,
-        size: file.size,
-        mimetype: file.mimetype,
-      }));
-
-      console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
-      console.log("Dosya bilgileri:", files);
-
-      const newPost = {
-        id: Date.now(),
-        contentType: contentType || "post",
-        title: cleanTitle,
-        content: cleanContent,
-        notes: cleanNotes,
-        storyLink: cleanStoryLink,
-        storyLinkTitle: cleanStoryLinkTitle,
-        scheduledDate,
-        scheduledTime,
-        selectedAccounts: parsedAccounts,
-        completedAccounts: [], // Yeni alan
-        files: files, // Birden fazla dosya desteği
-        // Geriye uyumluluk için eski alanları koru (tek dosya varsa)
-        fileName: files.length > 0 ? files[0].fileName : null,
-        originalName: files.length > 0 ? files[0].originalName : null,
-        status: "planlandı",
-        createdAt: new Date().toLocaleString("tr-TR"),
-      };
-
-      console.log("Yeni post objesi oluşturuldu:", newPost);
-
-      const posts = readPosts();
-      console.log("Mevcut post sayısı:", posts.length);
-
-      posts.push(newPost);
-
-      const writeResult = writePosts(posts);
-      console.log("Veri yazma sonucu:", writeResult);
-
-      if (writeResult) {
-        console.log("Post başarıyla kaydedildi");
-        res.json({ success: true, post: newPost });
-      } else {
-        console.error("Veri yazma hatası");
-        res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
-      }
-    } catch (error) {
-      console.error("Post ekleme hatası - Detay:", error);
-      console.error("Hata yığını:", error.stack);
-      res.status(500).json({
-        success: false,
-        message: "Sunucu hatası: " + error.message,
-      });
     }
-  }
 );
 
 // Post durumunu güncelle
@@ -299,8 +299,8 @@ app.put("/api/posts/:id/status", (req, res) => {
 
     if (postIndex === -1) {
       return res
-        .status(404)
-        .json({ success: false, message: "Post bulunamadı" });
+          .status(404)
+          .json({ success: false, message: "Post bulunamadı" });
     }
 
     posts[postIndex].status = status;
@@ -327,8 +327,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
 
     if (postIndex === -1) {
       return res
-        .status(404)
-        .json({ success: false, message: "Post bulunamadı" });
+          .status(404)
+          .json({ success: false, message: "Post bulunamadı" });
     }
 
     // completedAccounts alanı yoksa oluştur
@@ -344,8 +344,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
     } else {
       // Çıkar
       posts[postIndex].completedAccounts = posts[
-        postIndex
-      ].completedAccounts.filter((acc) => acc !== accountKey);
+          postIndex
+          ].completedAccounts.filter((acc) => acc !== accountKey);
     }
 
     if (writePosts(posts)) {
@@ -369,8 +369,8 @@ app.delete("/api/posts/:id", (req, res) => {
 
     if (postIndex === -1) {
       return res
-        .status(404)
-        .json({ success: false, message: "Post bulunamadı" });
+          .status(404)
+          .json({ success: false, message: "Post bulunamadı" });
     }
 
     // Dosyaları sil
@@ -452,8 +452,8 @@ app.get("/api/download/:fileName", (req, res) => {
 
     // Dosyayı orijinal ismiyle indirme için header'ları ayarla
     res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${originalName}"`
+        "Content-Disposition",
+        `attachment; filename="${originalName}"`
     );
     res.setHeader("Content-Type", "application/octet-stream");
 
@@ -473,8 +473,8 @@ app.get("/api/export", (req, res) => {
   const posts = readPosts();
   res.setHeader("Content-Type", "application/json");
   res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=sosyal-medya-posts.json"
+      "Content-Disposition",
+      "attachment; filename=sosyal-medya-posts.json"
   );
   res.send(JSON.stringify(posts, null, 2));
 });
@@ -482,21 +482,21 @@ app.get("/api/export", (req, res) => {
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     console.error('Multer Error:', error);
-    
+
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         success: false,
         message: `mesaj file size`
       });
     }
-    
+
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
         message: 'dosya sayısı vs '
       });
     }
-    
+
     return res.status(400).json({
       success: false,
       message: 'Dosya yükleme hatası: ' + error.message
