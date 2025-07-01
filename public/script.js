@@ -1,44 +1,144 @@
-// Hesap grupları
-// Hesap grupları
+// Hesap grupları ve platform bilgileri
 const accountGroups = {
   avm: [
+    "Özdilek AVM",
+    "ÖzdilekPark Bursa Nilüfer",
+    "ÖzdilekPark Antalya",
+    "ÖzdilekPark İstanbul",
+    "ÖzdilekPark M Geçit (Özdilek Geçit AVM)",
     "Özdilek İzmir",
     "Özdilek Eskişehir",
-    "Özdilek Afyon",
+    "Özdilek Afyonkarahisar (Özdilek Afyon AVM)",
     "Özdilek Yalova",
     "Özdilek Kocaeli",
     "Özdilek Bolu",
-    "Özdilek Nazım",
+    "Özdilek Manisa Turgutlu",
     "Özdilek Uşak",
     "Özdilek Bursa",
     "Özdilek Düzce",
-    "Özdilek Esenyurt",
-    "Özdilek ATM",
-    "Özdilek Restaurant",
-    "Özdilek Vakfı",
+    "Orange City Balat",
   ],
   park: [
-    "Özdilek Park Bursa",
-    "Özdilek Park Antalya",
-    "Özdilek Park İstanbul",
-    "Özdilek Park M Geçit",
+    "Wyndham Grand İstanbul Levent Hotel & Conference Center",
+    "Wyndham Grand İzmir Özdilek Thermal & Spa",
   ],
-  konsept: ["Özdilek Evtekstil", "Özdilekteyim", "Özdilek Fırsatları"],
+  konsept: [
+    "Cinetime",
+    "Safahat Lokantası",
+    "Kafe Safahat",
+    "Game Factory",
+    "Game Machine Bowling (Game Machine)",
+    "We You They",
+    "Sütfest (Sütfest Dondurma)",
+    "First Company",
+    "Carême Restaurant İzmir",
+    "Carême Restaurant İstanbul",
+    "Qualitasspa Levent İstanbul",
+    "Qualitasspa İzmir",
+    "Qualitasspa Eskişehir",
+    "AFunfair (Funfair)",
+  ],
   markalar: [
+    "Cottons& Clouds",
+    "Özdilekevtekstili (Özdilek Ev Tekstili)",
+    "Özdilek Fırsatları",
+    "Sadem",
+    "Finesuits",
+    "Shefame",
+    "Lavandi",
+    "Özdilek Vakfı",
     "Orange İnşaat",
-    "River Plaza",
-    "Özin Sigorta",
+    "River Plaza (River Plaza İstanbul)",
+    "Özlü Sigorta",
     "Tabiat Tarım",
     "My Auto",
     "Özdilek Lokum",
-    "Cotonuak Clouds",
   ],
 };
 
-const platforms = ["Instagram", "Facebook", "Twitter", "Youtube"];
+// Her hesabın sahip olduğu platformlar
+const accountPlatforms = {
+  // AVM Grubu
+  "Özdilek AVM": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Bursa Nilüfer": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Antalya": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark İstanbul": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark M Geçit (Özdilek Geçit AVM)": [
+    "Facebook",
+    "Instagram",
+    "Twitter",
+  ],
+  "Özdilek İzmir": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Eskişehir": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Afyonkarahisar (Özdilek Afyon AVM)": [
+    "Facebook",
+    "Instagram",
+    "Twitter",
+  ],
+  "Özdilek Yalova": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Kocaeli": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Bolu": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Uşak": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Bursa": ["Facebook", "Instagram", "Twitter"],
+  "Özdilek Düzce": ["Facebook", "Instagram", "Twitter"],
+  "Orange City Balat": ["Facebook", "Instagram", "Twitter"],
 
-// Sadece bu hesapların YouTube'u var
-const accountsWithYoutube = ["Özdilek Evtekstil", "Özdilekteyim"];
+  // Park/Otel Grubu
+  "Wyndham Grand İstanbul Levent Hotel & Conference Center": [
+    "Facebook",
+    "Instagram",
+    "LinkedIn",
+    "Twitter",
+  ],
+  "Wyndham Grand İzmir Özdilek Thermal & Spa": [
+    "Facebook",
+    "Instagram",
+    "LinkedIn",
+    "Twitter",
+  ],
+
+  // Konsept Grubu
+  Cinetime: ["Facebook", "Instagram", "Twitter"],
+  "Safahat Lokantası": ["Facebook", "Instagram", "Twitter"],
+  "Kafe Safahat": ["Facebook", "Instagram", "Twitter"],
+  "Game Factory": ["Facebook", "Instagram"],
+  "Game Machine Bowling (Game Machine)": ["Facebook", "Instagram"],
+  "We You They": ["Facebook", "Instagram", "Twitter"],
+  "Sütfest (Sütfest Dondurma)": ["Facebook", "Instagram", "Twitter"],
+  "First Company": ["Facebook", "Instagram"],
+  "Carême Restaurant İzmir": ["Instagram", "Facebook", "Twitter"],
+  "Carême Restaurant İstanbul": ["Facebook", "Instagram", "Twitter"],
+  "Qualitasspa Levent İstanbul": ["Facebook", "Instagram", "Twitter"],
+  "Qualitasspa İzmir": ["Facebook", "Instagram", "Twitter"],
+  "Qualitasspa Eskişehir": ["Facebook", "Instagram", "Twitter"],
+  "AFunfair (Funfair)": ["Facebook", "Instagram"],
+
+  // Markalar Grubu
+  "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
+  "Özdilekevtekstili (Özdilek Ev Tekstili)": [
+    "Facebook",
+    "Instagram",
+    "Twitter",
+  ],
+  "Özdilek Fırsatları": ["Facebook", "Instagram"],
+  Sadem: ["Facebook", "Instagram", "Twitter"],
+  Finesuits: ["Facebook", "Instagram"],
+  Shefame: ["Facebook", "Instagram"],
+  Lavandi: ["Facebook", "Instagram"],
+  "Özdilek Vakfı": ["Facebook", "Instagram", "Twitter"],
+  "Orange İnşaat": ["Facebook", "Instagram", "Twitter"],
+  "River Plaza (River Plaza İstanbul)": ["Facebook"],
+  "Özlü Sigorta": ["Facebook", "Instagram", "Twitter"],
+  "Tabiat Tarım": ["Facebook", "Instagram", "Twitter"],
+  "My Auto": ["Facebook", "Instagram"],
+  "Özdilek Lokum": ["Facebook", "Instagram"],
+};
+
+const platforms = ["Instagram", "Facebook", "Twitter", "LinkedIn"];
+
+// Sadece bu hesapların YouTube'u var (şu an için boş, gerektiğinde eklenebilir)
+const accountsWithYoutube = [];
 
 let selectedAccounts = [];
 
@@ -226,13 +326,10 @@ function createAccountItem(account) {
   selectAllDiv.appendChild(selectAllLabel);
   platformsDiv.appendChild(selectAllDiv);
 
-  // Platform checkbox'larını ekle
-  platforms.forEach((platform) => {
-    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
-    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-      return;
-    }
+  // Platform checkbox'larını ekle - sadece bu hesabın sahip olduğu platformlar
+  const accountAvailablePlatforms = accountPlatforms[account] || [];
 
+  accountAvailablePlatforms.forEach((platform) => {
     const checkboxDiv = document.createElement("div");
     checkboxDiv.className = "platform-checkbox";
 
@@ -262,13 +359,11 @@ function createAccountItem(account) {
 function handleSelectAllForAccount(event, account) {
   const isChecked = event.target.checked;
 
-  // O hesabın tüm platform checkbox'larını seç/seçme
-  platforms.forEach((platform) => {
-    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
-    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-      return;
-    }
+  // O hesabın sahip olduğu platformları al
+  const accountAvailablePlatforms = accountPlatforms[account] || [];
 
+  // O hesabın tüm platform checkbox'larını seç/seçme
+  accountAvailablePlatforms.forEach((platform) => {
     const platformCheckbox = document.getElementById(`${account}-${platform}`);
     if (platformCheckbox) {
       platformCheckbox.checked = isChecked;
@@ -285,15 +380,11 @@ function updateSelectAllCheckbox(account) {
   const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
   if (!selectAllCheckbox) return;
 
+  // O hesabın sahip olduğu platformları al
+  const accountAvailablePlatforms = accountPlatforms[account] || [];
+
   // O hesabın mevcut platform checkbox'larının durumunu kontrol et
-  const platformCheckboxes = platforms
-    .filter((platform) => {
-      // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, dahil etme
-      if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-        return false;
-      }
-      return true;
-    })
+  const platformCheckboxes = accountAvailablePlatforms
     .map((platform) => document.getElementById(`${account}-${platform}`))
     .filter((cb) => cb !== null);
 
@@ -322,13 +413,11 @@ function updateSelectedAccountsForAccount(account) {
     (accountKey) => !accountKey.startsWith(`${account}-`)
   );
 
-  // Seçili platformları yeniden ekle
-  platforms.forEach((platform) => {
-    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
-    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-      return;
-    }
+  // O hesabın sahip olduğu platformları al
+  const accountAvailablePlatforms = accountPlatforms[account] || [];
 
+  // Seçili platformları yeniden ekle
+  accountAvailablePlatforms.forEach((platform) => {
     const checkbox = document.getElementById(`${account}-${platform}`);
     if (checkbox && checkbox.checked) {
       selectedAccounts.push(`${account}-${platform}`);
@@ -369,12 +458,10 @@ function selectAll() {
   Object.values(accountGroups)
     .flat()
     .forEach((account) => {
-      platforms.forEach((platform) => {
-        // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
-        if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-          return;
-        }
+      // O hesabın sahip olduğu platformları al
+      const accountAvailablePlatforms = accountPlatforms[account] || [];
 
+      accountAvailablePlatforms.forEach((platform) => {
         const accountKey = `${account}-${platform}`;
         selectedAccounts.push(accountKey);
         const checkbox = document.getElementById(accountKey);
@@ -397,7 +484,10 @@ function clearAll() {
   Object.values(accountGroups)
     .flat()
     .forEach((account) => {
-      platforms.forEach((platform) => {
+      // O hesabın sahip olduğu platformları al
+      const accountAvailablePlatforms = accountPlatforms[account] || [];
+
+      accountAvailablePlatforms.forEach((platform) => {
         const checkbox = document.getElementById(`${account}-${platform}`);
         if (checkbox) checkbox.checked = false;
       });
@@ -417,12 +507,10 @@ function selectGroup(groupKey) {
   if (!accountGroups[groupKey]) return;
 
   accountGroups[groupKey].forEach((account) => {
-    platforms.forEach((platform) => {
-      // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
-      if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
-        return;
-      }
+    // O hesabın sahip olduğu platformları al
+    const accountAvailablePlatforms = accountPlatforms[account] || [];
 
+    accountAvailablePlatforms.forEach((platform) => {
       const accountKey = `${account}-${platform}`;
       if (!selectedAccounts.includes(accountKey)) {
         selectedAccounts.push(accountKey);
@@ -695,11 +783,11 @@ async function handleFormSubmit(event) {
     // Send request
     xhr.open("POST", "/api/posts");
     xhr.timeout = 600000;
-    xhr.ontimeout = function() {
+    xhr.ontimeout = function () {
       progressContainer.style.display = "none";
       resetSubmitButton();
     };
-    
+
     xhr.send(formData);
   } catch (error) {
     document.getElementById("uploadProgress").style.display = "none";
