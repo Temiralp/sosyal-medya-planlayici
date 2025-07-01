@@ -960,7 +960,7 @@ function renderPostsTable(posts) {
           <div class="story-title clickable-story-title" onclick="copyStoryTitle('${post.storyLinkTitle.replace(
             /'/g,
             "\\'"
-          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong>📱 Story:</strong> ${
+          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong></strong> ${
           post.storyLinkTitle
         }</div>
           ${
