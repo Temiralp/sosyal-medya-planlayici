@@ -7,12 +7,14 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Sticky Message Container -->
+    <div id="messageContainer" class="message-container"></div>
+
     <div class="container">
       <h1>ÖZDİLEK&SEMANTİK SOSYAL MEDYA PLANLAMA SİSTEMİ</h1>
 
       <!-- Form -->
       <div class="card">
-        <div id="messageContainer"></div>
         <form id="postForm" enctype="multipart/form-data">
           <!-- Post/Story Seçimi -->
           <div class="content-type-section">
@@ -57,7 +59,12 @@
               <div class="story-fields">
                 <div>
                   <label>Link URL'si</label>
-                  <input type="url" id="storyLink" name="storyLink" placeholder="https://..." />
+                  <input
+                    type="url"
+                    id="storyLink"
+                    name="storyLink"
+                    placeholder="https://..."
+                  />
                 </div>
                 <div>
                   <label>Link Başlığı</label>
@@ -73,11 +80,21 @@
 
             <div>
               <label>Tarih</label>
-              <input type="date" id="scheduledDate" name="scheduledDate" required />
+              <input
+                type="date"
+                id="scheduledDate"
+                name="scheduledDate"
+                required
+              />
             </div>
             <div>
               <label>Saat</label>
-              <input type="time" id="scheduledTime" name="scheduledTime" required />
+              <input
+                type="time"
+                id="scheduledTime"
+                name="scheduledTime"
+                required
+              />
             </div>
           </div>
 
