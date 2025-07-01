@@ -363,5 +363,62 @@
     "originalName": "6.jpg",
     "status": "planlandı",
     "createdAt": "29.06.2025 19:26:16"
+  },
+  {
+    "id": 1751393334720,
+    "contentType": "post",
+    "content": "ebc",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2112-02-11",
+    "scheduledTime": "21:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 21:08:54"
+  },
+  {
+    "id": 1751393361501,
+    "contentType": "post",
+    "content": "deneme",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "1331-03-31",
+    "scheduledTime": "03:13",
+    "selectedAccounts": [
+      "Özdilek Eskişehir-Facebook"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 21:09:21"
+  },
+  {
+    "id": 1751393735658,
+    "contentType": "post",
+    "content": "amösfömaöm",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "21221-11-12",
+    "scheduledTime": "22:21",
+    "selectedAccounts": [
+      "Özdilek Afyon-Instagram"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 21:15:35"
   }
 ]

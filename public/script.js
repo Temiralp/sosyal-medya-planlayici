@@ -821,9 +821,34 @@ function renderPostsTable(posts) {
 
   // En son oluşturulan paylaşımları ilk sırada göster
   posts.sort((a, b) => {
-    // Önce createdAt alanına göre sırala (yeniden eskiye)
-    const dateA = new Date(a.createdAt || a.id); // Eğer createdAt yoksa id'yi kullan
-    const dateB = new Date(b.createdAt || b.id);
+    // createdAt alanını doğru şekilde parse et
+    const parseCreatedAt = (createdAtStr) => {
+      if (!createdAtStr) return null;
+      // "29.06.2025 16:30:56" formatını "2025-06-29T16:30:56" formatına çevir
+      const parts = createdAtStr.split(" ");
+      if (parts.length !== 2) return null;
+
+      const datePart = parts[0]; // "29.06.2025"
+      const timePart = parts[1]; // "16:30:56"
+
+      const dateSegments = datePart.split(".");
+      if (dateSegments.length !== 3) return null;
+
+      const day = dateSegments[0];
+      const month = dateSegments[1];
+      const year = dateSegments[2];
+
+      // ISO format: YYYY-MM-DDTHH:mm:ss
+      const isoFormat = `${year}-${month.padStart(2, "0")}-${day.padStart(
+        2,
+        "0"
+      )}T${timePart}`;
+      return new Date(isoFormat);
+    };
+
+    const dateA = parseCreatedAt(a.createdAt) || new Date(a.id);
+    const dateB = parseCreatedAt(b.createdAt) || new Date(b.id);
+
     return dateB - dateA; // Büyükten küçüğe (yeniden eskiye)
   });
 
