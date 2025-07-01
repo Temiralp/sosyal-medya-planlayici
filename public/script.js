@@ -752,30 +752,126 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-// Mesaj göster
-function showMessage(message, type) {
+// Mesaj göster - Yeni sticky ve gelişmiş versiyon
+function showMessage(message, type = "info", duration = 7000) {
   console.log(`Mesaj: ${type} - ${message}`);
 
-  // Eski mesajları temizle
-  const oldMessages = document.querySelectorAll(".message");
-  oldMessages.forEach((msg) => msg.remove());
-
-  const messageDiv = document.createElement("div");
-  messageDiv.className = `message ${type}`;
-  messageDiv.textContent = message;
-
-  // Mesaj container'ına ekle
-  let container = document.getElementById("messageContainer");
-  if (!container) {
-    container = document.querySelector(".container");
-    container.insertBefore(messageDiv, container.firstChild);
-  } else {
-    container.appendChild(messageDiv);
+  // Aynı mesajı tekrar göstermemeye çalış
+  const existingMessages = document.querySelectorAll(".message");
+  for (let existingMsg of existingMessages) {
+    const existingText = existingMsg.textContent
+      .replace(/[✅❌ℹ️⚠️×]/g, "")
+      .trim();
+    const newText = message.trim();
+    if (existingText === newText) {
+      // Aynı mesaj zaten var, sadece animasyonu yenile
+      existingMsg.style.animation = "none";
+      void existingMsg.offsetHeight; // Reflow tetikle
+      existingMsg.style.animation =
+        "messageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
+      return;
+    }
   }
 
-  setTimeout(() => {
-    messageDiv.remove();
-  }, 5000);
+  // Mesaj elementi oluştur
+  const messageDiv = document.createElement("div");
+  messageDiv.className = `message ${type}`;
+
+  // Mesaj metni
+  const messageText = document.createElement("span");
+  messageText.textContent = message;
+  messageDiv.appendChild(messageText);
+
+  // Kapatma butonu
+  const closeButton = document.createElement("button");
+  closeButton.className = "message-close";
+  closeButton.innerHTML = "×";
+  closeButton.setAttribute("title", "Kapat");
+  messageDiv.appendChild(closeButton);
+
+  // Container'ı bul ve mesajı ekle
+  const container = document.getElementById("messageContainer");
+  if (container) {
+    container.appendChild(messageDiv);
+  } else {
+    console.error("Message container bulunamadı!");
+    return;
+  }
+
+  // Kapatma eventi
+  const closeMessage = () => {
+    if (messageDiv.parentNode) {
+      messageDiv.style.animation = "messageSlideOut 0.3s ease-in-out forwards";
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.remove();
+        }
+      }, 300);
+    }
+  };
+
+  // Event listener'lar
+  closeButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeMessage();
+  });
+
+  // Mesaja tıklayarak kapatma
+  messageDiv.addEventListener("click", closeMessage);
+
+  // Escape tuşu ile kapatma
+  const handleEscape = (e) => {
+    if (e.key === "Escape") {
+      closeMessage();
+      document.removeEventListener("keydown", handleEscape);
+    }
+  };
+  document.addEventListener("keydown", handleEscape);
+
+  // Otomatik kapatma
+  const autoCloseTimer = setTimeout(() => {
+    closeMessage();
+    document.removeEventListener("keydown", handleEscape);
+  }, duration);
+
+  // Manuel kapatma durumunda timer'ı temizle
+  messageDiv.addEventListener("click", () => {
+    clearTimeout(autoCloseTimer);
+    document.removeEventListener("keydown", handleEscape);
+  });
+
+  closeButton.addEventListener("click", () => {
+    clearTimeout(autoCloseTimer);
+    document.removeEventListener("keydown", handleEscape);
+  });
+
+  // Hover durumunda otomatik kapatmayı duraklat
+  let isHovered = false;
+  let remainingTime = duration;
+  let hoverStartTime;
+
+  messageDiv.addEventListener("mouseenter", () => {
+    if (!isHovered) {
+      isHovered = true;
+      hoverStartTime = Date.now();
+      clearTimeout(autoCloseTimer);
+    }
+  });
+
+  messageDiv.addEventListener("mouseleave", () => {
+    if (isHovered) {
+      isHovered = false;
+      const hoveredTime = Date.now() - hoverStartTime;
+      remainingTime = Math.max(1000, remainingTime - hoveredTime);
+
+      setTimeout(() => {
+        if (messageDiv.parentNode && !isHovered) {
+          closeMessage();
+          document.removeEventListener("keydown", handleEscape);
+        }
+      }, remainingTime);
+    }
+  });
 }
 
 // Toggle row
