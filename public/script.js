@@ -896,6 +896,11 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
     event.preventDefault();
   }
 
+  const originalChecked = checkbox.checked;
+  console.log(
+    `🔄 Toggle başlatıldı: PostID=${postId}, Account=${accountKey}, NewState=${originalChecked}`
+  );
+
   try {
     const response = await fetch(`/api/posts/${postId}/complete`, {
       method: "PUT",
@@ -904,21 +909,26 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
       },
       body: JSON.stringify({
         accountKey: accountKey,
-        completed: checkbox.checked,
+        completed: originalChecked,
       }),
     });
 
     const result = await response.json();
 
     if (result.success) {
+      console.log(
+        `✅ Backend başarılı: PostID=${postId}, Account=${accountKey}`
+      );
       // Progress güncellemesini tetikle
       updateProgressDisplay(postId);
     } else {
-      checkbox.checked = !checkbox.checked; // Geri al
+      console.log(`❌ Backend hatası: ${result.message}`);
+      checkbox.checked = !originalChecked; // Geri al
       showMessage("Hata: " + result.message, "error");
     }
   } catch (error) {
-    checkbox.checked = !checkbox.checked; // Geri al
+    console.log(`🚨 Network hatası:`, error);
+    checkbox.checked = !originalChecked; // Geri al
     console.error("Error:", error);
     showMessage("Güncelleme hatası!", "error");
   }
@@ -926,18 +936,24 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
 
 // Progress display güncelle
 function updateProgressDisplay(postId) {
+  console.log(`📊 Progress display güncelleniyor: PostID=${postId}`);
   // Sadece progress sayısını güncelle, tüm tabloyu yeniden yükleme
   updateProgressCount(postId);
 }
 
-// Sadece progress sayısını güncelle
+// Progress sayısını ve checkbox'ları güncelle
 async function updateProgressCount(postId) {
+  console.log(`🔢 Progress count güncelleniyor: PostID=${postId}`);
   try {
     const response = await fetch("/api/posts");
     const posts = await response.json();
     const post = posts.find((p) => p.id === postId);
 
     if (post) {
+      console.log(
+        `📋 Post bulundu. CompletedAccounts:`,
+        post.completedAccounts
+      );
       const completedCount = post.completedAccounts
         ? post.completedAccounts.length
         : 0;
@@ -945,7 +961,7 @@ async function updateProgressCount(postId) {
         ? post.selectedAccounts.length
         : 0;
 
-      // Progress text'i güncelle - daha güvenli yöntem
+      // Progress text'i güncelle
       const detailRow = document.getElementById(`detail-${postId}`);
       if (detailRow) {
         const mainRow = detailRow.previousElementSibling;
@@ -955,10 +971,44 @@ async function updateProgressCount(postId) {
             progressCell.textContent = `${completedCount}/${totalCount}`;
           }
         }
+
+        // Checkbox'ları da güncelle - Bu çok önemli!
+        const checkboxes = detailRow.querySelectorAll('input[type="checkbox"]');
+        console.log(`🎯 ${checkboxes.length} checkbox bulundu`);
+        checkboxes.forEach((checkbox) => {
+          const onchangeAttr = checkbox.getAttribute("onchange");
+          if (onchangeAttr && onchangeAttr.includes("toggleAccountComplete")) {
+            // onchange attribute'ından accountKey'i çıkar
+            const matches = onchangeAttr.match(/'([^']+)'/);
+            if (matches && matches[1]) {
+              const accountKey = matches[1];
+              const shouldBeChecked =
+                post.completedAccounts &&
+                post.completedAccounts.includes(accountKey);
+              const currentlyChecked = checkbox.checked;
+
+              console.log(
+                `🔍 Checkbox kontrol: ${accountKey} | Şu an: ${currentlyChecked} | Olması gereken: ${shouldBeChecked}`
+              );
+
+              // Checkbox durumunu güncelle (sadece gerekirse)
+              if (currentlyChecked !== shouldBeChecked) {
+                checkbox.checked = shouldBeChecked;
+                console.log(
+                  `✅ Checkbox güncellendi: ${accountKey} = ${shouldBeChecked}`
+                );
+              } else {
+                console.log(`ℹ️ Checkbox zaten doğru durumda: ${accountKey}`);
+              }
+            }
+          }
+        });
       }
+    } else {
+      console.log(`❌ Post bulunamadı: PostID=${postId}`);
     }
   } catch (error) {
-    console.error("Progress güncelleme hatası:", error);
+    console.error("🚨 Progress güncelleme hatası:", error);
   }
 }
 
