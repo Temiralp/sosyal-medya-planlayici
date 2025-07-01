@@ -694,6 +694,12 @@ async function handleFormSubmit(event) {
 
     // Send request
     xhr.open("POST", "/api/posts");
+    xhr.timeout = 600000;
+    xhr.ontimeout = function() {
+      progressContainer.style.display = "none";
+      resetSubmitButton();
+    };
+    
     xhr.send(formData);
   } catch (error) {
     document.getElementById("uploadProgress").style.display = "none";
