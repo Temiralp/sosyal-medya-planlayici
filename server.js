@@ -14,8 +14,10 @@ app.use(express.urlencoded({ limit: '1gb', extended: true }));
 app.use(express.static("public"));
 
 app.use((req, res, next) => {
-  req.setTimeout(600000);
-  res.setTimeout(600000);
+  if (req.path === '/api/posts' && req.method === 'POST') {
+    req.setTimeout(600000);
+    res.setTimeout(600000);
+  }
   next();
 });
 
