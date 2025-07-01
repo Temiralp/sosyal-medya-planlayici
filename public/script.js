@@ -36,6 +36,10 @@ const accountGroups = {
 };
 
 const platforms = ["Instagram", "Facebook", "Twitter", "Youtube"];
+
+// Sadece bu hesapların YouTube'u var
+const accountsWithYoutube = ["Özdilek Evtekstil", "Özdilekteyim"];
+
 let selectedAccounts = [];
 
 // Sayfalama değişkenleri
@@ -212,6 +216,11 @@ function createAccountItem(account) {
 
   // Platform checkbox'larını ekle
   platforms.forEach((platform) => {
+    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
+    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+      return;
+    }
+
     const checkboxDiv = document.createElement("div");
     checkboxDiv.className = "platform-checkbox";
 
@@ -243,6 +252,11 @@ function handleSelectAllForAccount(event, account) {
 
   // O hesabın tüm platform checkbox'larını seç/seçme
   platforms.forEach((platform) => {
+    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
+    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+      return;
+    }
+
     const platformCheckbox = document.getElementById(`${account}-${platform}`);
     if (platformCheckbox) {
       platformCheckbox.checked = isChecked;
@@ -259,8 +273,15 @@ function updateSelectAllCheckbox(account) {
   const selectAllCheckbox = document.getElementById(`${account}-selectAll`);
   if (!selectAllCheckbox) return;
 
-  // O hesabın tüm platform checkbox'larının durumunu kontrol et
+  // O hesabın mevcut platform checkbox'larının durumunu kontrol et
   const platformCheckboxes = platforms
+    .filter((platform) => {
+      // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, dahil etme
+      if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+        return false;
+      }
+      return true;
+    })
     .map((platform) => document.getElementById(`${account}-${platform}`))
     .filter((cb) => cb !== null);
 
@@ -291,6 +312,11 @@ function updateSelectedAccountsForAccount(account) {
 
   // Seçili platformları yeniden ekle
   platforms.forEach((platform) => {
+    // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
+    if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+      return;
+    }
+
     const checkbox = document.getElementById(`${account}-${platform}`);
     if (checkbox && checkbox.checked) {
       selectedAccounts.push(`${account}-${platform}`);
@@ -332,6 +358,11 @@ function selectAll() {
     .flat()
     .forEach((account) => {
       platforms.forEach((platform) => {
+        // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
+        if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+          return;
+        }
+
         const accountKey = `${account}-${platform}`;
         selectedAccounts.push(accountKey);
         const checkbox = document.getElementById(accountKey);
@@ -375,6 +406,11 @@ function selectGroup(groupKey) {
 
   accountGroups[groupKey].forEach((account) => {
     platforms.forEach((platform) => {
+      // Eğer platform YouTube ise ve bu hesabın YouTube'u yoksa, atla
+      if (platform === "Youtube" && !accountsWithYoutube.includes(account)) {
+        return;
+      }
+
       const accountKey = `${account}-${platform}`;
       if (!selectedAccounts.includes(accountKey)) {
         selectedAccounts.push(accountKey);

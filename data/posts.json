@@ -468,5 +468,24 @@
     "originalName": "1751203856167-856670590.jpg",
     "status": "planlandı",
     "createdAt": "01.07.2025 22:00:03"
+  },
+  {
+    "id": 1751398105931,
+    "contentType": "post",
+    "content": "fasfsa",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "12:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 22:28:25"
   }
 ]
