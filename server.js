@@ -3,16 +3,16 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const archiver = require("archiver");
 
 const app = express();
 const PORT = 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '1gb' }));
-app.use(express.urlencoded({ limit: '1gb', extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static("public"));
-
 
 // Klasörleri oluştur
 const createDirectories = () => {
@@ -35,24 +35,12 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
+const upload = multer({ 
   storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 1024,
-    files: 50,
-    fields: 20,
-    parts: 100
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|mp4|mov|avi|mkv|pdf|doc|docx/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Desteklenmeyen dosya formatı!'));
-    }
+    files: 10,
+    fields: 50
   }
 });
 
@@ -151,178 +139,136 @@ app.get("/api/posts", (req, res) => {
   const posts = readPosts();
   res.json(posts);
 });
-const checkConnection = (req, res, next) => {
-  req.on('close', () => {
-    console.log('Client connection closed');
-    req.connectionClosed = true;
-  });
-  
-  req.on('error', (err) => {
-    console.error('Request error:', err.message);
-    req.connectionError = true;
-  });
-  
-  next();
-};
 
 // Yeni post ekle
 app.post(
   "/api/posts",
-  checkConnection,
   upload.fields([{ name: "files", maxCount: 50 }]),
   (req, res) => {
-      try {
-        console.log("POST /api/posts isteği alındı");
-        console.log("Request body:", req.body);
-        console.log("Request files:", req.files);
+    try {
+      console.log("POST /api/posts isteği alındı");
+      console.log("Request body:", req.body);
+      console.log("Request files:", req.files);
 
-        const {
-          contentType,
-          title,
-          content,
-          notes,
-          storyLink,
-          storyLinkTitle,
-          scheduledDate,
-          scheduledTime,
-          selectedAccounts,
-        } = req.body;
+      const {
+        contentType,
+        title,
+        content,
+        notes,
+        storyLink,
+        storyLinkTitle,
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts,
+      } = req.body;
 
-        // Veriyi temizle (boşluk karakterlerini kaldır)
-        const cleanTitle = (title || "").trim();
-        const cleanContent = (content || "").trim();
-        const cleanNotes = (notes || "").trim();
-        const cleanStoryLink = (storyLink || "").trim();
-        const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
+      // Veriyi temizle (boşluk karakterlerini kaldır)
+      const cleanTitle = (title || "").trim();
+      const cleanContent = (content || "").trim();
+      const cleanNotes = (notes || "").trim();
+      const cleanStoryLink = (storyLink || "").trim();
+      const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
 
-        // Validasyon kontrolleri
-        if (!cleanTitle) {
-          console.error("Başlık alanı boş");
-          if (!req.connectionClosed && !res.headersSent) {
-            return res.status(400).json({
-              success: false,
-              message: "Paylaşım başlığı zorunludur",
-            });
-          }
-          return;
-        }
-
-        if (!scheduledDate || !scheduledTime) {
-          console.error("Eksik tarih/saat bilgisi");
-          if (!req.connectionClosed && !res.headersSent) {
-            return res.status(400).json({
-              success: false,
-              message: "Tarih ve saat alanları zorunludur",
-            });
-          }
-          return;
-        }
-
-        // İçerik türüne göre validasyon
-        if (contentType === "post" && !cleanContent) {
-          console.error("Post içeriği boş");
-          if (!req.connectionClosed && !res.headersSent) {
-            return res.status(400).json({
-              success: false,
-              message: "Post içeriği gereklidir",
-            });
-          }
-          return;
-        }
-
-        // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
-
-        // selectedAccounts parse etmeyi dene
-        let parsedAccounts = [];
-        try {
-          parsedAccounts = JSON.parse(selectedAccounts || "[]");
-          console.log("Parsed accounts:", parsedAccounts);
-        } catch (parseError) {
-          console.error("selectedAccounts parse hatası:", parseError);
-          console.error("selectedAccounts değeri:", selectedAccounts);
-          if (!req.connectionClosed && !res.headersSent) {
-            return res.status(400).json({
-              success: false,
-              message: "Hesap seçimi format hatası",
-            });
-          }
-          return;
-        }
-
-        // Dosya bilgilerini birden fazla dosya için hazırla
-        const uploadedFiles = req.files && req.files.files ? req.files.files : [];
-        const files = uploadedFiles.map((file) => ({
-          fileName: file.filename,
-          originalName: file.originalname,
-          size: file.size,
-          mimetype: file.mimetype,
-        }));
-
-        console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
-        try {
-          console.log("Dosya bilgileri:", files);
-        } catch (err) {
-          console.error("Log hatası (güvenli şekilde devam ediliyor):", err.message);
-        }
-
-        const newPost = {
-          id: Date.now(),
-          contentType: contentType || "post",
-          title: cleanTitle,
-          content: cleanContent,
-          notes: cleanNotes,
-          storyLink: cleanStoryLink,
-          storyLinkTitle: cleanStoryLinkTitle,
-          scheduledDate,
-          scheduledTime,
-          selectedAccounts: parsedAccounts,
-          completedAccounts: [], // Yeni alan
-          files: files, // Birden fazla dosya desteği
-          // Geriye uyumluluk için eski alanları koru (tek dosya varsa)
-          fileName: files.length > 0 ? files[0].fileName : null,
-          originalName: files.length > 0 ? files[0].originalName : null,
-          status: "planlandı",
-          createdAt: new Date().toLocaleString("tr-TR"),
-        };
-
-        console.log("Yeni post objesi oluşturuldu:", newPost);
-
-        const posts = readPosts();
-        console.log("Mevcut post sayısı:", posts.length);
-
-        posts.push(newPost);
-
-        const writeResult = writePosts(posts);
-        console.log("Veri yazma sonucu:", writeResult);
-        if (req.connectionClosed || req.connectionError) {
-          console.log("Connection already closed, not sending response");
-          return;
-        }
-
-        if (writeResult) {
-          console.log("Post başarıyla kaydedildi");
-          if (!res.headersSent) {
-            res.json({ success: true, post: newPost });
-          }
-        } else {
-          console.error("Veri yazma hatası");
-          if (!res.headersSent) {
-            res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
-          }
-        }
-      } catch (error) {
-        console.error("Post ekleme hatası - Detay:", error);
-        console.error("Hata yığını:", error.stack);
-        if (!req.connectionClosed && !req.connectionError && !res.headersSent) {
-          res.status(500).json({
-            success: false,
-            message: "Sunucu hatası: " + error.message,
-          });
-        } else {
-          console.log("Connection closed, not sending error response");
-        }
+      // Validasyon kontrolleri
+      if (!cleanTitle) {
+        console.error("Başlık alanı boş");
+        return res.status(400).json({
+          success: false,
+          message: "Paylaşım başlığı zorunludur",
+        });
       }
+
+      if (!scheduledDate || !scheduledTime) {
+        console.error("Eksik tarih/saat bilgisi");
+        return res.status(400).json({
+          success: false,
+          message: "Tarih ve saat alanları zorunludur",
+        });
+      }
+
+      // İçerik türüne göre validasyon
+      if (contentType === "post" && !cleanContent) {
+        console.error("Post içeriği boş");
+        return res.status(400).json({
+          success: false,
+          message: "Post içeriği gereklidir",
+        });
+      }
+
+      // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
+
+      // selectedAccounts parse etmeyi dene
+      let parsedAccounts = [];
+      try {
+        parsedAccounts = JSON.parse(selectedAccounts || "[]");
+        console.log("Parsed accounts:", parsedAccounts);
+      } catch (parseError) {
+        console.error("selectedAccounts parse hatası:", parseError);
+        console.error("selectedAccounts değeri:", selectedAccounts);
+        return res.status(400).json({
+          success: false,
+          message: "Hesap seçimi format hatası",
+        });
+      }
+
+      // Dosya bilgilerini birden fazla dosya için hazırla
+      const uploadedFiles = req.files && req.files.files ? req.files.files : [];
+      const files = uploadedFiles.map((file) => ({
+        fileName: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+      }));
+
+      console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
+      console.log("Dosya bilgileri:", files);
+
+      const newPost = {
+        id: Date.now(),
+        contentType: contentType || "post",
+        title: cleanTitle,
+        content: cleanContent,
+        notes: cleanNotes,
+        storyLink: cleanStoryLink,
+        storyLinkTitle: cleanStoryLinkTitle,
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts: parsedAccounts,
+        completedAccounts: [], // Yeni alan
+        files: files, // Birden fazla dosya desteği
+        // Geriye uyumluluk için eski alanları koru (tek dosya varsa)
+        fileName: files.length > 0 ? files[0].fileName : null,
+        originalName: files.length > 0 ? files[0].originalName : null,
+        status: "planlandı",
+        createdAt: new Date().toLocaleString("tr-TR"),
+      };
+
+      console.log("Yeni post objesi oluşturuldu:", newPost);
+
+      const posts = readPosts();
+      console.log("Mevcut post sayısı:", posts.length);
+
+      posts.push(newPost);
+
+      const writeResult = writePosts(posts);
+      console.log("Veri yazma sonucu:", writeResult);
+
+      if (writeResult) {
+        console.log("Post başarıyla kaydedildi");
+        res.json({ success: true, post: newPost });
+      } else {
+        console.error("Veri yazma hatası");
+        res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
+      }
+    } catch (error) {
+      console.error("Post ekleme hatası - Detay:", error);
+      console.error("Hata yığını:", error.stack);
+      res.status(500).json({
+        success: false,
+        message: "Sunucu hatası: " + error.message,
+      });
     }
+  }
 );
 
 // Post durumunu güncelle
@@ -336,8 +282,8 @@ app.put("/api/posts/:id/status", (req, res) => {
 
     if (postIndex === -1) {
       return res
-          .status(404)
-          .json({ success: false, message: "Post bulunamadı" });
+        .status(404)
+        .json({ success: false, message: "Post bulunamadı" });
     }
 
     posts[postIndex].status = status;
@@ -364,8 +310,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
 
     if (postIndex === -1) {
       return res
-          .status(404)
-          .json({ success: false, message: "Post bulunamadı" });
+        .status(404)
+        .json({ success: false, message: "Post bulunamadı" });
     }
 
     // completedAccounts alanı yoksa oluştur
@@ -381,8 +327,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
     } else {
       // Çıkar
       posts[postIndex].completedAccounts = posts[
-          postIndex
-          ].completedAccounts.filter((acc) => acc !== accountKey);
+        postIndex
+      ].completedAccounts.filter((acc) => acc !== accountKey);
     }
 
     if (writePosts(posts)) {
@@ -406,8 +352,8 @@ app.delete("/api/posts/:id", (req, res) => {
 
     if (postIndex === -1) {
       return res
-          .status(404)
-          .json({ success: false, message: "Post bulunamadı" });
+        .status(404)
+        .json({ success: false, message: "Post bulunamadı" });
     }
 
     // Dosyaları sil
@@ -489,8 +435,8 @@ app.get("/api/download/:fileName", (req, res) => {
 
     // Dosyayı orijinal ismiyle indirme için header'ları ayarla
     res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${originalName}"`
+      "Content-Disposition",
+      `attachment; filename="${originalName}"`
     );
     res.setHeader("Content-Type", "application/octet-stream");
 
@@ -505,13 +451,115 @@ app.get("/api/download/:fileName", (req, res) => {
   }
 });
 
+// Tüm dosyaları ZIP olarak indirme endpoint'i
+app.get("/api/download-all/:postId", (req, res) => {
+  try {
+    const { postId } = req.params;
+    const posts = readPosts();
+
+    // Post'u bul
+    const post = posts.find((p) => p.id == postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post bulunamadı",
+      });
+    }
+
+    // Dosyaları topla
+    let filesToZip = [];
+
+    // Yeni format: birden fazla dosya
+    if (post.files && Array.isArray(post.files) && post.files.length > 0) {
+      filesToZip = post.files;
+    }
+    // Eski format: tek dosya (geriye uyumluluk)
+    else if (post.fileName) {
+      filesToZip = [
+        {
+          fileName: post.fileName,
+          originalName: post.originalName || post.fileName,
+        },
+      ];
+    }
+
+    if (filesToZip.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Bu gönderi için dosya bulunamadı",
+      });
+    }
+
+    // ZIP dosyası adını oluştur
+    const zipFileName = `${post.title.replace(
+      /[^a-zA-Z0-9ğüşıöçĞÜŞIÖÇ\s]/g,
+      ""
+    )}-dosyalar.zip`;
+
+    // ZIP arşivi oluştur
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // Maksimum sıkıştırma
+    });
+
+    // Response header'larını ayarla
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${zipFileName}"`
+    );
+
+    // Hata yakalama
+    archive.on("error", (err) => {
+      console.error("ZIP oluşturma hatası:", err);
+      res.status(500).json({
+        success: false,
+        message: "ZIP dosyası oluşturulamadı",
+      });
+    });
+
+    // ZIP'i response'a pipe et
+    archive.pipe(res);
+
+    // Dosyaları ZIP'e ekle
+    let addedFiles = 0;
+    for (const file of filesToZip) {
+      const filePath = path.join(__dirname, "uploads", file.fileName);
+
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: file.originalName || file.fileName });
+        addedFiles++;
+      } else {
+        console.warn(`Dosya bulunamadı: ${filePath}`);
+      }
+    }
+
+    if (addedFiles === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Hiç dosya bulunamadı",
+      });
+    }
+
+    console.log(`${addedFiles} dosya ZIP'e eklendi: ${zipFileName}`);
+
+    // ZIP'i sonlandır
+    archive.finalize();
+  } catch (error) {
+    console.error("Toplu indirme hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Sunucu hatası",
+    });
+  }
+});
+
 // Verileri JSON olarak dışa aktar
 app.get("/api/export", (req, res) => {
   const posts = readPosts();
   res.setHeader("Content-Type", "application/json");
   res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=sosyal-medya-posts.json"
+    "Content-Disposition",
+    "attachment; filename=sosyal-medya-posts.json"
   );
   res.send(JSON.stringify(posts, null, 2));
 });
@@ -519,27 +567,35 @@ app.get("/api/export", (req, res) => {
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     console.error('Multer Error:', error);
-
+    
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(413).json({
         success: false,
-        message: `mesaj file size`
+        message: `Dosya çok büyük! Maksimum 1GB yükleyebilirsiniz.`
       });
     }
-
+    
     if (error.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({
         success: false,
-        message: 'dosya sayısı vs '
+        message: 'Çok fazla dosya! Maksimum 10 dosya yükleyebilirsiniz.'
       });
     }
-
+    
+    if (error.code === 'LIMIT_FIELD_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Çok fazla form alanı!'
+      });
+    }
+    
     return res.status(400).json({
       success: false,
       message: 'Dosya yükleme hatası: ' + error.message
     });
   }
-  console.error('Upload Error:', error);
+
+  console.error('Server Error:', error);
   res.status(500).json({
     success: false,
     message: 'Sunucu hatası: ' + error.message

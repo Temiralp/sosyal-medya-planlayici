@@ -782,10 +782,16 @@ async function handleFormSubmit(event) {
 
     // Send request
     xhr.open("POST", "/api/posts");
+<<<<<<< HEAD
     xhr.timeout = 600000;
     xhr.ontimeout = function () {
+=======
+    xhr.timeout = 1800000;
+    xhr.ontimeout = function() {
+>>>>>>> 3b2470b0d3e66df9b1a4f7cf9edaef7bd530725d
       progressContainer.style.display = "none";
       resetSubmitButton();
+      console.error("Upload timeout");
     };
 
     xhr.send(formData);
@@ -846,126 +852,30 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
 
-// Mesaj göster - Yeni sticky ve gelişmiş versiyon
-function showMessage(message, type = "info", duration = 7000) {
+// Mesaj göster
+function showMessage(message, type) {
   console.log(`Mesaj: ${type} - ${message}`);
 
-  // Aynı mesajı tekrar göstermemeye çalış
-  const existingMessages = document.querySelectorAll(".message");
-  for (let existingMsg of existingMessages) {
-    const existingText = existingMsg.textContent
-      .replace(/[✅❌ℹ️⚠️×]/g, "")
-      .trim();
-    const newText = message.trim();
-    if (existingText === newText) {
-      // Aynı mesaj zaten var, sadece animasyonu yenile
-      existingMsg.style.animation = "none";
-      void existingMsg.offsetHeight; // Reflow tetikle
-      existingMsg.style.animation =
-        "messageSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
-      return;
-    }
-  }
+  // Eski mesajları temizle
+  const oldMessages = document.querySelectorAll(".message");
+  oldMessages.forEach((msg) => msg.remove());
 
-  // Mesaj elementi oluştur
   const messageDiv = document.createElement("div");
   messageDiv.className = `message ${type}`;
+  messageDiv.textContent = message;
 
-  // Mesaj metni
-  const messageText = document.createElement("span");
-  messageText.textContent = message;
-  messageDiv.appendChild(messageText);
-
-  // Kapatma butonu
-  const closeButton = document.createElement("button");
-  closeButton.className = "message-close";
-  closeButton.innerHTML = "×";
-  closeButton.setAttribute("title", "Kapat");
-  messageDiv.appendChild(closeButton);
-
-  // Container'ı bul ve mesajı ekle
-  const container = document.getElementById("messageContainer");
-  if (container) {
-    container.appendChild(messageDiv);
+  // Mesaj container'ına ekle
+  let container = document.getElementById("messageContainer");
+  if (!container) {
+    container = document.querySelector(".container");
+    container.insertBefore(messageDiv, container.firstChild);
   } else {
-    console.error("Message container bulunamadı!");
-    return;
+    container.appendChild(messageDiv);
   }
 
-  // Kapatma eventi
-  const closeMessage = () => {
-    if (messageDiv.parentNode) {
-      messageDiv.style.animation = "messageSlideOut 0.3s ease-in-out forwards";
-      setTimeout(() => {
-        if (messageDiv.parentNode) {
-          messageDiv.remove();
-        }
-      }, 300);
-    }
-  };
-
-  // Event listener'lar
-  closeButton.addEventListener("click", (e) => {
-    e.stopPropagation();
-    closeMessage();
-  });
-
-  // Mesaja tıklayarak kapatma
-  messageDiv.addEventListener("click", closeMessage);
-
-  // Escape tuşu ile kapatma
-  const handleEscape = (e) => {
-    if (e.key === "Escape") {
-      closeMessage();
-      document.removeEventListener("keydown", handleEscape);
-    }
-  };
-  document.addEventListener("keydown", handleEscape);
-
-  // Otomatik kapatma
-  const autoCloseTimer = setTimeout(() => {
-    closeMessage();
-    document.removeEventListener("keydown", handleEscape);
-  }, duration);
-
-  // Manuel kapatma durumunda timer'ı temizle
-  messageDiv.addEventListener("click", () => {
-    clearTimeout(autoCloseTimer);
-    document.removeEventListener("keydown", handleEscape);
-  });
-
-  closeButton.addEventListener("click", () => {
-    clearTimeout(autoCloseTimer);
-    document.removeEventListener("keydown", handleEscape);
-  });
-
-  // Hover durumunda otomatik kapatmayı duraklat
-  let isHovered = false;
-  let remainingTime = duration;
-  let hoverStartTime;
-
-  messageDiv.addEventListener("mouseenter", () => {
-    if (!isHovered) {
-      isHovered = true;
-      hoverStartTime = Date.now();
-      clearTimeout(autoCloseTimer);
-    }
-  });
-
-  messageDiv.addEventListener("mouseleave", () => {
-    if (isHovered) {
-      isHovered = false;
-      const hoveredTime = Date.now() - hoverStartTime;
-      remainingTime = Math.max(1000, remainingTime - hoveredTime);
-
-      setTimeout(() => {
-        if (messageDiv.parentNode && !isHovered) {
-          closeMessage();
-          document.removeEventListener("keydown", handleEscape);
-        }
-      }, remainingTime);
-    }
-  });
+  setTimeout(() => {
+    messageDiv.remove();
+  }, 5000);
 }
 
 // Toggle row
@@ -990,11 +900,6 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
     event.preventDefault();
   }
 
-  const originalChecked = checkbox.checked;
-  console.log(
-    `🔄 Toggle başlatıldı: PostID=${postId}, Account=${accountKey}, NewState=${originalChecked}`
-  );
-
   try {
     const response = await fetch(`/api/posts/${postId}/complete`, {
       method: "PUT",
@@ -1003,26 +908,21 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
       },
       body: JSON.stringify({
         accountKey: accountKey,
-        completed: originalChecked,
+        completed: checkbox.checked,
       }),
     });
 
     const result = await response.json();
 
     if (result.success) {
-      console.log(
-        `✅ Backend başarılı: PostID=${postId}, Account=${accountKey}`
-      );
       // Progress güncellemesini tetikle
       updateProgressDisplay(postId);
     } else {
-      console.log(`❌ Backend hatası: ${result.message}`);
-      checkbox.checked = !originalChecked; // Geri al
+      checkbox.checked = !checkbox.checked; // Geri al
       showMessage("Hata: " + result.message, "error");
     }
   } catch (error) {
-    console.log(`🚨 Network hatası:`, error);
-    checkbox.checked = !originalChecked; // Geri al
+    checkbox.checked = !checkbox.checked; // Geri al
     console.error("Error:", error);
     showMessage("Güncelleme hatası!", "error");
   }
@@ -1030,24 +930,18 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
 
 // Progress display güncelle
 function updateProgressDisplay(postId) {
-  console.log(`📊 Progress display güncelleniyor: PostID=${postId}`);
   // Sadece progress sayısını güncelle, tüm tabloyu yeniden yükleme
   updateProgressCount(postId);
 }
 
-// Progress sayısını ve checkbox'ları güncelle
+// Sadece progress sayısını güncelle
 async function updateProgressCount(postId) {
-  console.log(`🔢 Progress count güncelleniyor: PostID=${postId}`);
   try {
     const response = await fetch("/api/posts");
     const posts = await response.json();
     const post = posts.find((p) => p.id === postId);
 
     if (post) {
-      console.log(
-        `📋 Post bulundu. CompletedAccounts:`,
-        post.completedAccounts
-      );
       const completedCount = post.completedAccounts
         ? post.completedAccounts.length
         : 0;
@@ -1055,7 +949,7 @@ async function updateProgressCount(postId) {
         ? post.selectedAccounts.length
         : 0;
 
-      // Progress text'i güncelle
+      // Progress text'i güncelle - daha güvenli yöntem
       const detailRow = document.getElementById(`detail-${postId}`);
       if (detailRow) {
         const mainRow = detailRow.previousElementSibling;
@@ -1065,44 +959,10 @@ async function updateProgressCount(postId) {
             progressCell.textContent = `${completedCount}/${totalCount}`;
           }
         }
-
-        // Checkbox'ları da güncelle - Bu çok önemli!
-        const checkboxes = detailRow.querySelectorAll('input[type="checkbox"]');
-        console.log(`🎯 ${checkboxes.length} checkbox bulundu`);
-        checkboxes.forEach((checkbox) => {
-          const onchangeAttr = checkbox.getAttribute("onchange");
-          if (onchangeAttr && onchangeAttr.includes("toggleAccountComplete")) {
-            // onchange attribute'ından accountKey'i çıkar
-            const matches = onchangeAttr.match(/'([^']+)'/);
-            if (matches && matches[1]) {
-              const accountKey = matches[1];
-              const shouldBeChecked =
-                post.completedAccounts &&
-                post.completedAccounts.includes(accountKey);
-              const currentlyChecked = checkbox.checked;
-
-              console.log(
-                `🔍 Checkbox kontrol: ${accountKey} | Şu an: ${currentlyChecked} | Olması gereken: ${shouldBeChecked}`
-              );
-
-              // Checkbox durumunu güncelle (sadece gerekirse)
-              if (currentlyChecked !== shouldBeChecked) {
-                checkbox.checked = shouldBeChecked;
-                console.log(
-                  `✅ Checkbox güncellendi: ${accountKey} = ${shouldBeChecked}`
-                );
-              } else {
-                console.log(`ℹ️ Checkbox zaten doğru durumda: ${accountKey}`);
-              }
-            }
-          }
-        });
       }
-    } else {
-      console.log(`❌ Post bulunamadı: PostID=${postId}`);
     }
   } catch (error) {
-    console.error("🚨 Progress güncelleme hatası:", error);
+    console.error("Progress güncelleme hatası:", error);
   }
 }
 
