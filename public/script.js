@@ -1062,6 +1062,11 @@ function renderPostsTable(posts) {
                     filesHtml += "</div>";
                     if (post.files.length > 1) {
                       filesHtml += `<div class="files-count">${post.files.length} dosya</div>`;
+                      filesHtml += `<div class="download-all-section">
+                        <a href="/api/download-all/${post.id}" class="download-all-btn" title="Tüm dosyaları ZIP olarak indir">
+                          📦 Tümünü İndir
+                        </a>
+                      </div>`;
                     }
                     return filesHtml;
                   }

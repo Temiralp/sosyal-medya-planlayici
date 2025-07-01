@@ -487,5 +487,38 @@
     "originalName": null,
     "status": "planlandı",
     "createdAt": "01.07.2025 22:28:25"
+  },
+  {
+    "id": 1751407324038,
+    "contentType": "post",
+    "title": "afasf",
+    "content": "afssfa",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "12:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [],
+    "files": [
+      {
+        "fileName": "1751407323827-733943050.jpg",
+        "originalName": "1751203856167-856670590.jpg",
+        "size": 218051,
+        "mimetype": "image/jpeg"
+      },
+      {
+        "fileName": "1751407323830-240743816.mp4",
+        "originalName": "1751208624672-596103836.mp4",
+        "size": 99710895,
+        "mimetype": "video/mp4"
+      }
+    ],
+    "fileName": "1751407323827-733943050.jpg",
+    "originalName": "1751203856167-856670590.jpg",
+    "status": "planlandı",
+    "createdAt": "02.07.2025 01:02:04"
   }
 ]

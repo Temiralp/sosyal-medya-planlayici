@@ -794,6 +794,40 @@ tr:hover {
   text-decoration: none;
 }
 
+/* Download All Button */
+.download-all-section {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.download-all-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.download-all-btn:hover {
+  background: #2980b9;
+  color: white;
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.download-all-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
 /* Toggle Arrow */
 .toggle-arrow {
   cursor: pointer;
@@ -1072,6 +1106,11 @@ tr:hover {
     text-align: center;
     margin-top: 4px;
   }
+
+  .download-all-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1134,6 +1173,11 @@ tr:hover {
   .download-btn {
     font-size: 10px;
     padding: 4px 8px;
+  }
+
+  .download-all-btn {
+    padding: 5px 10px;
+    font-size: 10px;
   }
 }
 

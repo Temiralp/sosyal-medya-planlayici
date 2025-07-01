@@ -3,6 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const archiver = require("archiver");
 
 const app = express();
 const PORT = 3000;
@@ -435,6 +436,108 @@ app.get("/api/download/:fileName", (req, res) => {
     res.sendFile(filePath);
   } catch (error) {
     console.error("Dosya indirme hatası:", error);
+    res.status(500).json({
+      success: false,
+      message: "Sunucu hatası",
+    });
+  }
+});
+
+// Tüm dosyaları ZIP olarak indirme endpoint'i
+app.get("/api/download-all/:postId", (req, res) => {
+  try {
+    const { postId } = req.params;
+    const posts = readPosts();
+
+    // Post'u bul
+    const post = posts.find((p) => p.id == postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post bulunamadı",
+      });
+    }
+
+    // Dosyaları topla
+    let filesToZip = [];
+
+    // Yeni format: birden fazla dosya
+    if (post.files && Array.isArray(post.files) && post.files.length > 0) {
+      filesToZip = post.files;
+    }
+    // Eski format: tek dosya (geriye uyumluluk)
+    else if (post.fileName) {
+      filesToZip = [
+        {
+          fileName: post.fileName,
+          originalName: post.originalName || post.fileName,
+        },
+      ];
+    }
+
+    if (filesToZip.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Bu gönderi için dosya bulunamadı",
+      });
+    }
+
+    // ZIP dosyası adını oluştur
+    const zipFileName = `${post.title.replace(
+      /[^a-zA-Z0-9ğüşıöçĞÜŞIÖÇ\s]/g,
+      ""
+    )}-dosyalar.zip`;
+
+    // ZIP arşivi oluştur
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // Maksimum sıkıştırma
+    });
+
+    // Response header'larını ayarla
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${zipFileName}"`
+    );
+
+    // Hata yakalama
+    archive.on("error", (err) => {
+      console.error("ZIP oluşturma hatası:", err);
+      res.status(500).json({
+        success: false,
+        message: "ZIP dosyası oluşturulamadı",
+      });
+    });
+
+    // ZIP'i response'a pipe et
+    archive.pipe(res);
+
+    // Dosyaları ZIP'e ekle
+    let addedFiles = 0;
+    for (const file of filesToZip) {
+      const filePath = path.join(__dirname, "uploads", file.fileName);
+
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: file.originalName || file.fileName });
+        addedFiles++;
+      } else {
+        console.warn(`Dosya bulunamadı: ${filePath}`);
+      }
+    }
+
+    if (addedFiles === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Hiç dosya bulunamadı",
+      });
+    }
+
+    console.log(`${addedFiles} dosya ZIP'e eklendi: ${zipFileName}`);
+
+    // ZIP'i sonlandır
+    archive.finalize();
+  } catch (error) {
+    console.error("Toplu indirme hatası:", error);
     res.status(500).json({
       success: false,
       message: "Sunucu hatası",
