@@ -2399,3 +2399,321 @@ tr:hover {
     justify-content: center;
   }
 }
+
+/* Edit Mode Styles */
+.post-card.edit-mode {
+  border-color: #f39c12;
+  box-shadow: 0 8px 30px rgba(243, 156, 18, 0.15);
+}
+
+.post-card.edit-mode .post-card-accordion-header {
+  background: #fef9e7;
+  border-bottom-color: #f39c12;
+}
+
+.edit-form-section {
+  background: #fef9e7;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 2px solid #f39c12;
+}
+
+.edit-form-group {
+  margin-bottom: 16px;
+}
+
+.edit-form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #856404;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.edit-form-input,
+.edit-form-textarea,
+.edit-form-select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.edit-form-input:focus,
+.edit-form-textarea:focus,
+.edit-form-select:focus {
+  outline: none;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.1);
+}
+
+.edit-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.edit-content-type-options {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.edit-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border: 2px solid #ffc107;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-radio-option:hover {
+  border-color: #f39c12;
+  background: #fff8e1;
+}
+
+.edit-radio-option input[type="radio"]:checked + span {
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.edit-radio-option:has(input:checked) {
+  border-color: #f39c12;
+  background: #fff8e1;
+}
+
+.edit-accounts-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ffc107;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.edit-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.edit-account-group {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.edit-account-group-title {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.edit-account-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.edit-account-item:hover {
+  background: #e9ecef;
+}
+
+.edit-account-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.edit-account-item label {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #495057;
+  cursor: pointer;
+}
+
+.edit-file-upload-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px dashed #ffc107;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.edit-file-upload-section:hover {
+  border-color: #f39c12;
+  background: #fff8e1;
+}
+
+.edit-file-input {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.edit-existing-files {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.edit-existing-files-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.edit-existing-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 2px solid #ffc107;
+  margin-top: 16px;
+}
+
+.edit-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-btn.save {
+  background: #27ae60;
+  color: white;
+}
+
+.edit-btn.save:hover {
+  background: #219a52;
+  transform: scale(1.05);
+}
+
+.edit-btn.cancel {
+  background: #6c757d;
+  color: white;
+}
+
+.edit-btn.cancel:hover {
+  background: #5a6268;
+  transform: scale(1.05);
+}
+
+.edit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.edit-mode-indicator {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: linear-gradient(90deg, #f39c12, #ffc107, #f39c12);
+  border-radius: 16px 16px 0 0;
+  animation: editPulse 2s infinite;
+}
+
+@keyframes editPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Hidden elements during edit mode */
+.post-card.edit-mode .post-card-accordion-content {
+  display: none;
+}
+
+.post-card.edit-mode .accordion-toggle {
+  display: none;
+}
+
+/* Responsive edit mode */
+@media (max-width: 768px) {
+  .edit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-accounts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-content-type-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .edit-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .edit-btn {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-form-section {
+    padding: 12px;
+  }
+
+  .edit-form-input,
+  .edit-form-textarea,
+  .edit-form-select {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .edit-accounts-section {
+    max-height: 200px;
+  }
+}

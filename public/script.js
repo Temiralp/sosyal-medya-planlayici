@@ -140,6 +140,11 @@ const platforms = ["Instagram", "Facebook", "Twitter", "LinkedIn"];
 // Sadece bu hesapların YouTube'u var (şu an için boş, gerektiğinde eklenebilir)
 const accountsWithYoutube = [];
 
+// Hesapları gruba göre getir
+function getAccountsByGroup(groupKey) {
+  return accountGroups[groupKey] || [];
+}
+
 let selectedAccounts = [];
 
 // Sayfalama değişkenleri
@@ -1246,6 +1251,11 @@ function createModernPostCard(post) {
   const currentStatus = statusInfo[post.status] || statusInfo["planlandı"];
 
   card.innerHTML = `
+    <!-- Edit Mode Indicator -->
+    <div class="edit-mode-indicator" id="edit-indicator-${
+      post.id
+    }" style="display: none;"></div>
+
     <!-- Accordion Header - Always Visible -->
     <div class="post-card-accordion-header" onclick="toggleAccordion(${
       post.id
@@ -1258,6 +1268,9 @@ function createModernPostCard(post) {
           <span class="post-card-id">#${post.id}</span>
         </div>
         <div class="post-card-actions">
+          <button class="btn btn-warning btn-icon" onclick="event.stopPropagation(); startEditMode(${
+            post.id
+          })" title="Düzenle">✏️</button>
           <button class="btn btn-danger btn-icon" onclick="event.stopPropagation(); deletePost(${
             post.id
           })" title="Sil">🗑️</button>
@@ -1308,6 +1321,13 @@ function createModernPostCard(post) {
           }">▶</span>
         </div>
       </div>
+    </div>
+
+    <!-- Edit Form (Hidden by default) -->
+    <div class="edit-form-container" id="edit-form-${
+      post.id
+    }" style="display: none;">
+      ${createEditForm(post)}
     </div>
 
     <!-- Accordion Content - Collapsible -->
@@ -1397,6 +1417,352 @@ function createModernPostCard(post) {
   `;
 
   return card;
+}
+
+// Edit formu oluştur
+function createEditForm(post) {
+  const existingFiles =
+    post.files && Array.isArray(post.files)
+      ? post.files
+      : post.fileName
+      ? [{ fileName: post.fileName, originalName: post.originalName }]
+      : [];
+
+  return `
+    <div class="edit-form-section">
+      <form id="edit-form-data-${post.id}">
+        <!-- Content Type Selection -->
+        <div class="edit-form-group">
+          <label class="edit-form-label">İçerik Türü</label>
+          <div class="edit-content-type-options">
+            <label class="edit-radio-option">
+              <input type="radio" name="contentType" value="post" ${
+                post.contentType === "post" ? "checked" : ""
+              } onchange="toggleEditContentType(${post.id})">
+              <span>📝 Post</span>
+            </label>
+            <label class="edit-radio-option">
+              <input type="radio" name="contentType" value="story" ${
+                post.contentType === "story" ? "checked" : ""
+              } onchange="toggleEditContentType(${post.id})">
+              <span>📱 Story</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="edit-form-group">
+          <label class="edit-form-label">📝 Paylaşım Başlığı</label>
+          <input type="text" name="title" class="edit-form-input" value="${
+            post.title || ""
+          }" required>
+        </div>
+
+        <!-- Content Fields -->
+        <div id="edit-content-fields-${post.id}">
+          <!-- Post Content -->
+          <div class="edit-form-group" id="edit-post-content-${post.id}" ${
+    post.contentType === "story" ? 'style="display:none"' : ""
+  }>
+            <label class="edit-form-label">📝 Post İçeriği</label>
+            <textarea name="content" class="edit-form-textarea" rows="4">${
+              post.content || ""
+            }</textarea>
+          </div>
+
+          <!-- Story Fields -->
+          <div id="edit-story-content-${post.id}" ${
+    post.contentType === "post" ? 'style="display:none"' : ""
+  }>
+            <div class="edit-form-group">
+              <label class="edit-form-label">📱 Story Başlığı</label>
+              <input type="text" name="storyLinkTitle" class="edit-form-input" value="${
+                post.storyLinkTitle || ""
+              }">
+            </div>
+            <div class="edit-form-group">
+              <label class="edit-form-label">🔗 Story Link URL'si</label>
+              <input type="url" name="storyLink" class="edit-form-input" value="${
+                post.storyLink || ""
+              }">
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="edit-form-group">
+          <label class="edit-form-label">📝 Notlar</label>
+          <textarea name="notes" class="edit-form-textarea" rows="3">${
+            post.notes || ""
+          }</textarea>
+        </div>
+
+        <!-- Date and Time -->
+        <div class="edit-form-grid">
+          <div class="edit-form-group">
+            <label class="edit-form-label">📅 Tarih</label>
+            <input type="date" name="scheduledDate" class="edit-form-input" value="${
+              post.scheduledDate
+            }" required>
+          </div>
+          <div class="edit-form-group">
+            <label class="edit-form-label">🕐 Saat</label>
+            <input type="time" name="scheduledTime" class="edit-form-input" value="${
+              post.scheduledTime
+            }" required>
+          </div>
+        </div>
+
+        <!-- File Upload -->
+        <div class="edit-form-group">
+          <label class="edit-form-label">📎 Dosyalar</label>
+          <div class="edit-file-upload-section">
+            <input type="file" name="files" class="edit-file-input" multiple accept="image/*,video/*">
+            <p style="margin: 8px 0; font-size: 0.85rem; color: #6c757d;">Yeni dosyalar seçin (mevcut dosyalar korunacak)</p>
+          </div>
+          
+          ${
+            existingFiles.length > 0
+              ? `
+            <div class="edit-existing-files">
+              <div class="edit-existing-files-title">Mevcut Dosyalar:</div>
+              ${existingFiles
+                .map(
+                  (file) => `
+                <div class="edit-existing-file-item">
+                  <span>📎</span>
+                  <span>${file.originalName || file.fileName}</span>
+                </div>
+              `
+                )
+                .join("")}
+            </div>
+          `
+              : ""
+          }
+        </div>
+
+        <!-- Account Selection -->
+        <div class="edit-form-group">
+          <label class="edit-form-label">👥 Hesap Seçimi</label>
+          <div class="edit-accounts-section">
+            <div class="edit-accounts-grid">
+              ${createEditAccountGroups(post.selectedAccounts || [])}
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="edit-actions">
+          <button type="button" class="edit-btn cancel" onclick="cancelEditMode(${
+            post.id
+          })">
+            ❌ İptal
+          </button>
+          <button type="button" class="edit-btn save" onclick="savePost(${
+            post.id
+          })">
+            💾 Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+// Edit hesap grupları oluştur
+function createEditAccountGroups(selectedAccounts) {
+  const accountGroups = {
+    avm: "🏢 AVM Hesapları",
+    park: "🌳 Park Hesapları",
+    konsept: "🍴 Konsept Hesapları",
+    markalar: "🏷️ Marka Hesapları",
+  };
+
+  return Object.keys(accountGroups)
+    .map((groupKey) => {
+      const groupTitle = accountGroups[groupKey];
+      const accounts = getAccountsByGroup(groupKey);
+
+      return `
+      <div class="edit-account-group">
+        <div class="edit-account-group-title">${groupTitle}</div>
+        ${accounts
+          .map((account) => {
+            const platforms = accountPlatforms[account] || [];
+            return platforms
+              .map((platform) => {
+                const accountKey = `${account}-${platform}`;
+                const isSelected = selectedAccounts.includes(accountKey);
+                return `
+              <div class="edit-account-item">
+                <input type="checkbox" name="selectedAccounts" value="${accountKey}" ${
+                  isSelected ? "checked" : ""
+                }>
+                <label>${account} - ${platform}</label>
+              </div>
+            `;
+              })
+              .join("");
+          })
+          .join("")}
+      </div>
+    `;
+    })
+    .join("");
+}
+
+// Edit mode başlat
+function startEditMode(postId) {
+  const card = document.getElementById(`post-card-${postId}`);
+  const editForm = document.getElementById(`edit-form-${postId}`);
+  const accordionContent = document.getElementById(
+    `accordion-content-${postId}`
+  );
+  const editIndicator = document.getElementById(`edit-indicator-${postId}`);
+
+  if (card && editForm) {
+    // Edit mode'u aktive et
+    card.classList.add("edit-mode");
+    editForm.style.display = "block";
+    if (accordionContent) accordionContent.style.display = "none";
+    if (editIndicator) editIndicator.style.display = "block";
+
+    console.log(`Post ${postId} edit mode'a geçti`);
+  }
+}
+
+// Edit mode iptal et
+function cancelEditMode(postId) {
+  const card = document.getElementById(`post-card-${postId}`);
+  const editForm = document.getElementById(`edit-form-${postId}`);
+  const accordionContent = document.getElementById(
+    `accordion-content-${postId}`
+  );
+  const editIndicator = document.getElementById(`edit-indicator-${postId}`);
+
+  if (card && editForm) {
+    // Edit mode'u deaktive et
+    card.classList.remove("edit-mode", "expanded");
+    editForm.style.display = "none";
+    if (accordionContent) accordionContent.style.display = "";
+    if (editIndicator) editIndicator.style.display = "none";
+
+    console.log(`Post ${postId} edit mode'dan çıktı`);
+  }
+}
+
+// Content type toggle (edit mode)
+function toggleEditContentType(postId) {
+  const postContent = document.getElementById(`edit-post-content-${postId}`);
+  const storyContent = document.getElementById(`edit-story-content-${postId}`);
+  const contentTypeRadio = document.querySelector(
+    `#edit-form-data-${postId} input[name="contentType"]:checked`
+  );
+
+  if (contentTypeRadio && postContent && storyContent) {
+    if (contentTypeRadio.value === "post") {
+      postContent.style.display = "block";
+      storyContent.style.display = "none";
+    } else {
+      postContent.style.display = "none";
+      storyContent.style.display = "block";
+    }
+  }
+}
+
+// Post kaydet (edit)
+async function savePost(postId) {
+  const form = document.getElementById(`edit-form-data-${postId}`);
+  const saveButton = document.querySelector(
+    `#edit-form-${postId} .edit-btn.save`
+  );
+
+  if (!form) {
+    console.error("Edit form bulunamadı");
+    return;
+  }
+
+  // Button'u deaktive et
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.innerHTML = "⏳ Kaydediliyor...";
+  }
+
+  try {
+    const formData = new FormData();
+
+    // Form verilerini topla
+    const formElements = form.elements;
+    for (let element of formElements) {
+      if (element.name) {
+        if (
+          element.type === "checkbox" &&
+          element.name === "selectedAccounts"
+        ) {
+          // Checkbox'ları ayrı işle
+          continue;
+        } else if (element.type === "file") {
+          // Dosyaları ayrı işle
+          if (element.files && element.files.length > 0) {
+            for (let file of element.files) {
+              formData.append("files", file);
+            }
+          }
+        } else if (element.type === "radio") {
+          if (element.checked) {
+            formData.append(element.name, element.value);
+          }
+        } else {
+          formData.append(element.name, element.value);
+        }
+      }
+    }
+
+    // Selected accounts'ları topla
+    const selectedAccounts = [];
+    const accountCheckboxes = form.querySelectorAll(
+      'input[name="selectedAccounts"]:checked'
+    );
+    accountCheckboxes.forEach((checkbox) => {
+      selectedAccounts.push(checkbox.value);
+    });
+    formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
+
+    // Mevcut dosyaları koru flag'i
+    formData.append("keepExistingFiles", "true");
+
+    console.log("Edit formu gönderiliyor:", postId);
+
+    const response = await fetch(`/api/posts/${postId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showMessage("Paylaşım başarıyla güncellendi!", "success");
+
+      // Edit mode'dan çık
+      cancelEditMode(postId);
+
+      // Postları yeniden yükle
+      loadPosts();
+    } else {
+      console.error("Güncelleme hatası:", result.message);
+      showMessage("Hata: " + result.message, "error");
+    }
+  } catch (error) {
+    console.error("Edit kaydetme hatası:", error);
+    showMessage("Güncelleme sırasında hata oluştu!", "error");
+  } finally {
+    // Button'u yeniden aktive et
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.innerHTML = "💾 Kaydet";
+    }
+  }
 }
 
 // Accordion açma/kapama fonksiyonu
