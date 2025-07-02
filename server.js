@@ -10,8 +10,8 @@ const PORT = 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
 
 // Klasörleri oluştur
@@ -35,13 +35,13 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 1024,
     files: 10,
-    fields: 50
-  }
+    fields: 50,
+  },
 });
 
 // Veri dosyası yolu
@@ -298,6 +298,202 @@ app.put("/api/posts/:id/status", (req, res) => {
     res.status(500).json({ success: false, message: "Sunucu hatası" });
   }
 });
+
+// Post güncelle (Edit)
+app.put(
+  "/api/posts/:id",
+  upload.fields([{ name: "files", maxCount: 50 }]),
+  (req, res) => {
+    try {
+      console.log("PUT /api/posts/:id isteği alındı");
+      console.log("Request body:", req.body);
+      console.log("Request files:", req.files);
+
+      const { id } = req.params;
+      const {
+        contentType,
+        title,
+        content,
+        notes,
+        storyLink,
+        storyLinkTitle,
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts,
+        keepExistingFiles,
+      } = req.body;
+
+      const posts = readPosts();
+      const postIndex = posts.findIndex((post) => post.id == id);
+
+      if (postIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: "Post bulunamadı",
+        });
+      }
+
+      // Veriyi temizle (boşluk karakterlerini kaldır)
+      const cleanTitle = (title || "").trim();
+      const cleanContent = (content || "").trim();
+      const cleanNotes = (notes || "").trim();
+      const cleanStoryLink = (storyLink || "").trim();
+      const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
+
+      // Validasyon kontrolleri
+      if (!cleanTitle) {
+        console.error("Başlık alanı boş");
+        return res.status(400).json({
+          success: false,
+          message: "Paylaşım başlığı zorunludur",
+        });
+      }
+
+      if (!scheduledDate || !scheduledTime) {
+        console.error("Eksik tarih/saat bilgisi");
+        return res.status(400).json({
+          success: false,
+          message: "Tarih ve saat alanları zorunludur",
+        });
+      }
+
+      // İçerik türüne göre validasyon
+      if (contentType === "post" && !cleanContent) {
+        console.error("Post içeriği boş");
+        return res.status(400).json({
+          success: false,
+          message: "Post içeriği gereklidir",
+        });
+      }
+
+      // selectedAccounts parse etmeyi dene
+      let parsedSelectedAccounts;
+      try {
+        parsedSelectedAccounts = selectedAccounts
+          ? JSON.parse(selectedAccounts)
+          : [];
+      } catch (parseError) {
+        console.error("selectedAccounts parse hatası:", parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Seçili hesaplar formatı hatalı",
+        });
+      }
+
+      // Mevcut post'u al
+      const existingPost = posts[postIndex];
+
+      // Dosya işlemleri
+      let updatedFiles = [];
+
+      // Eğer yeni dosyalar yüklendiyse
+      if (req.files && req.files.files && req.files.files.length > 0) {
+        console.log(`${req.files.files.length} yeni dosya yüklendi`);
+
+        // Eğer mevcut dosyalar korunmayacaksa, eski dosyaları sil
+        if (keepExistingFiles !== "true") {
+          if (existingPost.files && Array.isArray(existingPost.files)) {
+            existingPost.files.forEach((file) => {
+              if (file.fileName && fs.existsSync(`uploads/${file.fileName}`)) {
+                fs.unlinkSync(`uploads/${file.fileName}`);
+                console.log(`Eski dosya silindi: ${file.fileName}`);
+              }
+            });
+          }
+          // Eski format için geriye uyumluluk
+          if (
+            existingPost.fileName &&
+            fs.existsSync(`uploads/${existingPost.fileName}`)
+          ) {
+            fs.unlinkSync(`uploads/${existingPost.fileName}`);
+            console.log(`Eski dosya silindi: ${existingPost.fileName}`);
+          }
+        } else {
+          // Mevcut dosyaları koru
+          if (existingPost.files && Array.isArray(existingPost.files)) {
+            updatedFiles = [...existingPost.files];
+          }
+        }
+
+        // Yeni dosyaları ekle
+        const newFiles = req.files.files.map((file) => ({
+          fileName: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+        }));
+
+        updatedFiles = [...updatedFiles, ...newFiles];
+        console.log(`Toplam dosya sayısı: ${updatedFiles.length}`);
+      } else {
+        // Yeni dosya yüklenmediyse mevcut dosyaları koru
+        if (existingPost.files && Array.isArray(existingPost.files)) {
+          updatedFiles = existingPost.files;
+        } else if (existingPost.fileName) {
+          // Eski format için geriye uyumluluk
+          updatedFiles = [
+            {
+              fileName: existingPost.fileName,
+              originalName: existingPost.originalName,
+              mimetype: existingPost.mimetype || "application/octet-stream",
+              size: 0,
+            },
+          ];
+        }
+      }
+
+      // Post'u güncelle
+      const updatedPost = {
+        ...existingPost,
+        contentType: contentType || existingPost.contentType,
+        title: cleanTitle,
+        content: cleanContent,
+        notes: cleanNotes,
+        storyLink: cleanStoryLink,
+        storyLinkTitle: cleanStoryLinkTitle,
+        scheduledDate,
+        scheduledTime,
+        selectedAccounts: parsedSelectedAccounts,
+        files: updatedFiles.length > 0 ? updatedFiles : undefined,
+        // Eski alanları temizle
+        fileName: undefined,
+        originalName: undefined,
+        // Updated timestamp ekle
+        updatedAt: new Date().toLocaleString("tr-TR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      };
+
+      // Güncellenen post'u kaydet
+      posts[postIndex] = updatedPost;
+
+      if (writePosts(posts)) {
+        console.log("Post başarıyla güncellendi:", updatedPost.id);
+        res.json({
+          success: true,
+          message: "Post başarıyla güncellendi",
+          post: updatedPost,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Veri kaydedilemedi",
+        });
+      }
+    } catch (error) {
+      console.error("Post güncelleme hatası detayı:", error);
+      res.status(500).json({
+        success: false,
+        message: "Sunucu hatası",
+      });
+    }
+  }
+);
 
 // Hesap tamamlama durumunu güncelle
 app.put("/api/posts/:id/complete", (req, res) => {
@@ -566,39 +762,39 @@ app.get("/api/export", (req, res) => {
 
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
-    console.error('Multer Error:', error);
-    
-    if (error.code === 'LIMIT_FILE_SIZE') {
+    console.error("Multer Error:", error);
+
+    if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(413).json({
         success: false,
-        message: `Dosya çok büyük! Maksimum 1GB yükleyebilirsiniz.`
+        message: `Dosya çok büyük! Maksimum 1GB yükleyebilirsiniz.`,
       });
     }
-    
-    if (error.code === 'LIMIT_FILE_COUNT') {
+
+    if (error.code === "LIMIT_FILE_COUNT") {
       return res.status(400).json({
         success: false,
-        message: 'Çok fazla dosya! Maksimum 10 dosya yükleyebilirsiniz.'
+        message: "Çok fazla dosya! Maksimum 10 dosya yükleyebilirsiniz.",
       });
     }
-    
-    if (error.code === 'LIMIT_FIELD_COUNT') {
+
+    if (error.code === "LIMIT_FIELD_COUNT") {
       return res.status(400).json({
         success: false,
-        message: 'Çok fazla form alanı!'
+        message: "Çok fazla form alanı!",
       });
     }
-    
+
     return res.status(400).json({
       success: false,
-      message: 'Dosya yükleme hatası: ' + error.message
+      message: "Dosya yükleme hatası: " + error.message,
     });
   }
 
-  console.error('Server Error:', error);
+  console.error("Server Error:", error);
   res.status(500).json({
     success: false,
-    message: 'Sunucu hatası: ' + error.message
+    message: "Sunucu hatası: " + error.message,
   });
 });
 
