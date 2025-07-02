@@ -451,7 +451,7 @@ function updateSelectedCount() {
   }
 }
 
-// Tümünü seç
+// Tümü seç
 function selectAll() {
   console.log("Tümü seçiliyor...");
   selectedAccounts = [];
@@ -874,17 +874,12 @@ function showMessage(message, type) {
   }, 5000);
 }
 
-// Toggle row
-function toggleRow(postId) {
-  const detailRow = document.getElementById(`detail-${postId}`);
-  const arrow = document.querySelector(`[onclick="toggleRow(${postId})"]`);
-
-  if (detailRow.style.display === "none" || !detailRow.style.display) {
-    detailRow.style.display = "table-row";
-    arrow.classList.add("expanded");
-  } else {
-    detailRow.style.display = "none";
-    arrow.classList.remove("expanded");
+// Hesap seçim durumunu güncelle
+function updateSelectedAccountsDisplay() {
+  const selectedCount = selectedAccounts.length;
+  const countElement = document.getElementById("selectedCount");
+  if (countElement) {
+    countElement.textContent = `${selectedCount} hesap seçili`;
   }
 }
 
@@ -930,7 +925,7 @@ function updateProgressDisplay(postId) {
   updateProgressCount(postId);
 }
 
-// Sadece progress sayısını güncelle
+// Sadece progress sayısını güncelle (modern card için)
 async function updateProgressCount(postId) {
   try {
     const response = await fetch("/api/posts");
@@ -945,15 +940,12 @@ async function updateProgressCount(postId) {
         ? post.selectedAccounts.length
         : 0;
 
-      // Progress text'i güncelle - daha güvenli yöntem
-      const detailRow = document.getElementById(`detail-${postId}`);
-      if (detailRow) {
-        const mainRow = detailRow.previousElementSibling;
-        if (mainRow) {
-          const progressCell = mainRow.querySelector(".progress-text");
-          if (progressCell) {
-            progressCell.textContent = `${completedCount}/${totalCount}`;
-          }
+      // Modern card yapısında progress count'u güncelle
+      const postCard = document.getElementById(`post-card-${postId}`);
+      if (postCard) {
+        const progressCountElement = postCard.querySelector(".progress-count");
+        if (progressCountElement) {
+          progressCountElement.textContent = `${completedCount}/${totalCount}`;
         }
       }
     }
@@ -962,15 +954,18 @@ async function updateProgressCount(postId) {
   }
 }
 
-// Post tablosunu render et
+// Post tablosunu render et (yeni modern card-based tasarım)
 function renderPostsTable(posts) {
-  const tbody = document.querySelector("#postsTable tbody");
-  if (!tbody) {
-    console.error("Tablo tbody bulunamadı");
+  const postsContainer = document.getElementById("postsContainer");
+  const noPostsMessage = document.getElementById("noPostsMessage");
+
+  if (!postsContainer) {
+    console.error("Posts container bulunamadı");
     return;
   }
 
-  tbody.innerHTML = "";
+  // Temizle
+  postsContainer.innerHTML = "";
 
   // Tüm postları saklayalım
   allPosts = posts;
@@ -982,10 +977,14 @@ function renderPostsTable(posts) {
   updatePaginationControls();
 
   if (posts.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      '<td colspan="11" style="text-align: center; padding: 30px; color: #666;">Henüz paylaşım yok</td>';
-    tbody.appendChild(tr);
+    // No posts message'ı göster
+    postsContainer.innerHTML = `
+      <div class="no-posts-message">
+        <div class="no-posts-icon">📝</div>
+        <h3>Henüz paylaşım yok</h3>
+        <p>İlk paylaşımınızı oluşturmak için yukarıdaki formu kullanın.</p>
+      </div>
+    `;
 
     // Sayfalama konteynerini gizleyelim
     const paginationContainer = document.getElementById("paginationContainer");
@@ -1003,16 +1002,13 @@ function renderPostsTable(posts) {
 
   // En son oluşturulan paylaşımları ilk sırada göster
   posts.sort((a, b) => {
-    // createdAt alanını doğru şekilde parse et
     const parseCreatedAt = (createdAtStr) => {
       if (!createdAtStr) return null;
-      // "29.06.2025 16:30:56" formatını "2025-06-29T16:30:56" formatına çevir
       const parts = createdAtStr.split(" ");
       if (parts.length !== 2) return null;
 
-      const datePart = parts[0]; // "29.06.2025"
-      const timePart = parts[1]; // "16:30:56"
-
+      const datePart = parts[0];
+      const timePart = parts[1];
       const dateSegments = datePart.split(".");
       if (dateSegments.length !== 3) return null;
 
@@ -1020,7 +1016,6 @@ function renderPostsTable(posts) {
       const month = dateSegments[1];
       const year = dateSegments[2];
 
-      // ISO format: YYYY-MM-DDTHH:mm:ss
       const isoFormat = `${year}-${month.padStart(2, "0")}-${day.padStart(
         2,
         "0"
@@ -1031,7 +1026,7 @@ function renderPostsTable(posts) {
     const dateA = parseCreatedAt(a.createdAt) || new Date(a.id);
     const dateB = parseCreatedAt(b.createdAt) || new Date(b.id);
 
-    return dateB - dateA; // Büyükten küçüğe (yeniden eskiye)
+    return dateB - dateA;
   });
 
   // Mevcut sayfa için postları filtreleyelim
@@ -1039,621 +1034,466 @@ function renderPostsTable(posts) {
   const endIndex = startIndex + postsPerPage;
   const currentPagePosts = posts.slice(startIndex, endIndex);
 
+  // Modern card-based render
   currentPagePosts.forEach((post) => {
-    // Ana satır
-    const tr = document.createElement("tr");
+    const postCard = createModernPostCard(post);
+    postsContainer.appendChild(postCard);
+  });
 
-    const completedCount = post.completedAccounts
-      ? post.completedAccounts.length
-      : 0;
-    const totalCount = post.selectedAccounts ? post.selectedAccounts.length : 0;
+  console.log("Modern post kartları güncellendi");
+}
 
-    // İçerik türüne göre içerik metni
-    let contentDisplay = "";
-    if (post.contentType === "story") {
-      if (post.storyLinkTitle) {
-        contentDisplay = `<div class="story-content">
-          <div class="story-title clickable-story-title" onclick="copyStoryTitle('${post.storyLinkTitle.replace(
-            /'/g,
-            "\\'"
-          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong></strong> ${
-          post.storyLinkTitle
-        }</div>
-          ${
-            post.storyLink
-              ? `<div class="story-link"><small><a href="${
-                  post.storyLink
-                }" onclick="copyStoryLink('${post.storyLink.replace(
-                  /'/g,
-                  "\\'"
-                )}', event)" title="Linki kopyalamak için tıklayın">${
-                  post.storyLink.length > 50
-                    ? post.storyLink.substring(0, 50) + "..."
-                    : post.storyLink
-                }</a></small></div>`
-              : ""
-          }
-        </div>`;
-      } else {
-        contentDisplay = "<strong>📱 Story</strong>";
-      }
+// Modern post kartı oluştur (Accordion Version)
+function createModernPostCard(post) {
+  const card = document.createElement("div");
+  card.className = "post-card";
+  card.id = `post-card-${post.id}`;
+
+  const completedCount = post.completedAccounts
+    ? post.completedAccounts.length
+    : 0;
+  const totalCount = post.selectedAccounts ? post.selectedAccounts.length : 0;
+
+  // İçerik türüne göre içerik metni
+  let contentDisplay = "";
+  let contentPreview = "";
+  if (post.contentType === "story") {
+    if (post.storyLinkTitle) {
+      contentDisplay = post.storyLinkTitle;
+      contentPreview =
+        post.storyLinkTitle.length > 80
+          ? post.storyLinkTitle.substring(0, 80) + "..."
+          : post.storyLinkTitle;
     } else {
-      contentDisplay = post.content && post.content.trim() ? post.content : "-";
+      contentDisplay = "Story içeriği";
+      contentPreview = "Story içeriği";
     }
+  } else {
+    contentDisplay = post.content && post.content.trim() ? post.content : "";
+    contentPreview =
+      contentDisplay.length > 120
+        ? contentDisplay.substring(0, 120) + "..."
+        : contentDisplay;
+  }
 
-    tr.innerHTML = `
-            <td>
-                <span class="toggle-arrow" onclick="toggleRow(${
-                  post.id
-                })">▶</span>
-            </td>
-            <td>
-                <span class="content-type-badge ${
-                  post.contentType === "story" ? "story" : "post"
-                }">
-                    ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
-                </span>
-            </td>
-            <td class="content-cell">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="flex: 1;">${contentDisplay}</div>
-                    <button class="btn btn-info btn-sm copy-btn" 
-                            data-content="${contentDisplay
-                              .replace(/"/g, "&quot;")
-                              .replace(/'/g, "&#39;")}" 
-                            title="İçeriği kopyala" 
-                            style="margin-left: 10px; flex-shrink: 0;">
-                        📋 Kopyala
-                    </button>
+  // Dosyalar HTML
+  let filesHtml = "";
+  let fileCount = 0;
+  if (post.files && Array.isArray(post.files) && post.files.length > 0) {
+    fileCount = post.files.length;
+    filesHtml = `
+      <div class="post-files-section">
+        <span class="post-content-label">📎 Dosyalar (${
+          post.files.length
+        })</span>
+        <div class="post-files-list">
+          ${post.files
+            .map((file) => {
+              const fileType =
+                file.mimetype && file.mimetype.includes("image") ? "🖼️" : "🎬";
+              const fileSize = file.size
+                ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+                : "";
+              const fileName = file.originalName || file.fileName;
+
+              return `
+              <div class="post-file-item">
+                <span class="post-file-icon">${fileType}</span>
+                <div class="post-file-info">
+                  <div class="post-file-name" title="${fileName}">${fileName}</div>
+                  <div class="post-file-size">${fileSize}</div>
                 </div>
-            </td>
-            <td class="content-cell">${
-              post.notes && post.notes.trim() ? post.notes : "-"
-            }</td>
-            <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
-            <td>${post.scheduledTime}</td>
-            <td>
-                ${(() => {
-                  // Yeni format: birden fazla dosya
-                  if (
-                    post.files &&
-                    Array.isArray(post.files) &&
-                    post.files.length > 0
-                  ) {
-                    let filesHtml = '<div class="files-list">';
-                    post.files.forEach((file, index) => {
-                      const fileType =
-                        file.mimetype && file.mimetype.includes("image")
-                          ? "🖼️"
-                          : "🎬";
-                      const fileSize = file.size
-                        ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)`
-                        : "";
-                      // Mobil cihazlar için dosya ismini kısalt
-                      const isMobile = window.innerWidth <= 768;
-                      const fileName = file.originalName || file.fileName;
-                      let displayName = fileName;
-
-                      if (isMobile && fileName.length > 25) {
-                        const extension = fileName.split(".").pop();
-                        const nameWithoutExt = fileName.replace(
-                          `.${extension}`,
-                          ""
-                        );
-                        displayName =
-                          nameWithoutExt.substring(0, 20) + "..." + extension;
-                      }
-
-                      filesHtml += `
-                        <div class="file-item-table">
-                          <span class="file-icon">${fileType}</span>
-                          <a href="/uploads/${file.fileName}" target="_blank" class="file-link" title="${fileName}">
-                            ${displayName}
-                          </a>
-                          <span class="file-size-table">${fileSize}</span>
-                          <a href="/api/download/${file.fileName}" download class="download-btn">⬇️</a>
-                        </div>
-                      `;
-                    });
-                    filesHtml += "</div>";
-                    if (post.files.length > 1) {
-                      filesHtml += `<div class="files-count">${post.files.length} dosya</div>`;
-                      filesHtml += `<div class="download-all-section">
-                        <a href="/api/download-all/${post.id}" class="download-all-btn" title="Tüm dosyaları ZIP olarak indir">
-                          📦 Tümünü İndir
-                        </a>
-                      </div>`;
-                    }
-                    return filesHtml;
-                  }
-                  // Eski format: tek dosya (geriye uyumluluk)
-                  else if (post.fileName) {
-                    const isMobile = window.innerWidth <= 768;
-                    const fileName = post.originalName || post.fileName;
-                    let displayName = fileName;
-
-                    if (isMobile && fileName.length > 25) {
-                      const extension = fileName.split(".").pop();
-                      const nameWithoutExt = fileName.replace(
-                        `.${extension}`,
-                        ""
-                      );
-                      displayName =
-                        nameWithoutExt.substring(0, 20) + "..." + extension;
-                    }
-
-                    return `<div>
-                        <a href="/uploads/${post.fileName}" target="_blank" class="file-link" title="${fileName}">📎 ${displayName}</a>
-                        <a href="/api/download/${post.fileName}" download class="download-btn">⬇️ İndir</a>
-                       </div>`;
-                  }
-                  // Dosya yok
-                  else {
-                    return '<span style="color: #999;">-</span>';
-                  }
-                })()}
-            </td>
-            <td class="progress-text">${completedCount}/${totalCount}</td>
-            <td>
-                <select class="status-select status-${
-                  post.status
-                }" onchange="updateStatus(${post.id}, this.value)">
-                    <option value="planlandı" ${
-                      post.status === "planlandı" ? "selected" : ""
-                    }>📅 Planlandı</option>
-                    <option value="yapıldı" ${
-                      post.status === "yapıldı" ? "selected" : ""
-                    }>✅ Yapıldı</option>
-                    <option value="beklemede" ${
-                      post.status === "beklemede" ? "selected" : ""
-                    }>⏳ Beklemede</option>
-                    <option value="iptal" ${
-                      post.status === "iptal" ? "selected" : ""
-                    }>❌ İptal</option>
-                </select>
-            </td>
-            <td>${post.createdAt ? post.createdAt : "-"}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-danger btn-sm" onclick="deletePost(${
-                      post.id
-                    })">🗑️ Sil</button>
+                <div class="post-file-actions">
+                  <a href="/uploads/${file.fileName}" target="_blank" class="file-action-btn view">👁️ Görüntüle</a>
+                  <a href="/api/download/${file.fileName}" download class="file-action-btn download">⬇️ İndir</a>
                 </div>
-            </td>
-        `;
-    tbody.appendChild(tr);
+              </div>
+            `;
+            })
+            .join("")}
+        </div>
+        ${
+          post.files.length > 1
+            ? `
+          <div style="margin-top: 12px;">
+            <a href="/api/download-all/${post.id}" class="file-action-btn download">📦 Tümünü İndir (ZIP)</a>
+          </div>
+        `
+            : ""
+        }
+      </div>
+    `;
+  } else if (post.fileName) {
+    // Eski format için geriye uyumluluk
+    fileCount = 1;
+    const fileName = post.originalName || post.fileName;
+    filesHtml = `
+      <div class="post-files-section">
+        <span class="post-content-label">📎 Dosya</span>
+        <div class="post-files-list">
+          <div class="post-file-item">
+            <span class="post-file-icon">📎</span>
+            <div class="post-file-info">
+              <div class="post-file-name" title="${fileName}">${fileName}</div>
+            </div>
+            <div class="post-file-actions">
+              <a href="/uploads/${post.fileName}" target="_blank" class="file-action-btn view">👁️ Görüntüle</a>
+              <a href="/api/download/${post.fileName}" download class="file-action-btn download">⬇️ İndir</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
+  // Progress section
+  let progressHtml = "";
+  if (post.selectedAccounts && post.selectedAccounts.length > 0) {
     // Hesapları platform bazında grupla
-    const groupedAccounts = {
-      "Instagram/Facebook": [],
-      Twitter: [],
-      Diğer: [],
-    };
-
+    const groupedAccounts = {};
     post.selectedAccounts.forEach((accountKey) => {
       const [accountName, platform] = accountKey.split("-");
-      if (platform === "Instagram" || platform === "Facebook") {
-        groupedAccounts["Instagram/Facebook"].push({
-          accountKey,
-          accountName,
-          platform,
-        });
-      } else if (platform === "Twitter") {
-        groupedAccounts["Twitter"].push({ accountKey, accountName, platform });
-      } else {
-        groupedAccounts["Diğer"].push({ accountKey, accountName, platform });
+      const groupKey =
+        platform === "Instagram" || platform === "Facebook"
+          ? "Instagram/Facebook"
+          : platform;
+      if (!groupedAccounts[groupKey]) {
+        groupedAccounts[groupKey] = [];
       }
+      groupedAccounts[groupKey].push({ accountKey, accountName, platform });
     });
 
-    // Gruplu HTML oluştur
-    let accountsHtml = "";
-    Object.keys(groupedAccounts).forEach((groupName) => {
-      if (groupedAccounts[groupName].length > 0) {
-        accountsHtml += `
-                    <div class="platform-group" onclick="event.stopPropagation();">
-                        <h4 class="platform-group-title">${groupName}</h4>
-                        <div class="platform-accounts">
-                `;
-
-        groupedAccounts[groupName].forEach(
-          ({ accountKey, accountName, platform }) => {
+    const groupsHtml = Object.keys(groupedAccounts)
+      .map((groupName) => {
+        const accounts = groupedAccounts[groupName];
+        const accountsHtml = accounts
+          .map(({ accountKey, accountName, platform }) => {
             const isCompleted =
               post.completedAccounts &&
               post.completedAccounts.includes(accountKey);
-            accountsHtml += `
-                        <div class="account-progress-item" onclick="event.stopPropagation();">
-                            <input type="checkbox" 
-                                   ${isCompleted ? "checked" : ""} 
-                                   onclick="event.stopPropagation();"
-                                   onchange="toggleAccountComplete(${
-                                     post.id
-                                   }, '${accountKey}', this, event)">
-                            <label onclick="event.stopPropagation();">${accountName} - ${platform}</label>
-                        </div>
-                    `;
-          }
-        );
-
-        accountsHtml += `
-                        </div>
-                    </div>
-                `;
-      }
-    });
-
-    // Detay satırı
-    const detailTr = document.createElement("tr");
-    detailTr.id = `detail-${post.id}`;
-    detailTr.style.display = "none";
-
-    detailTr.innerHTML = `
-            <td></td>
-            <td colspan="9">
-                <div class="accounts-detail show" onclick="event.stopPropagation();">
-                    <div class="account-progress">
-                        ${accountsHtml}
-                    </div>
-                </div>
-            </td>
+            return `
+          <div class="progress-account-item ${
+            isCompleted ? "completed" : ""
+          }" onclick="event.stopPropagation();">
+            <input type="checkbox" 
+                   class="progress-account-checkbox"
+                   ${isCompleted ? "checked" : ""} 
+                   onclick="event.stopPropagation();"
+                   onchange="toggleAccountComplete(${
+                     post.id
+                   }, '${accountKey}', this, event)">
+            <label class="progress-account-label" onclick="event.stopPropagation();">${accountName} - ${platform}</label>
+          </div>
         `;
-    tbody.appendChild(detailTr);
-  });
+          })
+          .join("");
 
-  // Kopyalama butonlarına event listener ekle
-  const copyButtons = document.querySelectorAll(".copy-btn");
-  copyButtons.forEach((button) => {
-    button.addEventListener("click", function (e) {
-      e.stopPropagation();
-      const content = this.getAttribute("data-content");
-      copyContent(content, this);
-    });
-  });
+        return `
+        <div class="progress-platform-group">
+          <div class="progress-platform-title">${groupName}</div>
+          <div class="progress-accounts">
+            ${accountsHtml}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
 
-  // Uzun metinler için devamını oku işlevselliği ekle
-  setTimeout(() => {
-    // Story başlıkları için
-    tbody.querySelectorAll(".story-title").forEach((element) => {
-      addStoryTitleReadMore(element, 80);
-    });
-
-    // Normal post içerikleri için (story olmayan)
-    tbody.querySelectorAll(".content-cell").forEach((cell) => {
-      const contentDiv = cell.querySelector("div[style*='flex: 1']");
-      if (contentDiv && !contentDiv.querySelector(".story-content")) {
-        const textContent = contentDiv.textContent.trim();
-        if (textContent.length > 120 && textContent !== "-") {
-          addReadMoreFunctionality(contentDiv, 120);
-        }
-      }
-    });
-
-    // Notlar için (4. sütun)
-    tbody.querySelectorAll("tr").forEach((row) => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length > 3) {
-        const notesCell = cells[3]; // 4. sütun (0-bazlı index: 3)
-        if (notesCell && notesCell.classList.contains("content-cell")) {
-          const textContent = notesCell.textContent.trim();
-          if (textContent.length > 100 && textContent !== "-") {
-            addReadMoreFunctionality(notesCell, 100);
-          }
-        }
-      }
-    });
-  }, 0);
-
-  console.log("Tablo güncellendi");
-}
-
-// Story başlığını kopyala
-// Uzun metinler için devamını oku/daha az göster işlevselliği
-function addReadMoreFunctionality(element, maxLength = 150) {
-  const fullText = element.textContent.trim();
-
-  if (fullText.length <= maxLength) {
-    return; // Kısa metinler için işlem yapma
+    progressHtml = `
+      <div class="post-progress-section">
+        <div class="progress-summary" onclick="toggleProgressDetails(${post.id})">
+          <div class="progress-summary-text">
+            <span>📊 Progress</span>
+            <span class="progress-count">${completedCount}/${totalCount}</span>
+          </div>
+          <span class="progress-toggle" id="progress-toggle-${post.id}">▶</span>
+        </div>
+        <div class="progress-details" id="progress-details-${post.id}">
+          ${groupsHtml}
+        </div>
+      </div>
+    `;
   }
 
-  const shortText = fullText.substring(0, maxLength);
-  let isExpanded = false;
+  // Story link HTML
+  let storyLinkHtml = "";
+  if (post.contentType === "story" && post.storyLink) {
+    storyLinkHtml = `
+      <div class="post-content-section">
+        <span class="post-content-label">🔗 Story Link</span>
+        <div class="post-content-value">
+          <a href="${
+            post.storyLink
+          }" target="_blank" style="color: #3498db; text-decoration: none;">${
+      post.storyLink
+    }</a>
+          <button class="copy-content-btn" onclick="copyToClipboard('${post.storyLink.replace(
+            /'/g,
+            "\\'"
+          )}', this)">📋</button>
+        </div>
+      </div>
+    `;
+  }
 
-  const toggleButton = document.createElement("button");
-  toggleButton.className = "content-text-toggle";
-  toggleButton.type = "button";
+  // Status class belirleme
+  const statusInfo = {
+    planlandı: { icon: "📅", text: "Planlandı" },
+    yapıldı: { icon: "✅", text: "Yapıldı" },
+    beklemede: { icon: "⏳", text: "Beklemede" },
+    iptal: { icon: "❌", text: "İptal" },
+  };
+  const currentStatus = statusInfo[post.status] || statusInfo["planlandı"];
 
-  function updateDisplay() {
-    if (isExpanded) {
-      element.textContent = fullText;
-      toggleButton.textContent = " Daha az göster";
-      element.classList.add("expanded");
+  card.innerHTML = `
+    <!-- Accordion Header - Always Visible -->
+    <div class="post-card-accordion-header" onclick="toggleAccordion(${
+      post.id
+    })">
+      <div class="post-card-header">
+        <div class="post-card-title">
+          <span class="content-type-badge-modern ${post.contentType}">
+            ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
+          </span>
+          <span class="post-card-id">#${post.id}</span>
+        </div>
+        <div class="post-card-actions">
+          <button class="btn btn-danger btn-icon" onclick="event.stopPropagation(); deletePost(${
+            post.id
+          })" title="Sil">🗑️</button>
+        </div>
+      </div>
+
+      <div class="post-card-summary">
+        <div class="post-summary-content ${!contentPreview ? "empty" : ""}">
+          ${contentPreview || "İçerik bulunmuyor"}
+        </div>
+        
+        <div class="post-summary-meta">
+          <div class="post-summary-meta-item">
+            📅 ${new Date(post.scheduledDate).toLocaleDateString("tr-TR")} • ${
+    post.scheduledTime
+  }
+          </div>
+          
+          <div class="post-summary-meta-item">
+            ${currentStatus.icon} ${currentStatus.text}
+          </div>
+          
+          ${
+            fileCount > 0
+              ? `
+            <div class="post-summary-meta-item has-files">
+              📎 ${fileCount} dosya
+            </div>
+          `
+              : ""
+          }
+          
+          ${
+            totalCount > 0
+              ? `
+            <div class="post-summary-meta-item has-progress">
+              📊 ${completedCount}/${totalCount}
+            </div>
+          `
+              : ""
+          }
+        </div>
+
+        <div class="accordion-toggle">
+          <span>Detayları göster</span>
+          <span class="accordion-toggle-icon" id="accordion-icon-${
+            post.id
+          }">▶</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion Content - Collapsible -->
+    <div class="post-card-accordion-content" id="accordion-content-${post.id}">
+      <div class="post-card-content">
+        ${
+          contentDisplay
+            ? `
+          <div class="post-content-section">
+            <span class="post-content-label">${
+              post.contentType === "story" ? "📱 Story Başlığı" : "📝 İçerik"
+            }</span>
+            <div class="post-content-value">
+              ${contentDisplay}
+              <button class="copy-content-btn" onclick="copyToClipboard('${contentDisplay.replace(
+                /'/g,
+                "\\'"
+              )}', this)">📋</button>
+            </div>
+          </div>
+        `
+            : ""
+        }
+
+        ${storyLinkHtml}
+
+        ${
+          post.notes && post.notes.trim()
+            ? `
+          <div class="post-content-section">
+            <span class="post-content-label">📝 Notlar</span>
+            <div class="post-content-value">
+              ${post.notes}
+              <button class="copy-content-btn" onclick="copyToClipboard('${post.notes.replace(
+                /'/g,
+                "\\'"
+              )}', this)">📋</button>
+            </div>
+          </div>
+        `
+            : ""
+        }
+
+        <div class="post-card-grid">
+          <div class="post-card-grid-item">
+            <span class="post-content-label">📅 Tarih</span>
+            <div class="post-content-value">${new Date(
+              post.scheduledDate
+            ).toLocaleDateString("tr-TR")}</div>
+          </div>
+          <div class="post-card-grid-item">
+            <span class="post-content-label">🕐 Saat</span>
+            <div class="post-content-value">${post.scheduledTime}</div>
+          </div>
+          <div class="post-card-grid-item">
+            <span class="post-content-label">📆 Oluşturulma</span>
+            <div class="post-content-value">${post.createdAt || "-"}</div>
+          </div>
+        </div>
+
+        ${filesHtml}
+        ${progressHtml}
+
+        <div class="post-card-footer">
+          <div class="post-status-section">
+            <span class="post-content-label">Durum</span>
+            <select class="status-select-modern status-${
+              post.status
+            }" onchange="updateStatus(${post.id}, this.value)">
+              <option value="planlandı" ${
+                post.status === "planlandı" ? "selected" : ""
+              }>📅 Planlandı</option>
+              <option value="yapıldı" ${
+                post.status === "yapıldı" ? "selected" : ""
+              }>✅ Yapıldı</option>
+              <option value="beklemede" ${
+                post.status === "beklemede" ? "selected" : ""
+              }>⏳ Beklemede</option>
+              <option value="iptal" ${
+                post.status === "iptal" ? "selected" : ""
+              }>❌ İptal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return card;
+}
+
+// Accordion açma/kapama fonksiyonu
+function toggleAccordion(postId) {
+  const card = document.getElementById(`post-card-${postId}`);
+  const content = document.getElementById(`accordion-content-${postId}`);
+  const icon = document.getElementById(`accordion-icon-${postId}`);
+  const toggleText = card.querySelector(".accordion-toggle span:first-child");
+
+  if (card && content && icon) {
+    if (card.classList.contains("expanded")) {
+      // Kapat
+      card.classList.remove("expanded");
+      if (toggleText) toggleText.textContent = "Detayları göster";
     } else {
-      element.textContent = shortText + "...";
-      toggleButton.textContent = " Devamını oku";
-      element.classList.remove("expanded");
+      // Aç
+      card.classList.add("expanded");
+      if (toggleText) toggleText.textContent = "Detayları gizle";
     }
   }
-
-  toggleButton.addEventListener("click", function (e) {
-    e.stopPropagation();
-    isExpanded = !isExpanded;
-    updateDisplay();
-  });
-
-  // Başlangıç durumu
-  updateDisplay();
-  element.parentNode.insertBefore(toggleButton, element.nextSibling);
 }
 
-// Story başlıkları için özel işlevsellik
-function addStoryTitleReadMore(element, maxLength = 100) {
-  const fullText = element.innerHTML;
-  const textContent = element.textContent.trim();
+// Progress detaylarını aç/kapat
+function toggleProgressDetails(postId) {
+  const details = document.getElementById(`progress-details-${postId}`);
+  const toggle = document.getElementById(`progress-toggle-${postId}`);
 
-  if (textContent.length <= maxLength) {
+  if (details && toggle) {
+    if (details.classList.contains("show")) {
+      details.classList.remove("show");
+      toggle.classList.remove("expanded");
+    } else {
+      details.classList.add("show");
+      toggle.classList.add("expanded");
+    }
+  }
+}
+
+// Sayfa render fonksiyonu (modern kartlar için)
+function renderCurrentPagePosts() {
+  if (allPosts.length === 0) {
     return;
   }
 
-  // Strong tag'ını koruyarak kısa metni oluştur
-  const strongPart = fullText.match(/<strong>.*?<\/strong>/);
-  const strongText = strongPart ? strongPart[0] : "";
-  const remainingText = fullText.replace(strongText, "").trim();
-  const shortRemainingText = remainingText.substring(0, maxLength - 20);
-
-  let isExpanded = false;
-
-  const toggleButton = document.createElement("button");
-  toggleButton.className = "content-text-toggle";
-  toggleButton.type = "button";
-  toggleButton.style.marginLeft = "5px";
-
-  function updateDisplay() {
-    if (isExpanded) {
-      element.innerHTML = fullText;
-      toggleButton.textContent = "Daha az";
-      element.classList.add("expanded");
-    } else {
-      element.innerHTML = strongText + " " + shortRemainingText + "...";
-      toggleButton.textContent = "Devamı";
-      element.classList.remove("expanded");
-    }
+  const postsContainer = document.getElementById("postsContainer");
+  if (!postsContainer) {
+    console.error("Posts container bulunamadı");
+    return;
   }
 
-  toggleButton.addEventListener("click", function (e) {
-    e.stopPropagation();
-    isExpanded = !isExpanded;
-    updateDisplay();
+  postsContainer.innerHTML = "";
+
+  // Mevcut sayfa için postları filtreleyelim
+  const startIndex = (currentPage - 1) * postsPerPage;
+  const endIndex = startIndex + postsPerPage;
+  const currentPagePosts = allPosts.slice(startIndex, endIndex);
+
+  currentPagePosts.forEach((post) => {
+    const postCard = createModernPostCard(post);
+    postsContainer.appendChild(postCard);
   });
 
-  updateDisplay();
-  element.appendChild(toggleButton);
+  console.log("Mevcut sayfa modern kartları güncellendi");
 }
 
-function copyStoryTitle(title, event) {
-  event.preventDefault();
-  event.stopPropagation();
+// Kopyalama fonksiyonu
+function copyToClipboard(text, button) {
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      const originalText = button.textContent;
+      button.textContent = "✅";
+      button.style.background = "#27ae60";
 
-  console.log("Story başlığı kopyalanıyor:", title);
-
-  // Modern clipboard API desteğini kontrol et
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard
-      .writeText(title)
-      .then(() => {
-        showCopyFeedback(event.target, "Başlık kopyalandı!");
-        console.log("Story başlığı kopyalandı:", title);
-      })
-      .catch((err) => {
-        console.error("Modern clipboard API hatası:", err);
-        copyWithFallbackMethod(title, () =>
-          showCopyFeedback(event.target, "Başlık kopyalandı!")
-        );
-      });
-  } else {
-    copyWithFallbackMethod(title, () =>
-      showCopyFeedback(event.target, "Başlık kopyalandı!")
-    );
-  }
-}
-
-// Story linkini kopyala
-function copyStoryLink(link, event) {
-  event.preventDefault();
-  event.stopPropagation();
-
-  console.log("Story linki kopyalanıyor:", link);
-
-  // Modern clipboard API desteğini kontrol et
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard
-      .writeText(link)
-      .then(() => {
-        showCopyFeedback(event.target, "Link kopyalandı!");
-        console.log("Story linki kopyalandı:", link);
-      })
-      .catch((err) => {
-        console.error("Modern clipboard API hatası:", err);
-        copyWithFallbackMethod(link, () =>
-          showCopyFeedback(event.target, "Link kopyalandı!")
-        );
-      });
-  } else {
-    copyWithFallbackMethod(link, () =>
-      showCopyFeedback(event.target, "Link kopyalandı!")
-    );
-  }
-}
-
-// Kopyalama geri bildirimi göster
-function showCopyFeedback(element, message) {
-  // Geçici tooltip oluştur
-  const tooltip = document.createElement("div");
-  tooltip.className = "copy-tooltip";
-  tooltip.textContent = message;
-  tooltip.style.position = "fixed";
-  tooltip.style.background = "#27ae60";
-  tooltip.style.color = "white";
-  tooltip.style.padding = "6px 12px";
-  tooltip.style.borderRadius = "4px";
-  tooltip.style.fontSize = "12px";
-  tooltip.style.zIndex = "10000";
-  tooltip.style.pointerEvents = "none";
-  tooltip.style.transform = "translateX(-50%)";
-
-  // Mobil cihazlarda dokunma konumunu kullan
-  const rect = element.getBoundingClientRect();
-  tooltip.style.left = rect.left + rect.width / 2 + "px";
-  tooltip.style.top = rect.top - 35 + "px";
-
-  document.body.appendChild(tooltip);
-
-  // Element'e geçici stil ekle
-  const originalBackground = element.style.background;
-  const originalColor = element.style.color;
-  element.style.background = "#27ae60";
-  element.style.color = "white";
-
-  setTimeout(() => {
-    document.body.removeChild(tooltip);
-    element.style.background = originalBackground;
-    element.style.color = originalColor;
-  }, 2000);
-}
-
-// Fallback kopyalama metodu
-function copyWithFallbackMethod(text, successCallback) {
-  try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      successCallback();
-      console.log("İçerik kopyalandı (fallback):", text);
-    } else {
-      throw new Error("execCommand copy başarısız");
-    }
-  } catch (fallbackErr) {
-    console.error("Fallback kopyalama da başarısız:", fallbackErr);
-
-    // Son çare: kullanıcıya prompt göster
-    const fallbackPrompt = confirm(
-      "Otomatik kopyalama başarısız oldu. İçeriği manuel olarak kopyalamak ister misiniz?"
-    );
-
-    if (fallbackPrompt) {
-      const shortText =
-        text.length > 200 ? text.substring(0, 200) + "..." : text;
-      prompt("Bu içeriği kopyalayın (Ctrl+C):", shortText);
-    }
-  }
-}
-
-// İçeriği kopyala
-function copyContent(text, buttonElement) {
-  // Önce HTML özel karakterlerini decode et
-  let decodedText = text
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-
-  // HTML'i formatı koruyarak temizle
-  let cleanText = decodedText
-    // <br> ve <br/> etiketlerini satır arası ile değiştir
-    .replace(/<br\s*\/?>/gi, "\n")
-    // <p> etiketlerini satır arası ile değiştir
-    .replace(/<\/p>/gi, "\n")
-    .replace(/<p[^>]*>/gi, "")
-    // <div> etiketlerini satır arası ile değiştir
-    .replace(/<\/div>/gi, "\n")
-    .replace(/<div[^>]*>/gi, "")
-    // Diğer HTML etiketlerini kaldır
-    .replace(/<[^>]*>/g, "")
-    // Fazla satır aralarını temizle ama formatı koru
-    .replace(/\n\s*\n\s*\n/g, "\n\n")
-    .trim();
-
-  const plainText = cleanText;
-
-  // Buton görünümünü değiştiren fonksiyon
-  function updateButtonSuccess() {
-    const originalText = buttonElement.textContent;
-    buttonElement.textContent = "✓ Kopyalandı";
-    buttonElement.classList.add("copied");
-
-    setTimeout(() => {
-      buttonElement.textContent = originalText;
-      buttonElement.classList.remove("copied");
-    }, 2000);
-  }
-
-  // Modern clipboard API desteğini kontrol et
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    // Modern API kullan
-    navigator.clipboard
-      .writeText(plainText)
-      .then(() => {
-        updateButtonSuccess();
-        console.log("İçerik kopyalandı (modern API):", plainText);
-      })
-      .catch((err) => {
-        console.error("Modern clipboard API hatası:", err);
-        // Modern API başarısız olursa fallback'e geç
-        copyWithFallback(plainText, updateButtonSuccess);
-      });
-  } else {
-    // Direkt fallback kullan
-    console.log("Modern clipboard API desteklenmiyor, fallback kullanılıyor");
-    copyWithFallback(plainText, updateButtonSuccess);
-  }
-
-  // Fallback kopyalama fonksiyonu
-  function copyWithFallback(text, successCallback) {
-    try {
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = "#3498db";
+      }, 1500);
+    })
+    .catch(() => {
+      // Fallback için eski yöntem
       const textArea = document.createElement("textarea");
       textArea.value = text;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
-      textArea.focus();
       textArea.select();
-
-      const successful = document.execCommand("copy");
+      document.execCommand("copy");
       document.body.removeChild(textArea);
 
-      if (successful) {
-        successCallback();
-        console.log("İçerik kopyalandı (fallback):", text);
-      } else {
-        throw new Error("execCommand copy başarısız");
-      }
-    } catch (fallbackErr) {
-      console.error("Fallback kopyalama da başarısız:", fallbackErr);
+      const originalText = button.textContent;
+      button.textContent = "✅";
+      button.style.background = "#27ae60";
 
-      // Son çare: kullanıcıya prompt göster
-      const fallbackPrompt = confirm(
-        "Otomatik kopyalama başarısız oldu. İçeriği manuel olarak kopyalamak ister misiniz?"
-      );
-
-      if (fallbackPrompt) {
-        // Basit bir prompt ile içeriği göster
-        const shortText =
-          text.length > 200 ? text.substring(0, 200) + "..." : text;
-        prompt("Bu içeriği kopyalayın (Ctrl+C):", shortText);
-      }
-    }
-  }
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = "#3498db";
+      }, 1500);
+    });
 }
 
 // Durum güncelle
@@ -1746,297 +1586,6 @@ function goToPage(page) {
   updatePaginationControls();
 
   console.log(`Sayfa ${currentPage}'e geçildi`);
-}
-
-function renderCurrentPagePosts() {
-  if (allPosts.length === 0) {
-    return;
-  }
-
-  const tbody = document.querySelector("#postsTable tbody");
-  if (!tbody) {
-    console.error("Tablo tbody bulunamadı");
-    return;
-  }
-
-  tbody.innerHTML = "";
-
-  // Mevcut sayfa için postları filtreleyelim
-  const startIndex = (currentPage - 1) * postsPerPage;
-  const endIndex = startIndex + postsPerPage;
-  const currentPagePosts = allPosts.slice(startIndex, endIndex);
-
-  currentPagePosts.forEach((post) => {
-    // Ana satır
-    const tr = document.createElement("tr");
-
-    const completedCount = post.completedAccounts
-      ? post.completedAccounts.length
-      : 0;
-    const totalCount = post.selectedAccounts ? post.selectedAccounts.length : 0;
-
-    // İçerik türüne göre içerik metni
-    let contentDisplay = "";
-    if (post.contentType === "story") {
-      if (post.storyLinkTitle) {
-        contentDisplay = `<div class="story-content">
-          <div class="story-title clickable-story-title" onclick="copyStoryTitle('${post.storyLinkTitle.replace(
-            /'/g,
-            "\\'"
-          )}', event)" title="Başlığı kopyalamak için tıklayın"><strong>📱 Story:</strong> ${
-          post.storyLinkTitle
-        }</div>
-          ${
-            post.storyLink
-              ? `<div class="story-link"><small><a href="${
-                  post.storyLink
-                }" onclick="copyStoryLink('${post.storyLink.replace(
-                  /'/g,
-                  "\\'"
-                )}', event)" title="Linki kopyalamak için tıklayın">${
-                  post.storyLink.length > 50
-                    ? post.storyLink.substring(0, 50) + "..."
-                    : post.storyLink
-                }</a></small></div>`
-              : ""
-          }
-        </div>`;
-      } else {
-        contentDisplay = "<strong>📱 Story</strong>";
-      }
-    } else {
-      contentDisplay = post.content && post.content.trim() ? post.content : "-";
-    }
-
-    tr.innerHTML = `
-            <td>
-                <span class="toggle-arrow" onclick="toggleRow(${
-                  post.id
-                })">▶</span>
-            </td>
-            <td>
-                <span class="content-type-badge ${
-                  post.contentType === "story" ? "story" : "post"
-                }">
-                    ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
-                </span>
-            </td>
-            <td class="content-cell">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="flex: 1;">${contentDisplay}</div>
-                    <button class="btn btn-info btn-sm copy-btn" 
-                            data-content="${contentDisplay
-                              .replace(/"/g, "&quot;")
-                              .replace(/'/g, "&#39;")}" 
-                            title="İçeriği kopyala" 
-                            style="margin-left: 10px; flex-shrink: 0;">
-                        📋 Kopyala
-                    </button>
-                </div>
-            </td>
-            <td class="content-cell">${
-              post.notes && post.notes.trim() ? post.notes : "-"
-            }</td>
-            <td>${new Date(post.scheduledDate).toLocaleDateString("tr-TR")}</td>
-            <td>${post.scheduledTime}</td>
-            <td>
-                ${(() => {
-                  // Yeni format: birden fazla dosya
-                  if (
-                    post.files &&
-                    Array.isArray(post.files) &&
-                    post.files.length > 0
-                  ) {
-                    let filesHtml = '<div class="files-list">';
-                    post.files.forEach((file, index) => {
-                      const fileType =
-                        file.mimetype && file.mimetype.includes("image")
-                          ? "🖼️"
-                          : "🎬";
-                      const fileSize = file.size
-                        ? `(${(file.size / 1024 / 1024).toFixed(2)} MB)`
-                        : "";
-                      filesHtml += `
-                        <div class="file-item-table">
-                          <span class="file-icon">${fileType}</span>
-                          <a href="/uploads/${
-                            file.fileName
-                          }" target="_blank" class="file-link">
-                            ${file.originalName || file.fileName}
-                          </a>
-                          <span class="file-size-table">${fileSize}</span>
-                          <a href="/api/download/${
-                            file.fileName
-                          }" download class="download-btn">⬇️</a>
-                        </div>
-                      `;
-                    });
-                    filesHtml += "</div>";
-                    if (post.files.length > 1) {
-                      filesHtml += `<div class="files-count">${post.files.length} dosya</div>`;
-                    }
-                    return filesHtml;
-                  }
-                  // Eski format: tek dosya (geriye uyumluluk)
-                  else if (post.fileName) {
-                    return `<div>
-                        <a href="/uploads/${
-                          post.fileName
-                        }" target="_blank" class="file-link">📎 ${
-                      post.originalName || post.fileName
-                    }</a>
-                        <a href="/api/download/${
-                          post.fileName
-                        }" download class="download-btn">⬇️ İndir</a>
-                       </div>`;
-                  }
-                  // Dosya yok
-                  else {
-                    return '<span style="color: #999;">-</span>';
-                  }
-                })()}
-            </td>
-            <td class="progress-text">${completedCount}/${totalCount}</td>
-            <td>
-                <select class="status-select status-${
-                  post.status
-                }" onchange="updateStatus(${post.id}, this.value)">
-                    <option value="planlandı" ${
-                      post.status === "planlandı" ? "selected" : ""
-                    }>📅 Planlandı</option>
-                    <option value="yapıldı" ${
-                      post.status === "yapıldı" ? "selected" : ""
-                    }>✅ Yapıldı</option>
-                    <option value="beklemede" ${
-                      post.status === "beklemede" ? "selected" : ""
-                    }>⏳ Beklemede</option>
-                    <option value="iptal" ${
-                      post.status === "iptal" ? "selected" : ""
-                    }>❌ İptal</option>
-                </select>
-            </td>
-            <td>${post.createdAt ? post.createdAt : "-"}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-danger btn-sm" onclick="deletePost(${
-                      post.id
-                    })" title="Sil">
-                        🗑️ Sil
-                    </button>
-                </div>
-            </td>
-        `;
-    tbody.appendChild(tr);
-
-    // Detay satırı
-    const detailTr = document.createElement("tr");
-    detailTr.id = `detail-${post.id}`;
-    detailTr.style.display = "none";
-
-    // Hesapları gruplara ayır
-    const accountGroups = {};
-    if (post.selectedAccounts) {
-      post.selectedAccounts.forEach((account) => {
-        const parts = account.split("-");
-        const accountName = parts[0];
-        const platform = parts[1];
-
-        if (!accountGroups[accountName]) {
-          accountGroups[accountName] = [];
-        }
-        accountGroups[accountName].push(platform);
-      });
-    }
-
-    let accountsHtml = "";
-    Object.keys(accountGroups).forEach((accountName) => {
-      const platforms = accountGroups[accountName];
-      accountsHtml += `
-                <div class="platform-group">
-                    <div class="platform-group-title">${accountName}</div>
-                    <div class="platform-accounts">
-                        ${platforms
-                          .map((platform) => {
-                            const accountKey = `${accountName}-${platform}`;
-                            const isCompleted =
-                              post.completedAccounts &&
-                              post.completedAccounts.includes(accountKey);
-                            return `
-                            <div class="account-progress-item">
-                                <input type="checkbox" 
-                                       id="progress-${post.id}-${accountKey}" 
-                                       ${isCompleted ? "checked" : ""} 
-                                       onchange="toggleAccountComplete(${
-                                         post.id
-                                       }, '${accountKey}', this, event)" />
-                                <label for="progress-${post.id}-${accountKey}">
-                                    ${platform}
-                                </label>
-                            </div>
-                        `;
-                          })
-                          .join("")}
-                    </div>
-                </div>
-            `;
-    });
-
-    detailTr.innerHTML = `
-            <td colspan="11">
-                <div class="accounts-detail show" onclick="event.stopPropagation();">
-                    <div class="account-progress">
-                        ${accountsHtml}
-                    </div>
-                </div>
-            </td>
-        `;
-    tbody.appendChild(detailTr);
-  });
-
-  // Kopyalama butonlarına event listener ekle
-  const copyButtons = document.querySelectorAll(".copy-btn");
-  copyButtons.forEach((button) => {
-    button.addEventListener("click", function (e) {
-      e.stopPropagation();
-      const content = this.getAttribute("data-content");
-      copyContent(content, this);
-    });
-  });
-
-  // Uzun metinler için devamını oku işlevselliği ekle
-  setTimeout(() => {
-    // Story başlıkları için
-    tbody.querySelectorAll(".story-title").forEach((element) => {
-      addStoryTitleReadMore(element, 80);
-    });
-
-    // Normal post içerikleri için (story olmayan)
-    tbody.querySelectorAll(".content-cell").forEach((cell) => {
-      const contentDiv = cell.querySelector("div[style*='flex: 1']");
-      if (contentDiv && !contentDiv.querySelector(".story-content")) {
-        const textContent = contentDiv.textContent.trim();
-        if (textContent.length > 120 && textContent !== "-") {
-          addReadMoreFunctionality(contentDiv, 120);
-        }
-      }
-    });
-
-    // Notlar için (4. sütun)
-    tbody.querySelectorAll("tr").forEach((row) => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length > 3) {
-        const notesCell = cells[3]; // 4. sütun (0-bazlı index: 3)
-        if (notesCell && notesCell.classList.contains("content-cell")) {
-          const textContent = notesCell.textContent.trim();
-          if (textContent.length > 100 && textContent !== "-") {
-            addReadMoreFunctionality(notesCell, 100);
-          }
-        }
-      }
-    });
-  }, 0);
-
-  console.log("Mevcut sayfa postları güncellendi");
 }
 
 function updatePaginationControls() {
