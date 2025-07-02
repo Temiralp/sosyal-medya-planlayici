@@ -2,9 +2,6 @@
 const accountGroups = {
   avm: [
     "Özdilek AVM",
-    "ÖzdilekPark Bursa Nilüfer",
-    "ÖzdilekPark Antalya",
-    "ÖzdilekPark İstanbul",
     "ÖzdilekPark M Geçit (Özdilek Geçit AVM)",
     "Özdilek İzmir",
     "Özdilek Eskişehir",
@@ -19,6 +16,9 @@ const accountGroups = {
     "Orange City Balat",
   ],
   park: [
+    "ÖzdilekPark Bursa Nilüfer",
+    "ÖzdilekPark Antalya",
+    "ÖzdilekPark İstanbul",
     "Wyndham Grand İstanbul Levent Hotel & Conference Center",
     "Wyndham Grand İzmir Özdilek Thermal & Spa",
   ],
@@ -784,8 +784,7 @@ async function handleFormSubmit(event) {
     xhr.open("POST", "/api/posts");
 
     xhr.timeout = 1800000;
-    xhr.ontimeout = function() {
-
+    xhr.ontimeout = function () {
       progressContainer.style.display = "none";
       resetSubmitButton();
       console.error("Upload timeout");
