@@ -748,7 +748,9 @@ async function handleFormSubmit(event) {
           showMessage("Paylaşım başarıyla planlandı!", "success");
           resetSubmitButton();
           resetForm();
-          loadPosts();
+
+          // Yeni post'u dinamik olarak listeye ekle
+          addNewPostToList(result.post);
 
           // Progress bar'ı 2 saniye sonra gizle
           setTimeout(() => {
@@ -911,8 +913,8 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
     const result = await response.json();
 
     if (result.success) {
-      // Progress güncellemesini tetikle
-      updateProgressDisplay(postId);
+      // Post'u dinamik olarak güncelle
+      updatePostInList(result.post);
     } else {
       checkbox.checked = !checkbox.checked; // Geri al
       showMessage("Hata: " + result.message, "error");
@@ -924,39 +926,19 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
   }
 }
 
-// Progress display güncelle
+// Bu fonksiyonlar artık kullanılmıyor - updatePostInList ile değiştirildi
+// Progress display güncelle (DEPRECATED - updatePostInList kullanın)
 function updateProgressDisplay(postId) {
-  // Sadece progress sayısını güncelle, tüm tabloyu yeniden yükleme
-  updateProgressCount(postId);
+  console.warn(
+    "updateProgressDisplay kullanımdan kaldırıldı, updatePostInList kullanın"
+  );
 }
 
-// Sadece progress sayısını güncelle (modern card için)
+// Sadece progress sayısını güncelle (DEPRECATED - updatePostInList kullanın)
 async function updateProgressCount(postId) {
-  try {
-    const response = await fetch("/api/posts");
-    const posts = await response.json();
-    const post = posts.find((p) => p.id === postId);
-
-    if (post) {
-      const completedCount = post.completedAccounts
-        ? post.completedAccounts.length
-        : 0;
-      const totalCount = post.selectedAccounts
-        ? post.selectedAccounts.length
-        : 0;
-
-      // Modern card yapısında progress count'u güncelle
-      const postCard = document.getElementById(`post-card-${postId}`);
-      if (postCard) {
-        const progressCountElement = postCard.querySelector(".progress-count");
-        if (progressCountElement) {
-          progressCountElement.textContent = `${completedCount}/${totalCount}`;
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Progress güncelleme hatası:", error);
-  }
+  console.warn(
+    "updateProgressCount kullanımdan kaldırıldı, updatePostInList kullanın"
+  );
 }
 
 // Post tablosunu render et (yeni modern card-based tasarım)
@@ -1747,8 +1729,8 @@ async function savePost(postId) {
       // Edit mode'dan çık
       cancelEditMode(postId);
 
-      // Postları yeniden yükle
-      loadPosts();
+      // Post'u dinamik olarak güncelle
+      updatePostInList(result.post);
     } else {
       console.error("Güncelleme hatası:", result.message);
       showMessage("Hata: " + result.message, "error");
@@ -1878,7 +1860,9 @@ async function updateStatus(postId, newStatus) {
 
     if (result.success) {
       showMessage("Durum güncellendi!", "success");
-      loadPosts();
+
+      // Post'u dinamik olarak güncelle
+      updatePostInList(result.post);
     } else {
       showMessage("Hata: " + result.message, "error");
     }
@@ -1904,7 +1888,9 @@ async function deletePost(postId) {
 
     if (result.success) {
       showMessage("Paylaşım silindi!", "success");
-      loadPosts();
+
+      // Post'u dinamik olarak listeden kaldır
+      removePostFromList(postId);
     } else {
       showMessage("Hata: " + result.message, "error");
     }
@@ -1914,13 +1900,98 @@ async function deletePost(postId) {
   }
 }
 
+// Yeni post'u dinamik olarak listeye ekle
+function addNewPostToList(newPost) {
+  console.log("Yeni post listeye ekleniyor:", newPost.id);
+
+  // Yeni post'u listenin en başına ekle
+  allPosts.unshift(newPost);
+
+  // Post sayısını güncelle
+  const countElement = document.getElementById("postCount");
+  if (countElement) {
+    countElement.textContent = allPosts.length;
+  }
+
+  // Sayfalama bilgilerini güncelle
+  totalPages = Math.ceil(allPosts.length / postsPerPage);
+
+  // İlk sayfaya git (yeni post gösterilsin)
+  currentPage = 1;
+
+  // Sayfa görünümünü güncelle
+  renderCurrentPagePosts();
+  updatePaginationControls();
+
+  console.log(`Yeni post eklendi. Toplam: ${allPosts.length}`);
+}
+
+// Post'u dinamik olarak listeden kaldır
+function removePostFromList(postId) {
+  console.log("Post listeden kaldırılıyor:", postId);
+
+  // Post'u listeden kaldır
+  const originalLength = allPosts.length;
+  allPosts = allPosts.filter((post) => post.id != postId);
+
+  if (allPosts.length < originalLength) {
+    // Post sayısını güncelle
+    const countElement = document.getElementById("postCount");
+    if (countElement) {
+      countElement.textContent = allPosts.length;
+    }
+
+    // Sayfalama bilgilerini güncelle
+    totalPages = Math.ceil(allPosts.length / postsPerPage);
+
+    // Eğer mevcut sayfa artık mevcut değilse son sayfaya git
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = totalPages;
+    }
+
+    // Eğer hiç post kalmadıysa ilk sayfaya git
+    if (allPosts.length === 0) {
+      currentPage = 1;
+    }
+
+    // Sayfa görünümünü güncelle
+    renderCurrentPagePosts();
+    updatePaginationControls();
+
+    console.log(`Post silindi. Kalan: ${allPosts.length}`);
+  } else {
+    console.warn("Post listede bulunamadı:", postId);
+  }
+}
+
+// Post'u dinamik olarak listede güncelle
+function updatePostInList(updatedPost) {
+  console.log("Post listede güncelleniyor:", updatedPost.id);
+
+  // Post'u listede bul ve güncelle
+  const postIndex = allPosts.findIndex((post) => post.id == updatedPost.id);
+
+  if (postIndex !== -1) {
+    allPosts[postIndex] = updatedPost;
+
+    // Sadece mevcut sayfayı yeniden render et
+    renderCurrentPagePosts();
+
+    console.log(`Post güncellendi: ${updatedPost.id}`);
+  } else {
+    console.warn("Güncellenecek post listede bulunamadı:", updatedPost.id);
+    // Fallback olarak tam listeyi yeniden yükle
+    loadPosts();
+  }
+}
+
 // Verileri dışa aktar
 function exportData() {
   console.log("Veriler dışa aktarılıyor...");
   window.open("/api/export", "_blank");
 }
 
-// Postları yükle
+// Postları yükle (sayfa ilk açıldığında kullanılır)
 async function loadPosts() {
   console.log("Postlar yükleniyor...");
   try {
