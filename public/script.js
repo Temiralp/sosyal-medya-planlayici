@@ -13,7 +13,6 @@ const accountGroups = {
     "Özdilek Uşak",
     "Özdilek Bursa",
     "Özdilek Düzce",
-    "Orange City Balat",
   ],
   park: [
     "ÖzdilekPark Bursa Nilüfer",
@@ -48,6 +47,7 @@ const accountGroups = {
     "Lavandi",
     "Özdilek Vakfı",
     "Orange İnşaat",
+    "Orange City Balat",
     "River Plaza (River Plaza İstanbul)",
     "Özlü Sigorta",
     "Tabiat Tarım",
@@ -82,7 +82,6 @@ const accountPlatforms = {
   "Özdilek Uşak": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bursa": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Düzce": ["Facebook", "Instagram", "Twitter"],
-  "Orange City Balat": ["Facebook", "Instagram", "Twitter"],
 
   // Park/Otel Grubu
   "Wyndham Grand İstanbul Levent Hotel & Conference Center": [
@@ -128,6 +127,7 @@ const accountPlatforms = {
   Lavandi: ["Facebook", "Instagram"],
   "Özdilek Vakfı": ["Facebook", "Instagram", "Twitter"],
   "Orange İnşaat": ["Facebook", "Instagram", "Twitter"],
+  "Orange City Balat": ["Facebook", "Instagram", "Twitter"],
   "River Plaza (River Plaza İstanbul)": ["Facebook"],
   "Özlü Sigorta": ["Facebook", "Instagram", "Twitter"],
   "Tabiat Tarım": ["Facebook", "Instagram", "Twitter"],
