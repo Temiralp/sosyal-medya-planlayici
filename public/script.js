@@ -746,6 +746,7 @@ async function handleFormSubmit(event) {
         if (result.success) {
           progressText.textContent = "Paylaşım başarıyla planlandı!";
           showMessage("Paylaşım başarıyla planlandı!", "success");
+          showToast("🎉 Yeni paylaşım başarıyla oluşturuldu!", "success", 5000);
           resetSubmitButton();
           resetForm();
 
@@ -881,6 +882,91 @@ function showMessage(message, type) {
   }, 5000);
 }
 
+// Toast bildirimi göster (daha görünür)
+function showToast(message, type, duration = 4000) {
+  console.log(`Toast: ${type} - ${message}`);
+
+  // Eski toast'ları temizle
+  const oldToasts = document.querySelectorAll(".toast-notification");
+  oldToasts.forEach((toast) => toast.remove());
+
+  // Toast container'ı oluştur (yoksa)
+  let toastContainer = document.getElementById("toastContainer");
+  if (!toastContainer) {
+    toastContainer = document.createElement("div");
+    toastContainer.id = "toastContainer";
+    toastContainer.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      pointer-events: none;
+    `;
+    document.body.appendChild(toastContainer);
+  }
+
+  // Toast element'i oluştur
+  const toast = document.createElement("div");
+  toast.className = `toast-notification toast-${type}`;
+
+  // Icon belirleme
+  let icon = "ℹ️";
+  if (type === "success") icon = "✅";
+  if (type === "error") icon = "❌";
+  if (type === "warning") icon = "⚠️";
+
+  toast.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 18px;">${icon}</span>
+      <span style="font-weight: 500;">${message}</span>
+    </div>
+  `;
+
+  // Toast stil
+  toast.style.cssText = `
+    background: ${
+      type === "success" ? "#27ae60" : type === "error" ? "#e74c3c" : "#3498db"
+    };
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 10px;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    cursor: pointer;
+    max-width: 350px;
+    word-wrap: break-word;
+  `;
+
+  // Toast'ı container'a ekle
+  toastContainer.appendChild(toast);
+
+  // Animasyon
+  setTimeout(() => {
+    toast.style.transform = "translateX(0)";
+    toast.style.opacity = "1";
+  }, 100);
+
+  // Tıklayınca kapat
+  toast.addEventListener("click", () => {
+    toast.style.transform = "translateX(100%)";
+    toast.style.opacity = "0";
+    setTimeout(() => toast.remove(), 300);
+  });
+
+  // Otomatik kapat
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.style.transform = "translateX(100%)";
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, duration);
+}
+
 // Hesap seçim durumunu güncelle
 function updateSelectedAccountsDisplay() {
   const selectedCount = selectedAccounts.length;
@@ -915,6 +1001,13 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
     if (result.success) {
       // Post'u dinamik olarak güncelle
       updatePostInList(result.post);
+
+      // Hesap durumuna göre toast mesajı
+      const accountName = accountKey.split("-")[0];
+      const message = checkbox.checked
+        ? `✅ ${accountName} hesabı tamamlandı olarak işaretlendi!`
+        : `⏳ ${accountName} hesabı beklemede olarak işaretlendi!`;
+      showToast(message, "success", 2000);
     } else {
       checkbox.checked = !checkbox.checked; // Geri al
       showMessage("Hata: " + result.message, "error");
@@ -1725,6 +1818,7 @@ async function savePost(postId) {
 
     if (result.success) {
       showMessage("Paylaşım başarıyla güncellendi!", "success");
+      showToast("🎉 Paylaşım başarıyla düzenlendi!", "success", 5000);
 
       // Edit mode'dan çık
       cancelEditMode(postId);
@@ -1860,6 +1954,7 @@ async function updateStatus(postId, newStatus) {
 
     if (result.success) {
       showMessage("Durum güncellendi!", "success");
+      showToast("📝 Paylaşım durumu güncellendi!", "success", 3000);
 
       // Post'u dinamik olarak güncelle
       updatePostInList(result.post);
@@ -1888,6 +1983,7 @@ async function deletePost(postId) {
 
     if (result.success) {
       showMessage("Paylaşım silindi!", "success");
+      showToast("🗑️ Paylaşım başarıyla silindi!", "success", 3000);
 
       // Post'u dinamik olarak listeden kaldır
       removePostFromList(postId);
