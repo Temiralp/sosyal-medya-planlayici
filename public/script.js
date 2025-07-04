@@ -2032,7 +2032,38 @@ function toggleProgressDetails(postId) {
     } else {
       details.classList.add("show");
       toggle.classList.add("expanded");
+
+      // Scroll indicator'ları güncelle
+      setTimeout(() => {
+        updateScrollIndicators(details);
+
+        // Scroll event listener ekle
+        details.addEventListener("scroll", () => {
+          updateScrollIndicators(details);
+        });
+      }, 100);
     }
+  }
+}
+
+// Scroll indicator'ları güncelle
+function updateScrollIndicators(element) {
+  if (!element) return;
+
+  const canScrollUp = element.scrollTop > 5;
+  const canScrollDown =
+    element.scrollTop < element.scrollHeight - element.clientHeight - 5;
+
+  if (canScrollUp) {
+    element.classList.add("can-scroll-up");
+  } else {
+    element.classList.remove("can-scroll-up");
+  }
+
+  if (canScrollDown) {
+    element.classList.add("can-scroll-down");
+  } else {
+    element.classList.remove("can-scroll-down");
   }
 }
 
@@ -2289,7 +2320,9 @@ function updateSinglePostCard(
   // Eski durumları geri yükle
   if (wasExpanded) {
     newCard.classList.add("expanded");
-    const toggleText = newCard.querySelector(`#accordion-text-${post.id}`);
+    const toggleText = newCard.querySelector(
+      ".accordion-toggle span:first-child"
+    );
     if (toggleText) toggleText.textContent = "Detayları gizle";
   }
 

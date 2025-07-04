@@ -1878,9 +1878,11 @@ tr:hover {
   transition: all 0.2s ease;
 }
 
+/* Accordion toggle button styles */
 .accordion-toggle-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-size: 0.8rem;
   color: #6c757d;
@@ -1888,18 +1890,21 @@ tr:hover {
   margin-top: 8px;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid #e9ecef;
+  border: 1px solid #dee2e6;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
-  justify-content: space-between;
 }
 
 .accordion-toggle-btn:hover {
   color: #3498db;
   border-color: #3498db;
-  background: #f8f9fa;
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.accordion-toggle-btn:active {
+  transform: translateY(1px);
 }
 
 .accordion-toggle-icon {
@@ -1907,8 +1912,17 @@ tr:hover {
   transition: transform 0.3s ease;
 }
 
+.accordion-toggle-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
 .post-card.expanded .accordion-toggle-icon {
   transform: rotate(90deg);
+}
+
+.accordion-toggle:hover {
+  color: #3498db;
 }
 
 /* Accordion Content - Collapsible */
@@ -2158,6 +2172,9 @@ tr:hover {
 .progress-details {
   display: none;
   margin-top: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .progress-details.show {
@@ -2184,6 +2201,9 @@ tr:hover {
 .progress-accounts {
   display: grid;
   gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .progress-account-item {
@@ -2377,9 +2397,8 @@ tr:hover {
   }
 
   .accordion-toggle-btn {
-    padding: 10px 14px;
+    padding: 10px 16px;
     font-size: 0.85rem;
-    margin-top: 10px;
   }
 }
 
@@ -2707,6 +2726,10 @@ tr:hover {
   display: none;
 }
 
+.post-card.edit-mode .accordion-toggle-btn {
+  display: none;
+}
+
 /* Responsive edit mode */
 @media (max-width: 768px) {
   .edit-form-grid {
@@ -2934,4 +2957,82 @@ tr:hover {
   .status-label {
     font-size: 10px;
   }
+}
+
+/* Progress scrollbar styles */
+.progress-details::-webkit-scrollbar,
+.progress-accounts::-webkit-scrollbar {
+  width: 6px;
+}
+
+.progress-details::-webkit-scrollbar-track,
+.progress-accounts::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.progress-details::-webkit-scrollbar-thumb,
+.progress-accounts::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.progress-details::-webkit-scrollbar-thumb:hover,
+.progress-accounts::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Firefox scrollbar */
+.progress-details,
+.progress-accounts {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Progress scroll indicators */
+.progress-details {
+  position: relative;
+}
+
+.progress-details::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 15px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(52, 152, 219, 0.8),
+    rgba(52, 152, 219, 0.3)
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.progress-details::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 15px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(52, 152, 219, 0.3),
+    rgba(52, 152, 219, 0.8)
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.progress-details.can-scroll-up::before {
+  opacity: 1;
+}
+
+.progress-details.can-scroll-down::after {
+  opacity: 1;
 }
