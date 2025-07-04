@@ -1084,34 +1084,8 @@ function renderPostsTable(posts) {
     paginationContainer.style.display = "flex";
   }
 
-  // En son oluşturulan paylaşımları ilk sırada göster
-  posts.sort((a, b) => {
-    const parseCreatedAt = (createdAtStr) => {
-      if (!createdAtStr) return null;
-      const parts = createdAtStr.split(" ");
-      if (parts.length !== 2) return null;
-
-      const datePart = parts[0];
-      const timePart = parts[1];
-      const dateSegments = datePart.split(".");
-      if (dateSegments.length !== 3) return null;
-
-      const day = dateSegments[0];
-      const month = dateSegments[1];
-      const year = dateSegments[2];
-
-      const isoFormat = `${year}-${month.padStart(2, "0")}-${day.padStart(
-        2,
-        "0"
-      )}T${timePart}`;
-      return new Date(isoFormat);
-    };
-
-    const dateA = parseCreatedAt(a.createdAt) || new Date(a.id);
-    const dateB = parseCreatedAt(b.createdAt) || new Date(b.id);
-
-    return dateB - dateA;
-  });
+  // Server'dan gelen sıralamayı koruyoruz (artık yeniden sıralamıyoruz)
+  // Kullanıcı drag & drop ile özel sıralama yapmış olabilir
 
   // Mevcut sayfa için postları filtreleyelim
   const startIndex = (currentPage - 1) * postsPerPage;
@@ -1621,6 +1595,9 @@ async function savePostsOrder() {
   try {
     const postIds = allPosts.map((post) => post.id);
 
+    console.log("🔄 Sıralama kaydediliyor...");
+    console.log("📝 Post ID'leri:", postIds);
+
     const response = await fetch("/api/posts/reorder", {
       method: "PUT",
       headers: {
@@ -1629,16 +1606,19 @@ async function savePostsOrder() {
       body: JSON.stringify({ postIds }),
     });
 
+    console.log("🌐 Server response status:", response.status);
     const result = await response.json();
+    console.log("📤 Server response:", result);
 
     if (!result.success) {
-      console.error("Sıralama kaydedilemedi:", result.message);
+      console.error("❌ Sıralama kaydedilemedi:", result.message);
       showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
     } else {
-      console.log("Sıralama başarıyla kaydedildi");
+      console.log("✅ Sıralama başarıyla kaydedildi");
+      showToast("💾 Sıralama kaydedildi!", "success", 2000);
     }
   } catch (error) {
-    console.error("Sıralama kaydetme hatası:", error);
+    console.error("❌ Sıralama kaydetme hatası:", error);
     showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
   }
 }
@@ -2175,31 +2155,15 @@ async function deletePost(postId) {
 
 // Yeni post'u dinamik olarak listeye ekle
 function addNewPostToList(newPost) {
-  console.log("Yeni post listeye ekleniyor:", newPost.id);
+  console.log("Yeni post eklendi, listeyi yeniliyoruz:", newPost.id);
 
-  // Yeni post'u listenin en başına ekle
-  allPosts.unshift(newPost);
-
-  // Post sayısını güncelle
-  const countElement = document.getElementById("postCount");
-  if (countElement) {
-    countElement.textContent = allPosts.length;
-  }
-
-  // Sayfalama bilgilerini güncelle
-  totalPages = Math.ceil(allPosts.length / postsPerPage);
+  // Tüm listeyi yeniden yükle ki server'dan gelen sıralama korunsun
+  loadPosts();
 
   // İlk sayfaya git (yeni post gösterilsin)
   currentPage = 1;
 
-  // Sayfa görünümünü güncelle
-  renderCurrentPagePosts();
-  updatePaginationControls();
-
-  // Yeni sıralamayı server'a kaydet
-  savePostsOrder();
-
-  console.log(`Yeni post eklendi. Toplam: ${allPosts.length}`);
+  console.log(`Yeni post eklendi. Post ID: ${newPost.id}`);
 }
 
 // Post'u dinamik olarak listeden kaldır

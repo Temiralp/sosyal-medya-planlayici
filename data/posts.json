@@ -1,5 +1,25 @@
 [
   {
+    "id": 1751398105931,
+    "contentType": "post",
+    "content": "ebc",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "12:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "completedAccounts": [
+      "Özdilek İzmir-Instagram"
+    ],
+    "status": "planlandı",
+    "createdAt": "01.07.2025 22:28:25",
+    "title": "afsfas",
+    "updatedAt": "04.07.2025 23:35:49"
+  },
+  {
     "id": 1751661620338,
     "contentType": "post",
     "title": "çsaf",
@@ -10,16 +30,16 @@
     "scheduledDate": "2025-07-04",
     "scheduledTime": "03:31",
     "selectedAccounts": [
-      "Özdilek AVM-Facebook"
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Twitter"
     ],
     "completedAccounts": [
-      "Özdilek AVM-Facebook"
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Twitter"
     ],
-    "files": [],
-    "fileName": null,
-    "originalName": null,
     "status": "planlandı",
-    "createdAt": "04.07.2025 23:40:20"
+    "createdAt": "04.07.2025 23:40:20",
+    "updatedAt": "05.07.2025 00:09:18"
   },
   {
     "id": 1751661364817,
@@ -40,26 +60,6 @@
     "originalName": null,
     "status": "planlandı",
     "createdAt": "04.07.2025 23:36:04"
-  },
-  {
-    "id": 1751398105931,
-    "contentType": "post",
-    "content": "ebc",
-    "notes": "",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-01",
-    "scheduledTime": "12:12",
-    "selectedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "completedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "status": "planlandı",
-    "createdAt": "01.07.2025 22:28:25",
-    "title": "afsfas",
-    "updatedAt": "04.07.2025 23:35:49"
   },
   {
     "id": 1751396403749,
@@ -168,81 +168,6 @@
     "originalName": null,
     "status": "planlandı",
     "createdAt": "01.07.2025 21:08:54"
-  },
-  {
-    "id": 1751214376884,
-    "content": "magbarmgoıagıo",
-    "scheduledDate": "3333-03-22",
-    "scheduledTime": "03:03",
-    "selectedAccounts": [
-      "Özdilek İzmir-Instagram",
-      "Özdilek İzmir-Facebook",
-      "Özdilek İzmir-Twitter",
-      "Özdilek İzmir-Youtube",
-      "Özdilek Eskişehir-Instagram",
-      "Özdilek Eskişehir-Facebook",
-      "Özdilek Eskişehir-Twitter",
-      "Özdilek Eskişehir-Youtube",
-      "Özdilek Afyon-Instagram",
-      "Özdilek Afyon-Facebook",
-      "Özdilek Afyon-Twitter",
-      "Özdilek Afyon-Youtube",
-      "Özdilek Yalova-Instagram",
-      "Özdilek Yalova-Facebook",
-      "Özdilek Yalova-Twitter",
-      "Özdilek Yalova-Youtube",
-      "Özdilek Kocaeli-Instagram",
-      "Özdilek Kocaeli-Facebook",
-      "Özdilek Kocaeli-Twitter",
-      "Özdilek Kocaeli-Youtube",
-      "Özdilek Bolu-Instagram",
-      "Özdilek Bolu-Facebook",
-      "Özdilek Bolu-Twitter",
-      "Özdilek Bolu-Youtube",
-      "Özdilek Nazım-Instagram",
-      "Özdilek Nazım-Facebook",
-      "Özdilek Nazım-Twitter",
-      "Özdilek Nazım-Youtube",
-      "Özdilek Uşak-Instagram",
-      "Özdilek Uşak-Facebook",
-      "Özdilek Uşak-Twitter",
-      "Özdilek Uşak-Youtube",
-      "Özdilek Bursa-Instagram",
-      "Özdilek Bursa-Facebook",
-      "Özdilek Bursa-Twitter",
-      "Özdilek Bursa-Youtube",
-      "Özdilek Düzce-Instagram",
-      "Özdilek Düzce-Facebook",
-      "Özdilek Düzce-Twitter",
-      "Özdilek Düzce-Youtube",
-      "Özdilek Esenyurt-Instagram",
-      "Özdilek Esenyurt-Facebook",
-      "Özdilek Esenyurt-Twitter",
-      "Özdilek Esenyurt-Youtube",
-      "Özdilek ATM-Instagram",
-      "Özdilek ATM-Facebook",
-      "Özdilek ATM-Twitter",
-      "Özdilek ATM-Youtube",
-      "Özdilek Restaurant-Instagram",
-      "Özdilek Restaurant-Facebook",
-      "Özdilek Restaurant-Twitter",
-      "Özdilek Restaurant-Youtube",
-      "Özdilek Vakfı-Instagram",
-      "Özdilek Vakfı-Facebook",
-      "Özdilek Vakfı-Twitter",
-      "Özdilek Vakfı-Youtube"
-    ],
-    "completedAccounts": [
-      "Özdilek İzmir-Instagram",
-      "Özdilek İzmir-Facebook",
-      "Özdilek Eskişehir-Facebook",
-      "Özdilek Afyon-Instagram",
-      "Özdilek Afyon-Facebook"
-    ],
-    "fileName": "1751214376881-134071980.jpg",
-    "originalName": "6.jpg",
-    "status": "planlandı",
-    "createdAt": "29.06.2025 19:26:16"
   },
   {
     "id": 1751211180233,
