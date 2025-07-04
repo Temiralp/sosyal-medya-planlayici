@@ -1344,7 +1344,7 @@ function createModernPostCard(post) {
     <!-- Accordion Header - Always Visible -->
     <div class="post-card-accordion-header">
       <div class="post-card-header">
-        <div class="post-card-title" onclick="toggleAccordion(${post.id})">
+        <div class="post-card-title">
           <span class="content-type-badge-modern ${post.contentType}">
             ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
           </span>
@@ -1360,7 +1360,7 @@ function createModernPostCard(post) {
         </div>
       </div>
 
-      <div class="post-card-summary" onclick="toggleAccordion(${post.id})">
+      <div class="post-card-summary">
         <div class="post-summary-content ${!contentPreview ? "empty" : ""}">
           ${escapeHtml(contentPreview) || "İçerik bulunmuyor"}
         </div>
@@ -1397,12 +1397,16 @@ function createModernPostCard(post) {
           }
         </div>
 
-        <div class="accordion-toggle" onclick="toggleAccordion(${post.id})">
-          <span>Detayları göster</span>
+        <button class="accordion-toggle-btn" onclick="toggleAccordion(${
+          post.id
+        })" type="button">
+          <span class="accordion-toggle-text" id="accordion-text-${
+            post.id
+          }">Detayları göster</span>
           <span class="accordion-toggle-icon" id="accordion-icon-${
             post.id
           }">▶</span>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -1834,7 +1838,7 @@ function startEditMode(postId) {
 
     // Accordion toggle ikonunu güncelle
     const icon = document.getElementById(`accordion-icon-${postId}`);
-    const toggleText = card.querySelector(".accordion-toggle span:first-child");
+    const toggleText = document.getElementById(`accordion-text-${postId}`);
     if (icon) icon.textContent = "▼";
     if (toggleText) toggleText.textContent = "Düzenleme modunda";
 
@@ -1862,7 +1866,7 @@ function cancelEditMode(postId) {
 
     // Accordion toggle ikonunu ve metnini resetle
     const icon = document.getElementById(`accordion-icon-${postId}`);
-    const toggleText = card.querySelector(".accordion-toggle span:first-child");
+    const toggleText = document.getElementById(`accordion-text-${postId}`);
     if (card.classList.contains("expanded")) {
       if (icon) icon.textContent = "▼";
       if (toggleText) toggleText.textContent = "Detayları gizle";
@@ -1994,24 +1998,24 @@ function toggleAccordion(postId) {
   const card = document.getElementById(`post-card-${postId}`);
   const content = document.getElementById(`accordion-content-${postId}`);
   const icon = document.getElementById(`accordion-icon-${postId}`);
-  const toggleText = card.querySelector(".accordion-toggle span:first-child");
+  const toggleText = document.getElementById(`accordion-text-${postId}`);
 
   // Edit mode'dayken accordion kapatılmasın
   if (card && card.classList.contains("edit-mode")) {
     return;
   }
 
-  if (card && content && icon) {
+  if (card && content && icon && toggleText) {
     if (card.classList.contains("expanded")) {
       // Kapat
       card.classList.remove("expanded");
       icon.textContent = "▶";
-      if (toggleText) toggleText.textContent = "Detayları göster";
+      toggleText.textContent = "Detayları göster";
     } else {
       // Aç
       card.classList.add("expanded");
       icon.textContent = "▼";
-      if (toggleText) toggleText.textContent = "Detayları gizle";
+      toggleText.textContent = "Detayları gizle";
     }
   }
 }
@@ -2285,9 +2289,7 @@ function updateSinglePostCard(
   // Eski durumları geri yükle
   if (wasExpanded) {
     newCard.classList.add("expanded");
-    const toggleText = newCard.querySelector(
-      ".accordion-toggle span:first-child"
-    );
+    const toggleText = newCard.querySelector(`#accordion-text-${post.id}`);
     if (toggleText) toggleText.textContent = "Detayları gizle";
   }
 
