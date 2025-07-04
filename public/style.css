@@ -2810,3 +2810,102 @@ tr:hover {
     color: #3498db;
   }
 }
+
+/* Durum Header Stilleri */
+.post-status-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #dee2e6;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+.status-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6c757d;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.status-dropdown-container {
+  position: relative;
+}
+
+.status-dropdown-header {
+  background: white;
+  border: 2px solid #dee2e6;
+  border-radius: 20px;
+  padding: 6px 16px 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  min-width: 120px;
+  transition: all 0.2s ease;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+.status-dropdown-header:hover {
+  border-color: #adb5bd;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-dropdown-header:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Durum renklerine göre stil */
+.status-dropdown-header.status-planlandı {
+  border-color: #3498db;
+  background: linear-gradient(135deg, #ebf3fd 0%, #d6eaff 100%);
+  color: #2980b9;
+}
+
+.status-dropdown-header.status-yapıldı {
+  border-color: #27ae60;
+  background: linear-gradient(135deg, #eafaf1 0%, #d5f4e6 100%);
+  color: #229954;
+}
+
+.status-dropdown-header.status-beklemede {
+  border-color: #f39c12;
+  background: linear-gradient(135deg, #fef9e7 0%, #fcf3cf 100%);
+  color: #e67e22;
+}
+
+.status-dropdown-header.status-iptal {
+  border-color: #e74c3c;
+  background: linear-gradient(135deg, #fdf2f2 0%, #fadbd8 100%);
+  color: #c0392b;
+}
+
+/* Mobil uyumlu hale getir */
+@media (max-width: 768px) {
+  .post-status-header {
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .status-dropdown-header {
+    min-width: 100px;
+    font-size: 12px;
+    padding: 5px 12px 5px 10px;
+  }
+
+  .status-label {
+    font-size: 10px;
+  }
+}

@@ -10,12 +10,37 @@
     "scheduledDate": "2025-07-03",
     "scheduledTime": "12:21",
     "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram"
+    ],
+    "completedAccounts": [
       "Özdilek AVM-Facebook"
     ],
-    "completedAccounts": [],
     "status": "planlandı",
     "createdAt": "03.07.2025 12:30:00",
-    "updatedAt": "04.07.2025 02:20:02"
+    "updatedAt": "04.07.2025 04:04:16"
+  },
+  {
+    "id": 1751534196783,
+    "contentType": "post",
+    "title": "sfafsa",
+    "content": "afssfa",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2025-07-03",
+    "scheduledTime": "12:12",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook"
+    ],
+    "completedAccounts": [
+      "Özdilek AVM-Facebook"
+    ],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "03.07.2025 12:16:36"
   },
   {
     "id": 1751496875382,
@@ -85,47 +110,6 @@
     "createdAt": "02.07.2025 01:11:08"
   },
   {
-    "id": 1751534196783,
-    "contentType": "post",
-    "title": "sfafsa",
-    "content": "afssfa",
-    "notes": "",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-03",
-    "scheduledTime": "12:12",
-    "selectedAccounts": [
-      "Özdilek AVM-Facebook"
-    ],
-    "completedAccounts": [
-      "Özdilek AVM-Facebook"
-    ],
-    "files": [],
-    "fileName": null,
-    "originalName": null,
-    "status": "planlandı",
-    "createdAt": "03.07.2025 12:16:36"
-  },
-  {
-    "id": 1751398105931,
-    "contentType": "post",
-    "content": "fasfsa",
-    "notes": "",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-01",
-    "scheduledTime": "12:12",
-    "selectedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "completedAccounts": [],
-    "files": [],
-    "fileName": null,
-    "originalName": null,
-    "status": "planlandı",
-    "createdAt": "01.07.2025 22:28:25"
-  },
-  {
     "id": 1751407324038,
     "contentType": "post",
     "title": "afasf",
@@ -161,24 +145,23 @@
     "createdAt": "02.07.2025 01:02:04"
   },
   {
-    "id": 1751394665617,
+    "id": 1751398105931,
     "contentType": "post",
-    "content": "abc",
+    "content": "fasfsa",
     "notes": "",
     "storyLink": "",
     "storyLinkTitle": "",
-    "scheduledDate": "1212-02-12",
-    "scheduledTime": "21:12",
+    "scheduledDate": "2025-07-01",
+    "scheduledTime": "12:12",
     "selectedAccounts": [
-      "Özdilek İzmir-Instagram",
-      "Özdilek İzmir-Facebook"
+      "Özdilek İzmir-Instagram"
     ],
     "completedAccounts": [],
     "files": [],
     "fileName": null,
     "originalName": null,
     "status": "planlandı",
-    "createdAt": "01.07.2025 21:31:05"
+    "createdAt": "01.07.2025 22:28:25"
   },
   {
     "id": 1751396403749,
@@ -203,8 +186,28 @@
     ],
     "fileName": "1751396403742-878091074.jpg",
     "originalName": "1751203856167-856670590.jpg",
-    "status": "planlandı",
+    "status": "yapıldı",
     "createdAt": "01.07.2025 22:00:03"
+  },
+  {
+    "id": 1751394665617,
+    "contentType": "post",
+    "content": "abc",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "1212-02-12",
+    "scheduledTime": "21:12",
+    "selectedAccounts": [
+      "Özdilek İzmir-Instagram",
+      "Özdilek İzmir-Facebook"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "01.07.2025 21:31:05"
   },
   {
     "id": 1751393735658,

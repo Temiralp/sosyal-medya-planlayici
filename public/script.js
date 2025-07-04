@@ -1340,6 +1340,31 @@ function createModernPostCard(post) {
       post.id
     }" style="display: none;"></div>
 
+    <!-- Status Header - En üst kısım -->
+    <div class="post-status-header">
+      <span class="status-label">DURUM</span>
+      <div class="status-dropdown-container">
+        <select class="status-dropdown-header status-${
+          post.status
+        }" onchange="updateStatus(${
+    post.id
+  }, this.value)" onclick="event.stopPropagation();">
+          <option value="planlandı" ${
+            post.status === "planlandı" ? "selected" : ""
+          }>📅 Planlandı</option>
+          <option value="yapıldı" ${
+            post.status === "yapıldı" ? "selected" : ""
+          }>✅ Yapıldı</option>
+          <option value="beklemede" ${
+            post.status === "beklemede" ? "selected" : ""
+          }>⏳ Beklemede</option>
+          <option value="iptal" ${
+            post.status === "iptal" ? "selected" : ""
+          }>❌ İptal</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Accordion Header - Always Visible -->
     <div class="post-card-accordion-header" onclick="toggleAccordion(${
       post.id
@@ -1472,28 +1497,6 @@ function createModernPostCard(post) {
 
         ${filesHtml}
         ${progressHtml}
-
-        <div class="post-card-footer">
-          <div class="post-status-section">
-            <span class="post-content-label">Durum</span>
-            <select class="status-select-modern status-${
-              post.status
-            }" onchange="updateStatus(${post.id}, this.value)">
-              <option value="planlandı" ${
-                post.status === "planlandı" ? "selected" : ""
-              }>📅 Planlandı</option>
-              <option value="yapıldı" ${
-                post.status === "yapıldı" ? "selected" : ""
-              }>✅ Yapıldı</option>
-              <option value="beklemede" ${
-                post.status === "beklemede" ? "selected" : ""
-              }>⏳ Beklemede</option>
-              <option value="iptal" ${
-                post.status === "iptal" ? "selected" : ""
-              }>❌ İptal</option>
-            </select>
-          </div>
-        </div>
       </div>
     </div>
   `;
