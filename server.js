@@ -140,6 +140,46 @@ app.get("/api/posts", (req, res) => {
   res.json(posts);
 });
 
+// Post sıralamasını güncelle (DİKKAT: Parametreli rotalardan önce gelmeli)
+app.put("/api/posts/reorder", (req, res) => {
+  const { postIds } = req.body;
+
+  if (!postIds || !Array.isArray(postIds)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Geçersiz ID dizisi" });
+  }
+
+  try {
+    let posts = readPosts();
+
+    // Postları yeni sıraya göre sırala
+    const orderedPosts = postIds
+      .map((id) => posts.find((p) => p.id == id))
+      .filter(Boolean); // Eşleşmeyen ID'leri (null) kaldır
+
+    // Eğer sıralama sonrası post sayısı değiştiyse (eski/silinmiş id'ler varsa),
+    // sıralanmamış olanları sona ekle
+    if (orderedPosts.length !== posts.length) {
+      const remainingPosts = posts.filter(
+        (p) => !postIds.includes(p.id) // toString() kaldırıldı
+      );
+      orderedPosts.push(...remainingPosts);
+    }
+
+    if (writePosts(orderedPosts)) {
+      res.json({ success: true, message: "Sıralama güncellendi" });
+    } else {
+      res
+        .status(500)
+        .json({ success: false, message: "Sıralama kaydedilemedi" });
+    }
+  } catch (error) {
+    console.error("Sıralama hatası:", error);
+    res.status(500).json({ success: false, message: "Sunucu hatası" });
+  }
+});
+
 // Yeni post ekle
 app.post(
   "/api/posts",

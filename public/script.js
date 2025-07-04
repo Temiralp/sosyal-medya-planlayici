@@ -36,6 +36,7 @@ const accountGroups = {
     "Qualitasspa İzmir",
     "Qualitasspa Eskişehir",
     "AFunfair (Funfair)",
+    "Özdilekteyim",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -112,6 +113,7 @@ const accountPlatforms = {
   "Qualitasspa İzmir": ["Facebook", "Instagram", "Twitter"],
   "Qualitasspa Eskişehir": ["Facebook", "Instagram", "Twitter"],
   "AFunfair (Funfair)": ["Facebook", "Instagram"],
+  Özdilekteyim: ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
@@ -1074,7 +1076,7 @@ function renderPostsTable(posts) {
     return;
   }
 
-  // Sayfalama konteynerini gösterelim
+  // Sayfalama kontenerini gösterelim
   const paginationContainer = document.getElementById("paginationContainer");
   if (paginationContainer) {
     paginationContainer.style.display = "flex";
@@ -1363,7 +1365,7 @@ function createModernPostCard(post) {
 
       <div class="post-card-summary">
         <div class="post-summary-content ${!contentPreview ? "empty" : ""}">
-          ${contentPreview || "İçerik bulunmuyor"}
+          ${escapeHtml(contentPreview) || "İçerik bulunmuyor"}
         </div>
         
         <div class="post-summary-meta">
@@ -1425,11 +1427,10 @@ function createModernPostCard(post) {
               post.contentType === "story" ? "📱 Story Başlığı" : "📝 İçerik"
             }</span>
             <div class="post-content-value">
-              ${contentDisplay}
-              <button class="copy-content-btn" onclick="copyToClipboard('${contentDisplay.replace(
-                /'/g,
-                "\\'"
-              )}', this)">📋</button>
+              ${escapeHtml(contentDisplay)}
+              <button class="copy-content-btn" onclick="copyToClipboard(\`${contentDisplay
+                .replace(/`/g, "\\`")
+                .replace(/\\/g, "\\\\")}\`, this)">📋</button>
             </div>
           </div>
         `
@@ -1444,11 +1445,10 @@ function createModernPostCard(post) {
           <div class="post-content-section">
             <span class="post-content-label">📝 Notlar</span>
             <div class="post-content-value">
-              ${post.notes}
-              <button class="copy-content-btn" onclick="copyToClipboard('${post.notes.replace(
-                /'/g,
-                "\\'"
-              )}', this)">📋</button>
+              ${escapeHtml(post.notes)}
+              <button class="copy-content-btn" onclick="copyToClipboard(\`${post.notes
+                .replace(/`/g, "\\`")
+                .replace(/\\/g, "\\\\")}\`, this)">📋</button>
             </div>
           </div>
         `
@@ -1616,26 +1616,26 @@ function reorderPosts(draggedId, targetId) {
 // Post sıralamasını server'a kaydet
 async function savePostsOrder() {
   try {
-    const postIds = allPosts.map(post => post.id);
-    
-    const response = await fetch('/api/posts/reorder', {
-      method: 'PUT',
+    const postIds = allPosts.map((post) => post.id);
+
+    const response = await fetch("/api/posts/reorder", {
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ postIds })
+      body: JSON.stringify({ postIds }),
     });
 
     const result = await response.json();
-    
+
     if (!result.success) {
-      console.error('Sıralama kaydedilemedi:', result.message);
+      console.error("Sıralama kaydedilemedi:", result.message);
       showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
     } else {
-      console.log('Sıralama başarıyla kaydedildi');
+      console.log("Sıralama başarıyla kaydedildi");
     }
   } catch (error) {
-    console.error('Sıralama kaydetme hatası:', error);
+    console.error("Sıralama kaydetme hatası:", error);
     showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
   }
 }
@@ -2048,6 +2048,14 @@ function renderCurrentPagePosts() {
   });
 
   console.log("Mevcut sayfa modern kartları güncellendi");
+}
+
+// HTML escape fonksiyonu - metinlerdeki özel karakterleri güvenli hale getirir
+function escapeHtml(text) {
+  if (!text) return "";
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // Kopyalama fonksiyonu
