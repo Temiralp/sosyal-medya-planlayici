@@ -1263,9 +1263,7 @@ function createModernPostCard(post) {
               post.completedAccounts &&
               post.completedAccounts.includes(accountKey);
             return `
-          <div class="progress-account-item ${
-            isCompleted ? "completed" : ""
-          }" onclick="event.stopPropagation();">
+          <div class="progress-account-item ${isCompleted ? "completed" : ""}">
             <input type="checkbox" 
                    class="progress-account-checkbox"
                    ${isCompleted ? "checked" : ""} 

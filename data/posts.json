@@ -97,7 +97,9 @@
     "selectedAccounts": [
       "Özdilek AVM-Facebook"
     ],
-    "completedAccounts": [],
+    "completedAccounts": [
+      "Özdilek AVM-Facebook"
+    ],
     "files": [],
     "fileName": null,
     "originalName": null,
@@ -190,9 +192,7 @@
     "selectedAccounts": [
       "Özdilek İzmir-Instagram"
     ],
-    "completedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
+    "completedAccounts": [],
     "files": [
       {
         "fileName": "1751396403742-878091074.jpg",
