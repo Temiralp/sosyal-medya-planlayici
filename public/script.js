@@ -2113,14 +2113,34 @@ async function updateStatus(postId, newStatus) {
       showMessage("Durum güncellendi!", "success");
       showToast("📝 Paylaşım durumu güncellendi!", "success", 3000);
 
-      // Post'u dinamik olarak güncelle
+      // Post'u dinamik olarak güncelle (accordion durumunu koruyarak)
       updatePostInList(result.post);
     } else {
       showMessage("Hata: " + result.message, "error");
+      // Status dropdown'ını eski haline döndür
+      const statusDropdown = document.querySelector(
+        `#post-card-${postId} .status-dropdown-header`
+      );
+      if (statusDropdown) {
+        const originalPost = allPosts.find((post) => post.id == postId);
+        if (originalPost) {
+          statusDropdown.value = originalPost.status;
+        }
+      }
     }
   } catch (error) {
     console.error("Durum güncelleme hatası:", error);
     showMessage("Durum güncellenemedi!", "error");
+    // Status dropdown'ını eski haline döndür
+    const statusDropdown = document.querySelector(
+      `#post-card-${postId} .status-dropdown-header`
+    );
+    if (statusDropdown) {
+      const originalPost = allPosts.find((post) => post.id == postId);
+      if (originalPost) {
+        statusDropdown.value = originalPost.status;
+      }
+    }
   }
 }
 
@@ -2230,8 +2250,23 @@ function updatePostInList(updatedPost) {
   if (postIndex !== -1) {
     allPosts[postIndex] = updatedPost;
 
-    // Sadece mevcut sayfayı yeniden render et
-    renderCurrentPagePosts();
+    // Mevcut accordion durumunu kaydet
+    const postCard = document.getElementById(`post-card-${updatedPost.id}`);
+    const isExpanded = postCard && postCard.classList.contains("expanded");
+    const isEditMode = postCard && postCard.classList.contains("edit-mode");
+    const progressDetailsOpen =
+      document.getElementById(`progress-details-${updatedPost.id}`) &&
+      document
+        .getElementById(`progress-details-${updatedPost.id}`)
+        .classList.contains("show");
+
+    // Sadece ilgili post kartını güncelle
+    updateSinglePostCard(
+      updatedPost,
+      isExpanded,
+      isEditMode,
+      progressDetailsOpen
+    );
 
     console.log(`Post güncellendi: ${updatedPost.id}`);
   } else {
@@ -2239,6 +2274,63 @@ function updatePostInList(updatedPost) {
     // Fallback olarak tam listeyi yeniden yükle
     loadPosts();
   }
+}
+
+// Tek bir post kartını güncelle (accordion durumunu korur)
+function updateSinglePostCard(
+  post,
+  wasExpanded = false,
+  wasEditMode = false,
+  progressWasOpen = false
+) {
+  const existingCard = document.getElementById(`post-card-${post.id}`);
+  if (!existingCard) {
+    console.warn("Güncellenecek post kartı bulunamadı:", post.id);
+    return;
+  }
+
+  // Yeni kartı oluştur
+  const newCard = createModernPostCard(post);
+
+  // Eski durumları geri yükle
+  if (wasExpanded) {
+    newCard.classList.add("expanded");
+    const toggleText = newCard.querySelector(
+      ".accordion-toggle span:first-child"
+    );
+    if (toggleText) toggleText.textContent = "Detayları gizle";
+  }
+
+  if (wasEditMode) {
+    newCard.classList.add("edit-mode");
+    const editForm = newCard.querySelector(`#edit-form-${post.id}`);
+    const accordionContent = newCard.querySelector(
+      `#accordion-content-${post.id}`
+    );
+    const editIndicator = newCard.querySelector(`#edit-indicator-${post.id}`);
+
+    if (editForm) editForm.style.display = "block";
+    if (accordionContent) accordionContent.style.display = "none";
+    if (editIndicator) editIndicator.style.display = "block";
+  }
+
+  if (progressWasOpen) {
+    setTimeout(() => {
+      const progressDetails = newCard.querySelector(
+        `#progress-details-${post.id}`
+      );
+      const progressToggle = newCard.querySelector(
+        `#progress-toggle-${post.id}`
+      );
+      if (progressDetails) progressDetails.classList.add("show");
+      if (progressToggle) progressToggle.classList.add("expanded");
+    }, 50);
+  }
+
+  // Eski kartı yeni kartla değiştir
+  existingCard.parentNode.replaceChild(newCard, existingCard);
+
+  console.log(`Post kartı güncellendi ve durum korundu: ${post.id}`);
 }
 
 // Verileri dışa aktar
