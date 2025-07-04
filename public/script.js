@@ -1129,6 +1129,15 @@ function createModernPostCard(post) {
   card.className = "post-card";
   card.id = `post-card-${post.id}`;
 
+  // Drag and Drop özellikleri ekle
+  card.draggable = true;
+  card.addEventListener("dragstart", handleDragStart);
+  card.addEventListener("dragover", handleDragOver);
+  card.addEventListener("drop", handleDrop);
+  card.addEventListener("dragend", handleDragEnd);
+  card.addEventListener("dragenter", handleDragEnter);
+  card.addEventListener("dragleave", handleDragLeave);
+
   const completedCount = post.completedAccounts
     ? post.completedAccounts.length
     : 0;
@@ -1492,6 +1501,143 @@ function createModernPostCard(post) {
   `;
 
   return card;
+}
+
+// Drag and Drop değişkenleri
+let draggedElement = null;
+let draggedPostId = null;
+
+// Drag Start - Sürükleme başladığında
+function handleDragStart(e) {
+  // Edit mode'dayken drag and drop'u engelle
+  if (this.classList.contains("edit-mode")) {
+    e.preventDefault();
+    return false;
+  }
+
+  draggedElement = this;
+  draggedPostId = this.id.replace("post-card-", "");
+  this.style.opacity = "0.5";
+  this.classList.add("dragging");
+
+  // Drag data ayarla
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/html", this.outerHTML);
+
+  console.log("Drag başladı:", draggedPostId);
+}
+
+// Drag Over - Sürükleme alanı üzerindeyken
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault();
+  }
+
+  e.dataTransfer.dropEffect = "move";
+  return false;
+}
+
+// Drag Enter - Sürükleme alanına girerken
+function handleDragEnter(e) {
+  if (this !== draggedElement) {
+    this.classList.add("drag-over");
+  }
+}
+
+// Drag Leave - Sürükleme alanından çıkarken
+function handleDragLeave(e) {
+  this.classList.remove("drag-over");
+}
+
+// Drop - Bırakma işlemi
+function handleDrop(e) {
+  if (e.stopPropagation) {
+    e.stopPropagation();
+  }
+
+  if (draggedElement !== this) {
+    const draggedPostId = draggedElement.id.replace("post-card-", "");
+    const targetPostId = this.id.replace("post-card-", "");
+
+    // Post'ları yeniden sırala
+    reorderPosts(draggedPostId, targetPostId);
+
+    console.log(`Post ${draggedPostId} -> ${targetPostId} konumuna taşındı`);
+
+    // Toast mesajı göster
+    showToast("📋 Paylaşım sıralaması güncellendi!", "success", 2000);
+  }
+
+  this.classList.remove("drag-over");
+  return false;
+}
+
+// Drag End - Sürükleme bittiğinde
+function handleDragEnd(e) {
+  this.style.opacity = "";
+  this.classList.remove("dragging");
+
+  // Tüm drag-over sınıflarını temizle
+  const allCards = document.querySelectorAll(".post-card");
+  allCards.forEach((card) => {
+    card.classList.remove("drag-over");
+  });
+
+  draggedElement = null;
+  draggedPostId = null;
+}
+
+// Post'ları yeniden sırala
+function reorderPosts(draggedId, targetId) {
+  // Sürüklenen ve hedef post'ları bul
+  const draggedIndex = allPosts.findIndex((post) => post.id == draggedId);
+  const targetIndex = allPosts.findIndex((post) => post.id == targetId);
+
+  if (draggedIndex === -1 || targetIndex === -1) {
+    console.error("Post bulunamadı:", { draggedId, targetId });
+    return;
+  }
+
+  // Array'den sürüklenen elementi kaldır
+  const draggedPost = allPosts.splice(draggedIndex, 1)[0];
+
+  // Hedef konuma ekle
+  allPosts.splice(targetIndex, 0, draggedPost);
+
+  // Sayfayı yeniden render et
+  renderCurrentPagePosts();
+
+  // Yeni sıralamayı server'a kaydet
+  savePostsOrder();
+
+  console.log("Post sıralaması güncellendi");
+}
+
+// Post sıralamasını server'a kaydet
+async function savePostsOrder() {
+  try {
+    const postIds = allPosts.map(post => post.id);
+    
+    const response = await fetch('/api/posts/reorder', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ postIds })
+    });
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      console.error('Sıralama kaydedilemedi:', result.message);
+      showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
+    } else {
+      console.log('Sıralama başarıyla kaydedildi');
+    }
+  } catch (error) {
+    console.error('Sıralama kaydetme hatası:', error);
+    showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
+  }
 }
 
 // Edit formu oluştur
@@ -2018,6 +2164,9 @@ function addNewPostToList(newPost) {
   // Sayfa görünümünü güncelle
   renderCurrentPagePosts();
   updatePaginationControls();
+
+  // Yeni sıralamayı server'a kaydet
+  savePostsOrder();
 
   console.log(`Yeni post eklendi. Toplam: ${allPosts.length}`);
 }
