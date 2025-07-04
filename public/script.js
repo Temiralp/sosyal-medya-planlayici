@@ -635,6 +635,7 @@ async function handleFormSubmit(event) {
   if (contentType === "post" && !content.trim()) {
     resetSubmitButton();
     showMessage("Lütfen post içeriğini yazın!", "error");
+    showToast("❌ Lütfen post içeriğini yazın!", "error", 4000);
     return;
   }
 
@@ -643,6 +644,7 @@ async function handleFormSubmit(event) {
   if (selectedAccounts.length === 0) {
     resetSubmitButton();
     showMessage("En az bir hesap seçin!", "error");
+    showToast("❌ Lütfen en az bir hesap seçin!", "error", 4000);
     return;
   }
 
@@ -1965,7 +1967,7 @@ async function savePost(postId) {
 
     if (result.success) {
       showMessage("Paylaşım başarıyla güncellendi!", "success");
-      showToast("🎉 Paylaşım başarıyla düzenlendi!", "success", 5000);
+      showToast("🟠 Paylaşım başarıyla düzenlendi!", "warning", 5000);
 
       // Edit mode'dan çık
       cancelEditMode(postId);
@@ -2138,7 +2140,7 @@ async function deletePost(postId) {
 
     if (result.success) {
       showMessage("Paylaşım silindi!", "success");
-      showToast("🗑️ Paylaşım başarıyla silindi!", "success", 3000);
+      showToast("🗑️ Paylaşım başarıyla silindi!", "error", 3000);
 
       // Post'u dinamik olarak listeden kaldır
       removePostFromList(postId);

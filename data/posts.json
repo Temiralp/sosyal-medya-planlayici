@@ -1,56 +1,33 @@
 [
   {
-    "id": 1751535000571,
+    "id": 1751661620338,
     "contentType": "post",
-    "title": "ebc",
-    "content": "ebc",
-    "notes": "",
+    "title": "çsaf",
+    "content": "afsasf",
+    "notes": "afsafs",
     "storyLink": "",
     "storyLinkTitle": "",
-    "scheduledDate": "2025-07-03",
-    "scheduledTime": "12:21",
-    "selectedAccounts": [
-      "Özdilek AVM-Facebook",
-      "Özdilek AVM-Instagram"
-    ],
-    "completedAccounts": [
-      "Özdilek AVM-Facebook"
-    ],
-    "status": "planlandı",
-    "createdAt": "03.07.2025 12:30:00",
-    "updatedAt": "04.07.2025 04:04:16"
-  },
-  {
-    "id": 1751534196783,
-    "contentType": "post",
-    "title": "sfafsa",
-    "content": "afssfa",
-    "notes": "",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-03",
-    "scheduledTime": "12:12",
+    "scheduledDate": "2025-07-04",
+    "scheduledTime": "03:31",
     "selectedAccounts": [
       "Özdilek AVM-Facebook"
     ],
-    "completedAccounts": [
-      "Özdilek AVM-Facebook"
-    ],
+    "completedAccounts": [],
     "files": [],
     "fileName": null,
     "originalName": null,
     "status": "planlandı",
-    "createdAt": "03.07.2025 12:16:36"
+    "createdAt": "04.07.2025 23:40:20"
   },
   {
-    "id": 1751496875382,
+    "id": 1751661364817,
     "contentType": "post",
-    "title": "vxzzxv",
-    "content": "vzxxvz",
-    "notes": "fsa",
+    "title": "asfaf",
+    "content": "asfafs",
+    "notes": "",
     "storyLink": "",
     "storyLinkTitle": "",
-    "scheduledDate": "2025-07-02",
+    "scheduledDate": "2025-07-04",
     "scheduledTime": "12:12",
     "selectedAccounts": [
       "Özdilek AVM-Facebook"
@@ -60,94 +37,12 @@
     "fileName": null,
     "originalName": null,
     "status": "planlandı",
-    "createdAt": "03.07.2025 01:54:35"
-  },
-  {
-    "id": 1751407868679,
-    "contentType": "post",
-    "title": "asglkşagsagslşlgsalş şla las lşgg lşagsl şlşa lşslşg laslşas lş şl",
-    "content": "lşfalgsalş lşas gşllaş lş lşgasglşslgş lşags lşlşas lşl şgaslaşl",
-    "notes": "flaöasö la sş alşslş alşlasglşgaşl lşag slşl şgsşlgalş slşasglşlşags",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-01",
-    "scheduledTime": "21:04",
-    "selectedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "completedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "files": [
-      {
-        "fileName": "1751407868465-998642724.jpg",
-        "originalName": "1751203856167-856670590.jpg",
-        "size": 218051,
-        "mimetype": "image/jpeg"
-      },
-      {
-        "fileName": "1751407868476-862101483.jpg",
-        "originalName": "1751209775384-722399121.jpg",
-        "size": 218051,
-        "mimetype": "image/jpeg"
-      },
-      {
-        "fileName": "1751407868478-85567142.mp4",
-        "originalName": "1751208624672-596103836.mp4",
-        "size": 99710895,
-        "mimetype": "video/mp4"
-      },
-      {
-        "fileName": "1751407868674-65150243.jpg",
-        "originalName": "1751396378280-126613843.jpg",
-        "size": 218051,
-        "mimetype": "image/jpeg"
-      }
-    ],
-    "fileName": "1751407868465-998642724.jpg",
-    "originalName": "1751203856167-856670590.jpg",
-    "status": "planlandı",
-    "createdAt": "02.07.2025 01:11:08"
-  },
-  {
-    "id": 1751407324038,
-    "contentType": "post",
-    "title": "afasf",
-    "content": "afssfa",
-    "notes": "",
-    "storyLink": "",
-    "storyLinkTitle": "",
-    "scheduledDate": "2025-07-01",
-    "scheduledTime": "12:12",
-    "selectedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "completedAccounts": [
-      "Özdilek İzmir-Instagram"
-    ],
-    "files": [
-      {
-        "fileName": "1751407323827-733943050.jpg",
-        "originalName": "1751203856167-856670590.jpg",
-        "size": 218051,
-        "mimetype": "image/jpeg"
-      },
-      {
-        "fileName": "1751407323830-240743816.mp4",
-        "originalName": "1751208624672-596103836.mp4",
-        "size": 99710895,
-        "mimetype": "video/mp4"
-      }
-    ],
-    "fileName": "1751407323827-733943050.jpg",
-    "originalName": "1751203856167-856670590.jpg",
-    "status": "planlandı",
-    "createdAt": "02.07.2025 01:02:04"
+    "createdAt": "04.07.2025 23:36:04"
   },
   {
     "id": 1751398105931,
     "contentType": "post",
-    "content": "fasfsa",
+    "content": "ebc",
     "notes": "",
     "storyLink": "",
     "storyLinkTitle": "",
@@ -157,11 +52,10 @@
       "Özdilek İzmir-Instagram"
     ],
     "completedAccounts": [],
-    "files": [],
-    "fileName": null,
-    "originalName": null,
     "status": "planlandı",
-    "createdAt": "01.07.2025 22:28:25"
+    "createdAt": "01.07.2025 22:28:25",
+    "title": "afsfas",
+    "updatedAt": "04.07.2025 23:35:49"
   },
   {
     "id": 1751396403749,
