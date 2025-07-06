@@ -2343,6 +2343,7 @@ tr:hover {
 
   .post-card-accordion-header {
     padding: 16px;
+    cursor: default; /* Mobil cihazlarda header tıklanabilir olmasın */
   }
 
   .post-card-content {
@@ -2404,11 +2405,29 @@ tr:hover {
     padding: 10px 16px;
     font-size: 0.85rem;
   }
+
+  /* Mobil cihazlarda accordion content varsayılan olarak gizli */
+  .post-card-accordion-content {
+    display: none;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: none;
+  }
+
+  /* Sadece expanded class ile görünür olsun */
+  .post-card.expanded .post-card-accordion-content {
+    display: block;
+    opacity: 1;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 @media (max-width: 480px) {
   .post-card-accordion-header {
     padding: 12px;
+    cursor: default; /* Mobil cihazlarda header tıklanabilir olmasın */
   }
 
   .post-card-content {

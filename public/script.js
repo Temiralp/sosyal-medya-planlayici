@@ -2018,6 +2018,9 @@ function toggleAccordion(postId) {
     return;
   }
 
+  // Mobil cihazlarda (768px altı) sadece buton ile kontrol edilsin
+  const isMobile = window.innerWidth <= 768;
+
   if (card && content && icon && toggleText) {
     if (card.classList.contains("expanded")) {
       // Kapat
