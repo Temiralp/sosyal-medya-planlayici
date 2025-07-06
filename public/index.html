@@ -166,6 +166,13 @@
             </button>
             <button
               type="button"
+              class="btn btn-primary btn-sm"
+              onclick="selectGroup('ana')"
+            >
+              🏛️ Ana Hesaplar
+            </button>
+            <button
+              type="button"
               class="btn btn-info btn-sm"
               onclick="selectGroup('avm')"
             >
@@ -210,6 +217,12 @@
         </div>
 
         <div class="account-groups">
+          <!-- Ana Hesaplar -->
+          <div class="account-group">
+            <h3 class="group-title ana-title">🏛️ Ana Hesaplar</h3>
+            <div class="accounts-list" id="anaAccounts"></div>
+          </div>
+
           <!-- AVM Hesapları -->
           <div class="account-group">
             <h3 class="group-title avm-title">🏢 AVM Hesapları</h3>
