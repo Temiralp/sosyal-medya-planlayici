@@ -443,6 +443,11 @@ h3 {
   color: white;
 }
 
+.btn-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
 .btn-sm {
   padding: 6px 10px;
   font-size: 11px;
@@ -499,6 +504,10 @@ h3 {
 .markalar-title {
   color: #6c757d;
   border-color: #6c757d;
+}
+.test-title {
+  color: #ffc107;
+  border-color: #ffc107;
 }
 
 .accounts-list {
