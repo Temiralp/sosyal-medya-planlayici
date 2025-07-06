@@ -2104,36 +2104,52 @@ function escapeHtml(text) {
 
 // Kopyalama fonksiyonu
 function copyToClipboard(text, button) {
-  navigator.clipboard
-    .writeText(text)
-    .then(() => {
-      const originalText = button.textContent;
-      button.textContent = "✅";
-      button.style.background = "#27ae60";
+  // Başarı gösterimi için ortak fonksiyon
+  const showSuccess = () => {
+    const originalText = button.textContent;
+    button.textContent = "✅";
+    button.style.background = "#27ae60";
 
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.background = "#3498db";
-      }, 1500);
-    })
-    .catch(() => {
-      // Fallback için eski yöntem
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.style.background = "#3498db";
+    }, 1500);
+  };
+
+  // navigator.clipboard mevcut mu ve HTTPS/localhost'ta mı kontrol et
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showSuccess();
+      })
+      .catch(() => {
+        // Modern API başarısız olursa fallback kullan
+        fallbackCopy(text);
+        showSuccess();
+      });
+  } else {
+    // navigator.clipboard yoksa veya güvenli context değilse direkt fallback kullan
+    fallbackCopy(text);
+    showSuccess();
+  }
+
+  // Fallback kopyalama fonksiyonu
+  function fallbackCopy(text) {
+    try {
       const textArea = document.createElement("textarea");
       textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
       document.body.appendChild(textArea);
+      textArea.focus();
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-
-      const originalText = button.textContent;
-      button.textContent = "✅";
-      button.style.background = "#27ae60";
-
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.background = "#3498db";
-      }, 1500);
-    });
+    } catch (err) {
+      console.error("Kopyalama başarısız:", err);
+    }
+  }
 }
 
 // Durum güncelle
