@@ -1,5 +1,6 @@
 // Hesap grupları ve platform bilgileri
 const accountGroups = {
+  ana: ["Özdilek Holding", "Özdilek AVM"],
   avm: [
     "Özdilek AVM",
     "ÖzdilekPark M Geçit (Özdilek Geçit AVM)",
@@ -60,8 +61,11 @@ const accountGroups = {
 
 // Her hesabın sahip olduğu platformlar
 const accountPlatforms = {
-  // AVM Grubu
+  // Ana Hesaplar
+  "Özdilek Holding": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
   "Özdilek AVM": ["Facebook", "Instagram", "Twitter"],
+
+  // AVM Grubu
   "ÖzdilekPark Bursa Nilüfer": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark Antalya": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark İstanbul": ["Facebook", "Instagram", "Twitter"],
@@ -179,6 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Elementlerin varlığını kontrol et
   const requiredElements = [
+    "anaAccounts",
     "avmAccounts",
     "parkAccounts",
     "konseptAccounts",
