@@ -2104,36 +2104,77 @@ function escapeHtml(text) {
 
 // Kopyalama fonksiyonu
 function copyToClipboard(text, button) {
-  navigator.clipboard
-    .writeText(text)
-    .then(() => {
-      const originalText = button.textContent;
-      button.textContent = "✅";
-      button.style.background = "#27ae60";
+  // Modern tarayıcılarda clipboard API'sini dene
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showSuccessState(button);
+      })
+      .catch(() => {
+        fallbackCopyToClipboard(text, button);
+      });
+  } else {
+    // Clipboard API kullanılamazsa fallback kullan
+    fallbackCopyToClipboard(text, button);
+  }
+}
 
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.background = "#3498db";
-      }, 1500);
-    })
-    .catch(() => {
-      // Fallback için eski yöntem
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
+// Fallback kopyalama fonksiyonu
+function fallbackCopyToClipboard(text, button) {
+  try {
+    // Textarea oluştur
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
 
-      const originalText = button.textContent;
-      button.textContent = "✅";
-      button.style.background = "#27ae60";
+    // Metni seç ve kopyala
+    textArea.focus();
+    textArea.select();
 
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.style.background = "#3498db";
-      }, 1500);
-    });
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (successful) {
+      showSuccessState(button);
+    } else {
+      showErrorState(button);
+    }
+  } catch (err) {
+    console.error("Kopyalama hatası:", err);
+    showErrorState(button);
+  }
+}
+
+// Başarılı durum göster
+function showSuccessState(button) {
+  const originalText = button.textContent;
+  const originalBackground = button.style.background;
+
+  button.textContent = "✅";
+  button.style.background = "#27ae60";
+
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style.background = originalBackground || "#3498db";
+  }, 1500);
+}
+
+// Hata durumu göster
+function showErrorState(button) {
+  const originalText = button.textContent;
+  const originalBackground = button.style.background;
+
+  button.textContent = "❌";
+  button.style.background = "#e74c3c";
+
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.style.background = originalBackground || "#3498db";
+  }, 1500);
 }
 
 // Durum güncelle
