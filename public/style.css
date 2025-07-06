@@ -500,6 +500,10 @@ h3 {
   color: #6c757d;
   border-color: #6c757d;
 }
+.test-title {
+  color: #ffc107;
+  border-color: #ffc107;
+}
 
 .accounts-list {
   display: grid;

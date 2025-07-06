@@ -55,6 +55,7 @@ const accountGroups = {
     "My Auto",
     "Özdilek Lokum",
   ],
+  test: ["testhesap_ozoz", "test_ozd_01", "test_ozd_02", "testhesapyeni"],
 };
 
 // Her hesabın sahip olduğu platformlar
@@ -135,6 +136,12 @@ const accountPlatforms = {
   "Tabiat Tarım": ["Facebook", "Instagram", "Twitter"],
   "My Auto": ["Facebook", "Instagram"],
   "Özdilek Lokum": ["Facebook", "Instagram"],
+
+  // Test Hesapları
+  testhesap_ozoz: ["Facebook", "Instagram", "Twitter"],
+  test_ozd_01: ["Facebook", "Instagram", "Twitter"],
+  test_ozd_02: ["Facebook", "Instagram", "Twitter"],
+  testhesapyeni: ["Facebook", "Instagram", "Twitter"],
 };
 
 const platforms = ["Instagram", "Facebook", "Twitter", "LinkedIn"];
@@ -176,6 +183,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "parkAccounts",
     "konseptAccounts",
     "markalarAccounts",
+    "testAccounts",
   ];
   let allElementsExist = true;
 
