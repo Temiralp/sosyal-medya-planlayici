@@ -1332,6 +1332,13 @@ function createModernPostCard(post) {
     <!-- Status Header - En üst kısım -->
     <div class="post-status-header">
       <span class="status-label">DURUM</span>
+      <div class="post-title-header">
+        <strong>${escapeHtml(
+          post.contentType === "story" && post.storyLinkTitle
+            ? post.storyLinkTitle
+            : post.title
+        )}</strong>
+      </div>
       <div class="status-dropdown-container">
         <select class="status-dropdown-header status-${
           post.status
