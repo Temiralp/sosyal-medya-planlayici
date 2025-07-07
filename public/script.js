@@ -1329,6 +1329,13 @@ function createModernPostCard(post) {
       post.id
     }" style="display: none;"></div>
 
+    <!-- Düzenlendi Banner -->
+    <div class="edited-banner" id="edited-banner-${
+      post.id
+    }" style="display: none; background: #f39c12; color: white; padding: 8px 15px; font-size: 0.9rem; font-weight: 500; text-align: center; border-radius: 5px 5px 0 0;">
+      ✏️ Bu paylaşım düzenlendi
+    </div>
+
     <!-- Status Header - En üst kısım -->
     <div class="post-status-header">
       <span class="status-label">DURUM</span>
@@ -1997,6 +2004,17 @@ async function savePost(postId) {
 
       // Post'u dinamik olarak güncelle
       updatePostInList(result.post);
+
+      // Düzenlendi banner'ını göster
+      const editedBanner = document.getElementById(`edited-banner-${postId}`);
+      if (editedBanner) {
+        editedBanner.style.display = "block";
+
+        // 5 saniye sonra banner'ı gizle
+        setTimeout(() => {
+          editedBanner.style.display = "none";
+        }, 5000);
+      }
     } else {
       console.error("Güncelleme hatası:", result.message);
       showMessage("Hata: " + result.message, "error");
