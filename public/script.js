@@ -1880,6 +1880,10 @@ function startEditMode(postId) {
     if (icon) icon.textContent = "▼";
     if (toggleText) toggleText.textContent = "Düzenleme modunda";
 
+    // Edit mode'dayken kartın tıklanabilirliğini engelle
+    card.style.pointerEvents = "none";
+    editForm.style.pointerEvents = "all";
+
     console.log(`Post ${postId} edit mode'a geçti`);
   }
 }
@@ -1901,6 +1905,9 @@ function cancelEditMode(postId) {
     // Accordion içeriğini tekrar göster
     if (accordionContent) accordionContent.style.display = "";
     if (editIndicator) editIndicator.style.display = "none";
+
+    // Tıklanabilirliği geri aç
+    card.style.pointerEvents = "";
 
     // Accordion toggle ikonunu ve metnini resetle
     const icon = document.getElementById(`accordion-icon-${postId}`);
