@@ -1908,15 +1908,46 @@ function startEditMode(postId) {
       btn.style.opacity = "0.5";
       btn.style.cursor = "not-allowed";
       btn.style.pointerEvents = "none"; // Mobil dokunmatik olayları da engelle
+      btn.style.display = "none"; // Butonları tamamen gizle
     });
 
     // Kart başlığına tıklama olayını da engelle
     const cardHeader = card.querySelector(".post-card-accordion-header");
     if (cardHeader) {
       cardHeader.style.pointerEvents = "none";
+      cardHeader.style.cursor = "default";
     }
 
+    // Kartın tümüne click event'lerini engelle
+    card.style.pointerEvents = "auto"; // Kart içeriğini aktif bırak
+    card.addEventListener("click", preventAccordionToggle, true);
+
+    // Edit mode indicator'ını göster
+    card.setAttribute("data-edit-mode", "true");
+
     console.log(`Post ${postId} edit mode'a geçti`);
+  }
+}
+
+// Accordion toggle'ı engelleyen fonksiyon
+function preventAccordionToggle(event) {
+  const card = event.currentTarget;
+  if (card.classList.contains("edit-mode")) {
+    // Edit form içindeki elementlere tıklamaya izin ver
+    const editForm = card.querySelector('[id^="edit-form-"]');
+    if (editForm && editForm.contains(event.target)) {
+      return; // Edit form içindeki elementlere dokunma
+    }
+
+    // Accordion toggle butonlarına tıklamayı engelle
+    const isToggleButton = event.target.closest(".accordion-toggle-btn");
+    if (isToggleButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      console.log("Edit mode'da accordion toggle engellendi");
+      return false;
+    }
   }
 }
 
@@ -1945,13 +1976,19 @@ function cancelEditMode(postId) {
       btn.style.opacity = "";
       btn.style.cursor = "";
       btn.style.pointerEvents = ""; // Mobil dokunmatik olayları tekrar aktive et
+      btn.style.display = ""; // Butonları tekrar göster
     });
 
     // Kart başlığına tıklama olayını da tekrar aktive et
     const cardHeader = card.querySelector(".post-card-accordion-header");
     if (cardHeader) {
       cardHeader.style.pointerEvents = "";
+      cardHeader.style.cursor = "";
     }
+
+    // Click event listener'ı kaldır
+    card.removeEventListener("click", preventAccordionToggle, true);
+    card.removeAttribute("data-edit-mode");
 
     // Accordion toggle ikonunu ve metnini resetle
     const icon = document.getElementById(`accordion-icon-${postId}`);
@@ -2095,6 +2132,25 @@ async function savePost(postId) {
 
 // Accordion açma/kapama fonksiyonu
 function toggleAccordion(postId, event) {
+  const card = document.getElementById(`post-card-${postId}`);
+
+  // Edit mode'dayken accordion kapatılmasın - MUTLAK ENGEL
+  if (
+    card &&
+    (card.classList.contains("edit-mode") ||
+      card.hasAttribute("data-edit-mode"))
+  ) {
+    console.log(
+      `Post ${postId} edit mode'da, accordion işlemi MUTLAK OLARAK iptal edildi`
+    );
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+    return false;
+  }
+
   // Event'i kontrol et - mobil scroll event'lerini engelle
   if (event && event.type === "touchmove") {
     console.log(
@@ -2103,18 +2159,11 @@ function toggleAccordion(postId, event) {
     return;
   }
 
-  const card = document.getElementById(`post-card-${postId}`);
   const content = document.getElementById(`accordion-content-${postId}`);
   const topButton = document.getElementById(`accordion-toggle-top-${postId}`);
   const bottomButton = document.getElementById(
     `accordion-toggle-bottom-${postId}`
   );
-
-  // Edit mode'dayken accordion kapatılmasın
-  if (card && card.classList.contains("edit-mode")) {
-    console.log(`Post ${postId} edit mode'da, accordion işlemi iptal edildi`);
-    return;
-  }
 
   // Buton devre dışıysa işlem yapma
   if (topButton && topButton.disabled) {
