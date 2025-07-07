@@ -1129,6 +1129,27 @@ function createModernPostCard(post) {
   card.addEventListener("dragenter", handleDragEnter);
   card.addEventListener("dragleave", handleDragLeave);
 
+  // Mobil scroll koruması
+  let scrollTimeout;
+  card.addEventListener("touchstart", (e) => {
+    card.removeAttribute("data-is-scrolling");
+  });
+
+  card.addEventListener("touchmove", (e) => {
+    card.setAttribute("data-is-scrolling", "true");
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      card.removeAttribute("data-is-scrolling");
+    }, 150);
+  });
+
+  card.addEventListener("touchend", (e) => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      card.removeAttribute("data-is-scrolling");
+    }, 100);
+  });
+
   const completedCount = post.completedAccounts
     ? post.completedAccounts.length
     : 0;
@@ -1427,7 +1448,7 @@ function createModernPostCard(post) {
         <!-- Accordion açıkken butonu göstermeyeceğiz, altta olacak -->
         <button class="accordion-toggle-btn" onclick="toggleAccordion(${
           post.id
-        })" type="button" id="accordion-toggle-top-${post.id}">
+        }, event)" type="button" id="accordion-toggle-top-${post.id}">
           <span class="accordion-toggle-text" id="accordion-text-${
             post.id
           }">Detayları göster</span>
@@ -1507,7 +1528,7 @@ function createModernPostCard(post) {
         <!-- Accordion content'in sonunda detayları gizle butonu -->
         <button class="accordion-toggle-btn" onclick="toggleAccordion(${
           post.id
-        })" type="button" id="accordion-toggle-bottom-${
+        }, event)" type="button" id="accordion-toggle-bottom-${
     post.id
   }" style="display: none;">
           <span class="accordion-toggle-text">Detayları gizle</span>
@@ -2068,12 +2089,20 @@ async function savePost(postId) {
     if (saveButton) {
       saveButton.disabled = false;
       saveButton.innerHTML = "💾 Kaydet";
-       }
+    }
   }
 }
 
 // Accordion açma/kapama fonksiyonu
-function toggleAccordion(postId) {
+function toggleAccordion(postId, event) {
+  // Event'i kontrol et - mobil scroll event'lerini engelle
+  if (event && event.type === "touchmove") {
+    console.log(
+      `Post ${postId} scroll event'i tespit edildi, accordion işlemi iptal edildi`
+    );
+    return;
+  }
+
   const card = document.getElementById(`post-card-${postId}`);
   const content = document.getElementById(`accordion-content-${postId}`);
   const topButton = document.getElementById(`accordion-toggle-top-${postId}`);
@@ -2090,6 +2119,14 @@ function toggleAccordion(postId) {
   // Buton devre dışıysa işlem yapma
   if (topButton && topButton.disabled) {
     console.log(`Post ${postId} accordion butonu devre dışı`);
+    return;
+  }
+
+  // Mobil scroll koruması - kart üzerinde scroll event'i aktifse accordion'u tetikleme
+  if (card && card.hasAttribute("data-is-scrolling")) {
+    console.log(
+      `Post ${postId} şu anda scroll yapılıyor, accordion işlemi iptal edildi`
+    );
     return;
   }
 
