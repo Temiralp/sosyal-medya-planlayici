@@ -6,12 +6,12 @@ const cors = require("cors");
 const archiver = require("archiver");
 
 const app = express();
-const PORT = 3000;
+const PORT = 3146;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.json({ limit: "5000mb" }));
+app.use(express.urlencoded({ limit: "5000mb", extended: true }));
 app.use(express.static("public"));
 
 // Klasörleri oluştur
@@ -39,8 +39,8 @@ const upload = multer({
   storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 1024,
-    files: 10,
-    fields: 50,
+    files: 100,
+    fields: 500,
   },
 });
 
@@ -183,7 +183,7 @@ app.put("/api/posts/reorder", (req, res) => {
 // Yeni post ekle
 app.post(
   "/api/posts",
-  upload.fields([{ name: "files", maxCount: 50 }]),
+  upload.fields([{ name: "files", maxCount: 500 }]),
   (req, res) => {
     try {
       console.log("POST /api/posts isteği alındı");
@@ -342,7 +342,7 @@ app.put("/api/posts/:id/status", (req, res) => {
 // Post güncelle (Edit)
 app.put(
   "/api/posts/:id",
-  upload.fields([{ name: "files", maxCount: 50 }]),
+  upload.fields([{ name: "files", maxCount: 500 }]),
   (req, res) => {
     try {
       console.log("PUT /api/posts/:id isteği alındı");
