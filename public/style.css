@@ -1904,6 +1904,9 @@ tr:hover {
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
+  /* Accordion açıkken altta göstermek için */
+  position: relative;
+  z-index: 10;
 }
 
 .accordion-toggle-btn:hover {
@@ -1914,6 +1917,24 @@ tr:hover {
 
 .accordion-toggle-btn:active {
   transform: translateY(1px);
+}
+
+/* Accordion açıkken butonu en alta taşı */
+.post-card.expanded .accordion-toggle-btn {
+  margin-top: 0;
+  margin-bottom: 8px;
+  order: 999;
+}
+
+/* Detayları gizle butonunu en altta konumlandır */
+.post-card.expanded [id^="accordion-toggle-bottom-"] {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: white;
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .accordion-toggle-icon {
@@ -1940,6 +1961,8 @@ tr:hover {
   overflow: hidden;
   transition: max-height 0.3s ease;
   background: white;
+  display: flex;
+  flex-direction: column;
 }
 
 .post-card.expanded .post-card-accordion-content {
@@ -1948,6 +1971,18 @@ tr:hover {
 
 .post-card-content {
   padding: 0 24px 24px 24px;
+  flex: 1;
+}
+
+/* Detayları gizle butonunu en altta sabitlemek için */
+.post-card.expanded
+  .post-card-accordion-content
+  [id^="accordion-toggle-bottom-"] {
+  margin-top: auto;
+  margin-bottom: 0;
+  border-radius: 0 0 6px 6px;
+  border-top: 1px solid #e9ecef;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .post-content-section {

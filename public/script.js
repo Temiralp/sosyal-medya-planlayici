@@ -1423,10 +1423,11 @@ function createModernPostCard(post) {
               : ""
           }
         </div>
-
+        
+        <!-- Accordion açıkken butonu göstermeyeceğiz, altta olacak -->
         <button class="accordion-toggle-btn" onclick="toggleAccordion(${
           post.id
-        })" type="button">
+        })" type="button" id="accordion-toggle-top-${post.id}">
           <span class="accordion-toggle-text" id="accordion-text-${
             post.id
           }">Detayları göster</span>
@@ -1502,6 +1503,16 @@ function createModernPostCard(post) {
 
         ${filesHtml}
         ${progressHtml}
+        
+        <!-- Accordion content'in sonunda detayları gizle butonu -->
+        <button class="accordion-toggle-btn" onclick="toggleAccordion(${
+          post.id
+        })" type="button" id="accordion-toggle-bottom-${
+    post.id
+  }" style="display: none;">
+          <span class="accordion-toggle-text">Detayları gizle</span>
+          <span class="accordion-toggle-icon">▼</span>
+        </button>
       </div>
     </div>
   `;
@@ -2035,25 +2046,35 @@ async function savePost(postId) {
 function toggleAccordion(postId) {
   const card = document.getElementById(`post-card-${postId}`);
   const content = document.getElementById(`accordion-content-${postId}`);
-  const icon = document.getElementById(`accordion-icon-${postId}`);
-  const toggleText = document.getElementById(`accordion-text-${postId}`);
+  const topButton = document.getElementById(`accordion-toggle-top-${postId}`);
+  const bottomButton = document.getElementById(
+    `accordion-toggle-bottom-${postId}`
+  );
 
   // Edit mode'dayken accordion kapatılmasın
   if (card && card.classList.contains("edit-mode")) {
     return;
   }
 
-  if (card && content && icon && toggleText) {
+  if (card && content && topButton && bottomButton) {
     if (card.classList.contains("expanded")) {
       // Kapat
       card.classList.remove("expanded");
-      icon.textContent = "▶";
-      toggleText.textContent = "Detayları göster";
+      topButton.style.display = "flex";
+      bottomButton.style.display = "none";
+
+      // Üstteki buton text'ini güncelle
+      const topText = topButton.querySelector(".accordion-toggle-text");
+      const topIcon = topButton.querySelector(".accordion-toggle-icon");
+      if (topText && topIcon) {
+        topText.textContent = "Detayları göster";
+        topIcon.textContent = "▶";
+      }
     } else {
       // Aç
       card.classList.add("expanded");
-      icon.textContent = "▼";
-      toggleText.textContent = "Detayları gizle";
+      topButton.style.display = "none";
+      bottomButton.style.display = "flex";
     }
   }
 }
