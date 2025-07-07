@@ -166,6 +166,9 @@ const postsPerPage = 10;
 let totalPages = 1;
 let allPosts = [];
 
+// Yeni: Aktif düzenlemede olan gönderiyi takip eden değişken
+let currentEditPostId = null;
+
 // Varsayılan tarihi ayarla
 function setDefaultDate() {
   const scheduledDate = document.getElementById("scheduledDate");
@@ -1879,6 +1882,15 @@ function createEditAccountGroups(selectedAccounts) {
 
 // Edit mode başlat
 function startEditMode(postId) {
+  // Kart zaten edit-modundaysa tekrar işlem yapma
+  const existingCard = document.getElementById(`post-card-${postId}`);
+  if (existingCard && existingCard.classList.contains("edit-mode")) {
+    return; // Zaten edit modunda
+  }
+
+  // Aktif düzenlenen post'u kaydet (mobilde yeniden render durumunda korunur)
+  currentEditPostId = postId;
+
   const card = document.getElementById(`post-card-${postId}`);
   const editForm = document.getElementById(`edit-form-${postId}`);
   const accordionContent = document.getElementById(
@@ -1953,6 +1965,15 @@ function preventAccordionToggle(event) {
 
 // Edit mode iptal et
 function cancelEditMode(postId) {
+  // ... existing code ...
+
+  // Düzenleme modu kapatıldığında takip değişkenini sıfırla
+  if (currentEditPostId === postId) {
+    currentEditPostId = null;
+  }
+
+  // ... existing code ...
+
   const card = document.getElementById(`post-card-${postId}`);
   const editForm = document.getElementById(`edit-form-${postId}`);
   const accordionContent = document.getElementById(
@@ -2272,6 +2293,14 @@ function renderCurrentPagePosts() {
     const postCard = createModernPostCard(post);
     postsContainer.appendChild(postCard);
   });
+
+  // Eğer bir gönderi düzenleniyorsa yeniden göster
+  if (currentEditPostId) {
+    const editCard = document.getElementById(`post-card-${currentEditPostId}`);
+    if (editCard && !editCard.classList.contains("edit-mode")) {
+      startEditMode(currentEditPostId);
+    }
+  }
 
   console.log("Mevcut sayfa modern kartları güncellendi");
 }
