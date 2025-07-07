@@ -1886,7 +1886,14 @@ function startEditMode(postId) {
       btn.disabled = true;
       btn.style.opacity = "0.5";
       btn.style.cursor = "not-allowed";
+      btn.style.pointerEvents = "none"; // Mobil dokunmatik olayları da engelle
     });
+
+    // Kart başlığına tıklama olayını da engelle
+    const cardHeader = card.querySelector(".post-card-accordion-header");
+    if (cardHeader) {
+      cardHeader.style.pointerEvents = "none";
+    }
 
     console.log(`Post ${postId} edit mode'a geçti`);
   }
@@ -1916,7 +1923,14 @@ function cancelEditMode(postId) {
       btn.disabled = false;
       btn.style.opacity = "";
       btn.style.cursor = "";
+      btn.style.pointerEvents = ""; // Mobil dokunmatik olayları tekrar aktive et
     });
+
+    // Kart başlığına tıklama olayını da tekrar aktive et
+    const cardHeader = card.querySelector(".post-card-accordion-header");
+    if (cardHeader) {
+      cardHeader.style.pointerEvents = "";
+    }
 
     // Accordion toggle ikonunu ve metnini resetle
     const icon = document.getElementById(`accordion-icon-${postId}`);
@@ -2054,7 +2068,7 @@ async function savePost(postId) {
     if (saveButton) {
       saveButton.disabled = false;
       saveButton.innerHTML = "💾 Kaydet";
-    }
+       }
   }
 }
 
