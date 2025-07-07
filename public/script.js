@@ -2272,11 +2272,24 @@ async function deletePost(postId) {
 function addNewPostToList(newPost) {
   console.log("Yeni post eklendi, listeyi yeniliyoruz:", newPost.id);
 
-  // Tüm listeyi yeniden yükle ki server'dan gelen sıralama korunsun
-  loadPosts();
+  // Yeni post'u listenin en başına ekle
+  allPosts.unshift(newPost);
+
+  // Post sayısını güncelle
+  const countElement = document.getElementById("postCount");
+  if (countElement) {
+    countElement.textContent = allPosts.length;
+  }
+
+  // Sayfalama bilgilerini güncelle
+  totalPages = Math.ceil(allPosts.length / postsPerPage);
 
   // İlk sayfaya git (yeni post gösterilsin)
   currentPage = 1;
+
+  // Sayfa görünümünü güncelle
+  renderCurrentPagePosts();
+  updatePaginationControls();
 
   console.log(`Yeni post eklendi. Post ID: ${newPost.id}`);
 }
