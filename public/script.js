@@ -168,6 +168,8 @@ let allPosts = [];
 
 // Yeni: Aktif düzenlemede olan gönderiyi takip eden değişken
 let currentEditPostId = null;
+// Yeni: Açık (expanded) durumda kalan kartları tutan Set
+const expandedPostIds = new Set();
 
 // Varsayılan tarihi ayarla
 function setDefaultDate() {
@@ -2221,6 +2223,15 @@ function toggleAccordion(postId, event) {
       bottomButton.style.display = "flex";
     }
   }
+
+  // Accordion durumuna göre Set'i güncelle
+  if (card) {
+    if (card.classList.contains("expanded")) {
+      expandedPostIds.add(postId);
+    } else {
+      expandedPostIds.delete(postId);
+    }
+  }
 }
 
 // Progress detaylarını aç/kapat
@@ -2292,6 +2303,21 @@ function renderCurrentPagePosts() {
   currentPagePosts.forEach((post) => {
     const postCard = createModernPostCard(post);
     postsContainer.appendChild(postCard);
+
+    // Kart daha önce açık bırakıldıysa tekrar genişlet
+    if (expandedPostIds.has(post.id)) {
+      postCard.classList.add("expanded");
+      const topButton = document.getElementById(
+        `accordion-toggle-top-${post.id}`
+      );
+      const bottomButton = document.getElementById(
+        `accordion-toggle-bottom-${post.id}`
+      );
+      if (topButton && bottomButton) {
+        topButton.style.display = "none";
+        bottomButton.style.display = "flex";
+      }
+    }
   });
 
   // Eğer bir gönderi düzenleniyorsa yeniden göster
@@ -2621,6 +2647,13 @@ function updateSinglePostCard(
   existingCard.parentNode.replaceChild(newCard, existingCard);
 
   console.log(`Post kartı güncellendi ve durum korundu: ${post.id}`);
+
+  // Accordion Set senkronizasyonu
+  if (wasExpanded) {
+    expandedPostIds.add(post.id);
+  } else {
+    expandedPostIds.delete(post.id);
+  }
 }
 
 // Verileri dışa aktar
