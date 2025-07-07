@@ -690,7 +690,7 @@ tr:hover {
 .story-link a {
   color: #3498db;
   text-decoration: none;
-  word-break: break-all;
+
   font-size: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2503,6 +2503,18 @@ tr:hover {
 .post-card.edit-mode .post-card-accordion-header {
   background: #fef9e7;
   border-bottom-color: #f39c12;
+}
+
+/* Edit mode'dayken accordion butonlarını devre dışı bırak */
+.post-card.edit-mode .accordion-toggle-btn {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+.post-card.edit-mode .accordion-toggle-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 
 .edit-form-section {

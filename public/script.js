@@ -1880,9 +1880,13 @@ function startEditMode(postId) {
     if (icon) icon.textContent = "▼";
     if (toggleText) toggleText.textContent = "Düzenleme modunda";
 
-    // Edit mode'dayken kartın tıklanabilirliğini engelle
-    card.style.pointerEvents = "none";
-    editForm.style.pointerEvents = "all";
+    // Edit mode'dayken accordion toggle butonlarını devre dışı bırak
+    const toggleButtons = card.querySelectorAll(".accordion-toggle-btn");
+    toggleButtons.forEach((btn) => {
+      btn.disabled = true;
+      btn.style.opacity = "0.5";
+      btn.style.cursor = "not-allowed";
+    });
 
     console.log(`Post ${postId} edit mode'a geçti`);
   }
@@ -1906,8 +1910,13 @@ function cancelEditMode(postId) {
     if (accordionContent) accordionContent.style.display = "";
     if (editIndicator) editIndicator.style.display = "none";
 
-    // Tıklanabilirliği geri aç
-    card.style.pointerEvents = "";
+    // Accordion toggle butonlarını yeniden aktive et
+    const toggleButtons = card.querySelectorAll(".accordion-toggle-btn");
+    toggleButtons.forEach((btn) => {
+      btn.disabled = false;
+      btn.style.opacity = "";
+      btn.style.cursor = "";
+    });
 
     // Accordion toggle ikonunu ve metnini resetle
     const icon = document.getElementById(`accordion-icon-${postId}`);
@@ -2060,6 +2069,13 @@ function toggleAccordion(postId) {
 
   // Edit mode'dayken accordion kapatılmasın
   if (card && card.classList.contains("edit-mode")) {
+    console.log(`Post ${postId} edit mode'da, accordion işlemi iptal edildi`);
+    return;
+  }
+
+  // Buton devre dışıysa işlem yapma
+  if (topButton && topButton.disabled) {
+    console.log(`Post ${postId} accordion butonu devre dışı`);
     return;
   }
 
