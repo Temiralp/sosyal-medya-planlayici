@@ -112,8 +112,18 @@ const writePosts = (posts) => {
       console.log("Data klasörü oluşturuldu:", dir);
     }
 
-    // Postları ID'ye göre azalan sırada sırala (en yeni en başta)
-    const sortedPosts = posts.sort((a, b) => b.id - a.id);
+    // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
+    const sortedPosts = posts.sort((a, b) => {
+      // Eğer her ikisinde de manuel sıralama varsa, ona göre sırala
+      if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+        return a.manualOrder - b.manualOrder;
+      }
+      // Eğer sadece birinde manuel sıralama varsa, o öne gelsin
+      if (a.manualOrder !== undefined) return -1;
+      if (b.manualOrder !== undefined) return 1;
+      // Hiçbirinde manuel sıralama yoksa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+      return b.id - a.id;
+    });
 
     // JSON'u string'e çevir
     const jsonData = JSON.stringify(sortedPosts, null, 2);
@@ -159,9 +169,18 @@ app.get("/", (req, res) => {
 // Tüm postları getir
 app.get("/api/posts", (req, res) => {
   const posts = readPosts();
-  // Postları her zaman ID'ye göre azalan sırada sırala (en yeni en başta)
-  // Bu, manuel sıralama yapılmadığı durumlarda doğru sıralamayı garanti eder
-  const sortedPosts = posts.sort((a, b) => b.id - a.id);
+  // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
+  const sortedPosts = posts.sort((a, b) => {
+    // Eğer her ikisinde de manuel sıralama varsa, ona göre sırala
+    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+      return a.manualOrder - b.manualOrder;
+    }
+    // Eğer sadece birinde manuel sıralama varsa, o öne gelsin
+    if (a.manualOrder !== undefined) return -1;
+    if (b.manualOrder !== undefined) return 1;
+    // Hiçbirinde manuel sıralama yoksa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+    return b.id - a.id;
+  });
   res.json(sortedPosts);
 });
 
@@ -324,7 +343,23 @@ app.post(
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
 
-      // Yeni post her zaman listenin en başına eklensin
+      // Yeni post her zaman listenin en başına eklensin ve en küçük manualOrder değeri atansın
+      // Mevcut en küçük manualOrder'ı bul ve ondan bir küçük değer ata
+      let minManualOrder = 0;
+      if (posts.length > 0) {
+        const postsWithManualOrder = posts.filter(
+          (p) => p.manualOrder !== undefined
+        );
+        if (postsWithManualOrder.length > 0) {
+          minManualOrder =
+            Math.min(...postsWithManualOrder.map((p) => p.manualOrder)) - 1;
+        }
+      }
+
+      // manualOrder değerini yeni posta ekle
+      newPost.manualOrder = minManualOrder;
+
+      // Yeni postu listenin başına ekle
       posts.unshift(newPost);
 
       const writeResult = writePosts(posts);
