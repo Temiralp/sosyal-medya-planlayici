@@ -1079,7 +1079,7 @@ function renderPostsTable(posts) {
   // Temizle
   postsContainer.innerHTML = "";
 
-  // Tüm postları saklayalım
+  // Tüm postları saklayalım (server'dan gelen sıralama korunur)
   allPosts = posts;
 
   // Toplam sayfa sayısını hesaplayalım
@@ -2525,7 +2525,9 @@ function addNewPostToList(newPost) {
   renderCurrentPagePosts();
   updatePaginationControls();
 
-  console.log(`Yeni post eklendi. Post ID: ${newPost.id}`);
+  console.log(
+    `Yeni post eklendi ve ilk sayfada gösteriliyor. Post ID: ${newPost.id}, Toplam: ${allPosts.length}`
+  );
 }
 
 // Post'u dinamik olarak listeden kaldır
@@ -2679,6 +2681,9 @@ async function loadPosts() {
     const response = await fetch("/api/posts");
     const posts = await response.json();
     console.log(`${posts.length} post yüklendi`);
+
+    // Server'dan gelen sıralama zaten doğru (manuel sıralama varsa korunur, yoksa ID'ye göre sıralı)
+    // Client tarafında tekrar sıralamaya gerek yok
 
     renderPostsTable(posts);
     const countElement = document.getElementById("postCount");

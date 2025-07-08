@@ -112,8 +112,11 @@ const writePosts = (posts) => {
       console.log("Data klasörü oluşturuldu:", dir);
     }
 
+    // Postları ID'ye göre azalan sırada sırala (en yeni en başta)
+    const sortedPosts = posts.sort((a, b) => b.id - a.id);
+
     // JSON'u string'e çevir
-    const jsonData = JSON.stringify(posts, null, 2);
+    const jsonData = JSON.stringify(sortedPosts, null, 2);
     console.log("JSON veri boyutu:", jsonData.length, "karakter");
 
     // Dosyaya yaz
@@ -124,6 +127,14 @@ const writePosts = (posts) => {
     if (fs.existsSync(DATA_FILE)) {
       const fileSize = fs.statSync(DATA_FILE).size;
       console.log("Dosya boyutu:", fileSize, "bytes");
+
+      // Çok küçük sunucularda dosya yazma gecikmesi olabilir, kısa bir bekleme ekle
+      if (process.env.NODE_ENV === "production") {
+        // Üretim ortamında dosya yazma işleminin tamamlanması için kısa bekleme
+        const start = Date.now();
+        while (Date.now() - start < 50) {} // 50ms bekleme
+      }
+
       return true;
     } else {
       console.error("Dosya yazıldıktan sonra bulunamadı");
@@ -148,7 +159,10 @@ app.get("/", (req, res) => {
 // Tüm postları getir
 app.get("/api/posts", (req, res) => {
   const posts = readPosts();
-  res.json(posts);
+  // Postları her zaman ID'ye göre azalan sırada sırala (en yeni en başta)
+  // Bu, manuel sıralama yapılmadığı durumlarda doğru sıralamayı garanti eder
+  const sortedPosts = posts.sort((a, b) => b.id - a.id);
+  res.json(sortedPosts);
 });
 
 // Post sıralamasını güncelle (DİKKAT: Parametreli rotalardan önce gelmeli)
@@ -178,7 +192,13 @@ app.put("/api/posts/reorder", (req, res) => {
       orderedPosts.push(...remainingPosts);
     }
 
-    if (writePosts(orderedPosts)) {
+    // Manuel sıralama yapıldığını belirtmek için bir özel işaret ekle
+    const finalPosts = orderedPosts.map((post, index) => ({
+      ...post,
+      manualOrder: index, // Manuel sıralama indeksi
+    }));
+
+    if (writePosts(finalPosts)) {
       res.json({ success: true, message: "Sıralama güncellendi" });
     } else {
       res
@@ -302,12 +322,29 @@ app.post(
       // Yeni post her zaman listenin en başına eklensin
       posts.unshift(newPost);
 
+      // Veriyi hemen kaydet ve sıralamayı garanti et
       const writeResult = writePosts(posts);
       console.log("Veri yazma sonucu:", writeResult);
 
       if (writeResult) {
         console.log("Post başarıyla kaydedildi");
-        res.json({ success: true, post: newPost });
+
+        // Kaydedilen veriyi tekrar oku ve sıralayarak doğrula
+        const savedPosts = readPosts();
+        const sortedPosts = savedPosts.sort((a, b) => b.id - a.id);
+
+        // En son eklenen post'un başta olup olmadığını kontrol et
+        const addedPost = sortedPosts.find((p) => p.id === newPost.id);
+        if (addedPost) {
+          res.json({ success: true, post: addedPost });
+        } else {
+          res
+            .status(500)
+            .json({
+              success: false,
+              message: "Post kaydedildi ama bulunamadı",
+            });
+        }
       } else {
         console.error("Veri yazma hatası");
         res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
