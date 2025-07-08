@@ -214,9 +214,11 @@ document.addEventListener("DOMContentLoaded", function () {
     setupEventListeners();
 
     // ----- GERÇEK ZAMANLI GÜNCELLEME -----
-    const socket = io();
+    const socket = io(window.location.origin, {
+      transports: ["websocket", "polling"],
+    });
     socket.on("postUpdated", () => {
-      loadPosts(); // Listeyi tamamen yenile
+      loadPosts();
     });
 
     console.log("Başlatma tamamlandı");
