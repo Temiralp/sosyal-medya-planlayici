@@ -112,20 +112,29 @@ const writePosts = (posts) => {
       console.log("Data klasörü oluşturuldu:", dir);
     }
 
-    // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
+    // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
     const sortedPosts = posts.sort((a, b) => {
-      // Önce undefined olan manualOrder değerlerini düzelt
-      const aOrder =
-        a.manualOrder !== undefined ? a.manualOrder : Number.MAX_SAFE_INTEGER;
-      const bOrder =
-        b.manualOrder !== undefined ? b.manualOrder : Number.MAX_SAFE_INTEGER;
-
-      // manualOrder değerlerine göre sırala (küçük olan önce gelsin)
-      if (aOrder !== bOrder) {
-        return aOrder - bOrder;
+      // Öncelikle manuel sıralama var mı kontrol et
+      if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+        // Her ikisinde de manuel sıralama varsa, ona göre sırala
+        return a.manualOrder - b.manualOrder;
       }
 
-      // Eğer manualOrder değerleri aynıysa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+      // Kullanıcı sürükle bırak yaptıysa manualOrder'a göre sırala
+      if (a.manualOrder !== undefined) return -1;
+      if (b.manualOrder !== undefined) return 1;
+
+      // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
+      // Önce oluşturma tarihlerini alıp milisaniyeye çevir
+      const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+      // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
+      if (aCreatedAt && bCreatedAt) {
+        return bCreatedAt - aCreatedAt;
+      }
+
+      // Son çare olarak ID'ye göre sırala (en yeni en üstte)
       return b.id - a.id;
     });
 
@@ -173,20 +182,29 @@ app.get("/", (req, res) => {
 // Tüm postları getir
 app.get("/api/posts", (req, res) => {
   const posts = readPosts();
-  // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
+  // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
   const sortedPosts = posts.sort((a, b) => {
-    // Önce undefined olan manualOrder değerlerini düzelt
-    const aOrder =
-      a.manualOrder !== undefined ? a.manualOrder : Number.MAX_SAFE_INTEGER;
-    const bOrder =
-      b.manualOrder !== undefined ? b.manualOrder : Number.MAX_SAFE_INTEGER;
-
-    // manualOrder değerlerine göre sırala (küçük olan önce gelsin)
-    if (aOrder !== bOrder) {
-      return aOrder - bOrder;
+    // Öncelikle manuel sıralama var mı kontrol et
+    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+      // Her ikisinde de manuel sıralama varsa, ona göre sırala
+      return a.manualOrder - b.manualOrder;
     }
 
-    // Eğer manualOrder değerleri aynıysa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+    // Kullanıcı sürükle bırak yaptıysa manualOrder'a göre sırala
+    if (a.manualOrder !== undefined) return -1;
+    if (b.manualOrder !== undefined) return 1;
+
+    // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
+    // Önce oluşturma tarihlerini alıp milisaniyeye çevir
+    const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
+    if (aCreatedAt && bCreatedAt) {
+      return bCreatedAt - aCreatedAt;
+    }
+
+    // Son çare olarak ID'ye göre sırala (en yeni en üstte)
     return b.id - a.id;
   });
   res.json(sortedPosts);
@@ -351,23 +369,12 @@ app.post(
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
 
-      // Yeni post her zaman listenin en başına eklensin ve en küçük manualOrder değeri atansın
-      // Mevcut en küçük manualOrder'ı bul ve ondan bir küçük değer ata
-      let minManualOrder = 0;
-      if (posts.length > 0) {
-        // Önce tüm postların manualOrder değerini kontrol et, undefined olanları eksi değerlerle doldur
-        posts.forEach((post, index) => {
-          if (post.manualOrder === undefined) {
-            post.manualOrder = -index; // Eğer undefined ise, otomatik olarak eksi değerler ata
-          }
-        });
+      // Yeni post'un oluşturma zamanını doğru şekilde ayarla
+      const now = new Date();
+      newPost.createdAt = now.toLocaleString("tr-TR");
 
-        // Şimdi en küçük değeri bul
-        minManualOrder = Math.min(...posts.map((p) => p.manualOrder)) - 1;
-      }
-
-      // manualOrder değerini yeni posta ekle (her zaman en küçük olsun ki en başta görünsün)
-      newPost.manualOrder = minManualOrder;
+      // Eğer sürükle bırak yapılmışsa manuel sıralama kullanılacak,
+      // yoksa createdAt zamanı ile otomatik sıralanacak
 
       // Yeni postu listenin başına ekle
       posts.unshift(newPost);
