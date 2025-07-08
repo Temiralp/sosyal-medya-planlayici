@@ -174,6 +174,28 @@ const writePosts = (posts) => {
 // Başlangıçta klasörleri oluştur
 createDirectories();
 
+// Socket.IO bağlantı yönetimi
+io.on("connection", (socket) => {
+  console.log("Yeni socket bağlantısı:", socket.id);
+
+  // Socket bağlantısı kesildiğinde
+  socket.on("disconnect", () => {
+    console.log("Socket bağlantısı kesildi:", socket.id);
+  });
+
+  // Test mesajları için
+  socket.on("test", (data) => {
+    console.log("Test mesajı alındı:", data);
+    socket.emit("testResponse", { message: "Server'dan merhaba!" });
+  });
+});
+
+// Post güncellendiğinde tüm clientlara bildir
+const notifyPostUpdate = () => {
+  io.emit("postUpdated");
+  console.log("Tüm clientlara post güncellemesi bildirildi");
+};
+
 // Ana sayfa
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -244,6 +266,8 @@ app.put("/api/posts/reorder", (req, res) => {
     }));
 
     if (writePosts(finalPosts)) {
+      // Gerçek zamanlı güncelleme bildirimi gönder
+      notifyPostUpdate();
       res.json({ success: true, message: "Sıralama güncellendi" });
     } else {
       res
@@ -383,6 +407,8 @@ app.post(
       console.log("Veri yazma sonucu:", writeResult);
 
       if (writeResult) {
+        // Gerçek zamanlı güncelleme bildirimi gönder
+        notifyPostUpdate();
         console.log("Post başarıyla kaydedildi");
         res.json({ success: true, post: newPost });
       } else {
@@ -418,6 +444,8 @@ app.put("/api/posts/:id/status", (req, res) => {
     posts[postIndex].status = status;
 
     if (writePosts(posts)) {
+      // Gerçek zamanlı güncelleme bildirimi gönder
+      notifyPostUpdate();
       res.json({ success: true, post: posts[postIndex] });
     } else {
       res.status(500).json({ success: false, message: "Veri güncellenemedi" });
@@ -602,6 +630,8 @@ app.put(
       posts[postIndex] = updatedPost;
 
       if (writePosts(posts)) {
+        // Gerçek zamanlı güncelleme bildirimi gönder
+        notifyPostUpdate();
         console.log("Post başarıyla güncellendi:", updatedPost.id);
         res.json({
           success: true,
@@ -657,8 +687,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
     }
 
     if (writePosts(posts)) {
-      // ----- GERÇEK ZAMANLI BİLDİRİM -----
-      io.emit("postUpdated", posts[postIndex]);
+      // Gerçek zamanlı güncelleme bildirimi gönder
+      notifyPostUpdate();
       res.json({ success: true, post: posts[postIndex] });
     } else {
       res.status(500).json({ success: false, message: "Veri güncellenemedi" });
@@ -703,6 +733,8 @@ app.delete("/api/posts/:id", (req, res) => {
     posts.splice(postIndex, 1);
 
     if (writePosts(posts)) {
+      // Gerçek zamanlı güncelleme bildirimi gönder
+      notifyPostUpdate();
       res.json({ success: true });
     } else {
       res.status(500).json({ success: false, message: "Veri silinemedi" });
