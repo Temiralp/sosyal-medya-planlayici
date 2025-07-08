@@ -114,14 +114,18 @@ const writePosts = (posts) => {
 
     // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
     const sortedPosts = posts.sort((a, b) => {
-      // Eğer her ikisinde de manuel sıralama varsa, ona göre sırala
-      if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
-        return a.manualOrder - b.manualOrder;
+      // Önce undefined olan manualOrder değerlerini düzelt
+      const aOrder =
+        a.manualOrder !== undefined ? a.manualOrder : Number.MAX_SAFE_INTEGER;
+      const bOrder =
+        b.manualOrder !== undefined ? b.manualOrder : Number.MAX_SAFE_INTEGER;
+
+      // manualOrder değerlerine göre sırala (küçük olan önce gelsin)
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder;
       }
-      // Eğer sadece birinde manuel sıralama varsa, o öne gelsin
-      if (a.manualOrder !== undefined) return -1;
-      if (b.manualOrder !== undefined) return 1;
-      // Hiçbirinde manuel sıralama yoksa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+
+      // Eğer manualOrder değerleri aynıysa, ID'ye göre azalan sıralama yap (en yeni en üstte)
       return b.id - a.id;
     });
 
@@ -171,14 +175,18 @@ app.get("/api/posts", (req, res) => {
   const posts = readPosts();
   // Manuel sıralama varsa ona göre, yoksa ID'ye göre azalan sırada sırala (en yeni en başta)
   const sortedPosts = posts.sort((a, b) => {
-    // Eğer her ikisinde de manuel sıralama varsa, ona göre sırala
-    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
-      return a.manualOrder - b.manualOrder;
+    // Önce undefined olan manualOrder değerlerini düzelt
+    const aOrder =
+      a.manualOrder !== undefined ? a.manualOrder : Number.MAX_SAFE_INTEGER;
+    const bOrder =
+      b.manualOrder !== undefined ? b.manualOrder : Number.MAX_SAFE_INTEGER;
+
+    // manualOrder değerlerine göre sırala (küçük olan önce gelsin)
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
     }
-    // Eğer sadece birinde manuel sıralama varsa, o öne gelsin
-    if (a.manualOrder !== undefined) return -1;
-    if (b.manualOrder !== undefined) return 1;
-    // Hiçbirinde manuel sıralama yoksa, ID'ye göre azalan sıralama yap (en yeni en üstte)
+
+    // Eğer manualOrder değerleri aynıysa, ID'ye göre azalan sıralama yap (en yeni en üstte)
     return b.id - a.id;
   });
   res.json(sortedPosts);
@@ -347,16 +355,18 @@ app.post(
       // Mevcut en küçük manualOrder'ı bul ve ondan bir küçük değer ata
       let minManualOrder = 0;
       if (posts.length > 0) {
-        const postsWithManualOrder = posts.filter(
-          (p) => p.manualOrder !== undefined
-        );
-        if (postsWithManualOrder.length > 0) {
-          minManualOrder =
-            Math.min(...postsWithManualOrder.map((p) => p.manualOrder)) - 1;
-        }
+        // Önce tüm postların manualOrder değerini kontrol et, undefined olanları eksi değerlerle doldur
+        posts.forEach((post, index) => {
+          if (post.manualOrder === undefined) {
+            post.manualOrder = -index; // Eğer undefined ise, otomatik olarak eksi değerler ata
+          }
+        });
+
+        // Şimdi en küçük değeri bul
+        minManualOrder = Math.min(...posts.map((p) => p.manualOrder)) - 1;
       }
 
-      // manualOrder değerini yeni posta ekle
+      // manualOrder değerini yeni posta ekle (her zaman en küçük olsun ki en başta görünsün)
       newPost.manualOrder = minManualOrder;
 
       // Yeni postu listenin başına ekle
