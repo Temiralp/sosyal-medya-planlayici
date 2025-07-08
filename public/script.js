@@ -215,9 +215,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ----- GERÇEK ZAMANLI GÜNCELLEME -----
     const socket = io();
-    socket.on("postUpdated", (updatedPost) => {
-      console.log("🔄 Gerçek zamanlı güncelleme alındı:", updatedPost);
-      updatePostInList(updatedPost);
+    socket.on("postUpdated", () => {
+      loadPosts(); // Listeyi tamamen yenile
     });
 
     console.log("Başlatma tamamlandı");
