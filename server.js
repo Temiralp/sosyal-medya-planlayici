@@ -163,26 +163,9 @@ const writePosts = (posts) => {
 // Başlangıçta klasörleri oluştur
 createDirectories();
 
-// Socket.IO bağlantı yönetimi
-io.on("connection", (socket) => {
-  console.log("Yeni socket bağlantısı:", socket.id);
-
-  // Socket bağlantısı kesildiğinde
-  socket.on("disconnect", () => {
-    console.log("Socket bağlantısı kesildi:", socket.id);
-  });
-
-  // Test mesajları için
-  socket.on("test", (data) => {
-    console.log("Test mesajı alındı:", data);
-    socket.emit("testResponse", { message: "Server'dan merhaba!" });
-  });
-});
-
-// Post güncellendiğinde tüm clientlara bildir
+// Gerçek zamanlı güncelleme kaldırıldı - HTTP istekleri ile çalışıyor
 const notifyPostUpdate = () => {
-  io.emit("postUpdated");
-  console.log("Tüm clientlara post güncellemesi bildirildi");
+  // Socket.IO kaldırıldı - bu fonksiyon artık boş
 };
 
 // Ana sayfa
