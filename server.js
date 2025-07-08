@@ -47,6 +47,9 @@ const upload = multer({
 // Veri dosyası yolu
 const DATA_FILE = "./data/posts.json";
 
+// Son güncelleme zamanını takip et
+let lastDataUpdate = Date.now();
+
 // Veri okuma fonksiyonu
 const readPosts = () => {
   try {
@@ -135,6 +138,9 @@ const writePosts = (posts) => {
     fs.writeFileSync(DATA_FILE, jsonData, "utf8");
     console.log("Veri başarıyla yazıldı:", DATA_FILE);
 
+    // Güncelleme zamanını güncelle
+    lastDataUpdate = Date.now();
+
     // Yazılan veriyi doğrula
     if (fs.existsSync(DATA_FILE)) {
       const fileSize = fs.statSync(DATA_FILE).size;
@@ -166,11 +172,18 @@ createDirectories();
 // Gerçek zamanlı güncelleme kaldırıldı - HTTP istekleri ile çalışıyor
 const notifyPostUpdate = () => {
   // Socket.IO kaldırıldı - bu fonksiyon artık boş
+  // Ancak güncelleme zamanını güncelleyelim
+  lastDataUpdate = Date.now();
 };
 
 // Ana sayfa
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Son güncelleme zamanını getir (polling için)
+app.get("/api/last-update", (req, res) => {
+  res.json({ lastUpdate: lastDataUpdate });
 });
 
 // Tüm postları getir

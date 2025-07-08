@@ -2768,3 +2768,103 @@ function createPageButton(pageNum) {
   button.onclick = () => goToPage(pageNum);
   return button;
 }
+
+// ============================================================================
+// POLLING MEKANİZMASI - Çoklu sekme desteği için
+// ============================================================================
+
+// Polling değişkenleri
+let lastKnownUpdate = Date.now();
+let pollingInterval = null;
+let isPageActive = true;
+
+// Son güncelleme zamanını kontrol et
+async function checkForUpdates() {
+  try {
+    const response = await fetch("/api/last-update");
+    const result = await response.json();
+
+    if (result.lastUpdate > lastKnownUpdate) {
+      console.log(
+        "Veri değişikliği tespit edildi, postlar yeniden yükleniyor..."
+      );
+      lastKnownUpdate = result.lastUpdate;
+      await loadPosts();
+      showToast("📄 Veriler güncellendi!", "info", 2000);
+    }
+  } catch (error) {
+    console.error("Güncelleme kontrol hatası:", error);
+  }
+}
+
+// Polling'i başlat
+function startPolling() {
+  // Önceki interval'i temizle
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
+
+  // Sayfa aktifse daha sık kontrol et (5 saniye), pasifse daha seyrek (30 saniye)
+  const interval = isPageActive ? 5000 : 30000;
+
+  pollingInterval = setInterval(() => {
+    checkForUpdates();
+  }, interval);
+
+  console.log(`Polling başlatıldı: ${interval / 1000} saniye aralık`);
+}
+
+// Polling'i durdur
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+    console.log("Polling durduruldu");
+  }
+}
+
+// Sayfa görünürlük durumu değişikliklerini dinle
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    // Sayfa gizlendi (başka sekmeye geçildi)
+    isPageActive = false;
+    console.log("Sayfa pasif duruma geçti");
+    startPolling(); // Daha seyrek polling başlat
+  } else {
+    // Sayfa aktif hale geldi
+    isPageActive = true;
+    console.log("Sayfa aktif duruma geçti");
+    // Hemen bir kontrol yap
+    checkForUpdates();
+    // Daha sık polling başlat
+    startPolling();
+  }
+});
+
+// Window focus/blur eventi dinle (ek güvenlik)
+window.addEventListener("focus", () => {
+  isPageActive = true;
+  console.log("Window focus alındı");
+  checkForUpdates();
+  startPolling();
+});
+
+window.addEventListener("blur", () => {
+  isPageActive = false;
+  console.log("Window focus kaybedildi");
+  startPolling();
+});
+
+// Sayfa yüklendiğinde polling'i başlat
+document.addEventListener("DOMContentLoaded", () => {
+  // Mevcut DOMContentLoaded event'ine ek olarak çalışacak
+  setTimeout(() => {
+    console.log("Polling mekanizması başlatılıyor...");
+    startPolling();
+  }, 2000); // 2 saniye bekle ki sayfa tamamen yüklensin
+});
+
+// Sayfa kapatılırken polling'i temizle
+window.addEventListener("beforeunload", () => {
+  stopPolling();
+});
