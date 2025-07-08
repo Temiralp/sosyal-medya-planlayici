@@ -215,7 +215,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ----- GERÇEK ZAMANLI GÜNCELLEME -----
     const socket = io(window.location.origin, {
-      transports: ["websocket", "polling"],
+      transports: ["polling"],
+      upgrade: false,
     });
     socket.on("postUpdated", () => {
       loadPosts();
