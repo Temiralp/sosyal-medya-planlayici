@@ -214,13 +214,40 @@ document.addEventListener("DOMContentLoaded", function () {
     setupEventListeners();
 
     // ----- GERÇEK ZAMANLI GÜNCELLEME -----
-    const socket = io(window.location.origin, {
-      transports: ["polling"],
-      upgrade: false,
-    });
-    socket.on("postUpdated", () => {
-      loadPosts();
-    });
+    // Socket.IO kütüphanesinin yüklenip yüklenmediğini kontrol et
+    if (typeof io !== "undefined") {
+      const socket = io(window.location.origin, {
+        transports: ["polling", "websocket"],
+        upgrade: true,
+        timeout: 20000,
+        forceNew: false,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+        maxReconnectionAttempts: 5,
+      });
+
+      socket.on("connect", () => {
+        console.log("Socket.IO bağlantısı kuruldu:", socket.id);
+      });
+
+      socket.on("disconnect", (reason) => {
+        console.log("Socket.IO bağlantısı kesildi:", reason);
+      });
+
+      socket.on("connect_error", (error) => {
+        console.error("Socket.IO bağlantı hatası:", error);
+      });
+
+      socket.on("postUpdated", () => {
+        console.log("Post güncellendi, yeniden yükleniyor...");
+        loadPosts();
+      });
+    } else {
+      console.error(
+        "Socket.IO kütüphanesi yüklenemedi! Gerçek zamanlı güncellemeler çalışmayacak."
+      );
+    }
 
     console.log("Başlatma tamamlandı");
   } else {

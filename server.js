@@ -15,8 +15,17 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Basit çözüm: tüm origin'lere izin ver
+    origin: [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://44.221.78.190:3000",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["my-custom-header"],
+    credentials: false,
   },
+  allowEIO3: true,
+  transports: ["polling", "websocket"],
 });
 
 // Middleware
