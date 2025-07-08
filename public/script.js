@@ -785,6 +785,11 @@ async function handleFormSubmit(event) {
           // Yeni post'u dinamik olarak listeye ekle
           addNewPostToList(result.post);
 
+          // Güvenlik için post listesini yeniden yükle
+          setTimeout(() => {
+            loadPosts();
+          }, 1000);
+
           // Progress bar'ı 2 saniye sonra gizle
           setTimeout(() => {
             progressContainer.style.display = "none";
@@ -2504,30 +2509,15 @@ async function deletePost(postId) {
 
 // Yeni post'u dinamik olarak listeye ekle
 function addNewPostToList(newPost) {
-  console.log("Yeni post eklendi, listeyi yeniliyoruz:", newPost.id);
+  console.log("Yeni post eklendi, ilk sayfaya gidiliyor:", newPost.id);
 
-  // Yeni post'u listenin en başına ekle
-  allPosts.unshift(newPost);
-
-  // Post sayısını güncelle
-  const countElement = document.getElementById("postCount");
-  if (countElement) {
-    countElement.textContent = allPosts.length;
-  }
-
-  // Sayfalama bilgilerini güncelle
-  totalPages = Math.ceil(allPosts.length / postsPerPage);
-
-  // İlk sayfaya git (yeni post gösterilsin)
+  // İlk sayfaya git
   currentPage = 1;
 
-  // Sayfa görünümünü güncelle
-  renderCurrentPagePosts();
-  updatePaginationControls();
+  // Post listesini yeniden yükle
+  loadPosts();
 
-  console.log(
-    `Yeni post eklendi ve ilk sayfada gösteriliyor. Post ID: ${newPost.id}, Toplam: ${allPosts.length}`
-  );
+  console.log(`Yeni post eklendi. Post ID: ${newPost.id}`);
 }
 
 // Post'u dinamik olarak listeden kaldır

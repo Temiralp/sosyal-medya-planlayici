@@ -294,8 +294,16 @@ app.post(
       console.log("Yüklenen dosya sayısı:", uploadedFiles.length);
       console.log("Dosya bilgileri:", files);
 
+      // Mevcut postları oku ve en büyük ID'yi bul
+      const posts = readPosts();
+      console.log("Mevcut post sayısı:", posts.length);
+
+      // Yeni post ID'si her zaman en büyük olacak şekilde hesapla
+      const maxId = posts.length > 0 ? Math.max(...posts.map((p) => p.id)) : 0;
+      const newId = Math.max(Date.now(), maxId + 1);
+
       const newPost = {
-        id: Date.now(),
+        id: newId,
         contentType: contentType || "post",
         title: cleanTitle,
         content: cleanContent,
@@ -316,35 +324,15 @@ app.post(
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
 
-      const posts = readPosts();
-      console.log("Mevcut post sayısı:", posts.length);
-
       // Yeni post her zaman listenin en başına eklensin
       posts.unshift(newPost);
 
-      // Veriyi hemen kaydet ve sıralamayı garanti et
       const writeResult = writePosts(posts);
       console.log("Veri yazma sonucu:", writeResult);
 
       if (writeResult) {
         console.log("Post başarıyla kaydedildi");
-
-        // Kaydedilen veriyi tekrar oku ve sıralayarak doğrula
-        const savedPosts = readPosts();
-        const sortedPosts = savedPosts.sort((a, b) => b.id - a.id);
-
-        // En son eklenen post'un başta olup olmadığını kontrol et
-        const addedPost = sortedPosts.find((p) => p.id === newPost.id);
-        if (addedPost) {
-          res.json({ success: true, post: addedPost });
-        } else {
-          res
-            .status(500)
-            .json({
-              success: false,
-              message: "Post kaydedildi ama bulunamadı",
-            });
-        }
+        res.json({ success: true, post: newPost });
       } else {
         console.error("Veri yazma hatası");
         res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
