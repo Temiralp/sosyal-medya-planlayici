@@ -4,29 +4,9 @@ const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
 const archiver = require("archiver");
-// Yeni eklenenler – gerçek zamanlı iletişim
-const http = require("http");
-const { Server } = require("socket.io");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// HTTP sunucusu ve Socket.IO instance'ı oluştur
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://44.221.78.190:3000",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["my-custom-header"],
-    credentials: false,
-  },
-  allowEIO3: true,
-  transports: ["polling", "websocket"],
-});
 
 // Middleware
 app.use(cors());
@@ -938,8 +918,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Sunucuyu başlat (artık Socket.IO ile birlikte)
-server.listen(PORT, () => {
+// Sunucuyu başlat
+app.listen(PORT, () => {
   console.log(`Sunucu çalışıyor: http://localhost:${PORT}`);
   console.log("Kullanım:");
   console.log("1. npm install");
