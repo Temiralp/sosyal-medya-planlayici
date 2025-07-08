@@ -354,7 +354,11 @@
     </div>
 
     <!-- Socket.IO istemci kütüphanesini CDN üzerinden yüklüyoruz -->
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script
+      src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      crossorigin="anonymous"
+      onerror="console.error('Socket.IO CDN yüklenemedi!')"
+    ></script>
     <script src="script.js"></script>
   </body>
 </html>
