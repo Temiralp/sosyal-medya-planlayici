@@ -4,9 +4,20 @@ const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
 const archiver = require("archiver");
+// Yeni eklenenler – gerçek zamanlı iletişim
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 const PORT = 3146;
+
+// HTTP sunucusu ve Socket.IO instance'ı oluştur
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Basit çözüm: tüm origin'lere izin ver
+  },
+});
 
 // Middleware
 app.use(cors());
@@ -568,6 +579,8 @@ app.put("/api/posts/:id/complete", (req, res) => {
     }
 
     if (writePosts(posts)) {
+      // ----- GERÇEK ZAMANLI BİLDİRİM -----
+      io.emit("postUpdated", posts[postIndex]);
       res.json({ success: true, post: posts[postIndex] });
     } else {
       res.status(500).json({ success: false, message: "Veri güncellenemedi" });
@@ -838,8 +851,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Sunucuyu başlat
-app.listen(PORT, () => {
+// Sunucuyu başlat (artık Socket.IO ile birlikte)
+server.listen(PORT, () => {
   console.log(`Sunucu çalışıyor: http://localhost:${PORT}`);
   console.log("Kullanım:");
   console.log("1. npm install");

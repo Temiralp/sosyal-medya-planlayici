@@ -212,6 +212,14 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeAccountSelection();
     loadPosts();
     setupEventListeners();
+
+    // ----- GERÇEK ZAMANLI GÜNCELLEME -----
+    const socket = io();
+    socket.on("postUpdated", (updatedPost) => {
+      console.log("🔄 Gerçek zamanlı güncelleme alındı:", updatedPost);
+      updatePostInList(updatedPost);
+    });
+
     console.log("Başlatma tamamlandı");
   } else {
     console.error("Gerekli HTML elementleri bulunamadı!");
