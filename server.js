@@ -299,7 +299,8 @@ app.post(
       const posts = readPosts();
       console.log("Mevcut post sayısı:", posts.length);
 
-      posts.push(newPost);
+      // Yeni post her zaman listenin en başına eklensin
+      posts.unshift(newPost);
 
       const writeResult = writePosts(posts);
       console.log("Veri yazma sonucu:", writeResult);
