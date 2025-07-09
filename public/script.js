@@ -1531,7 +1531,9 @@ function createModernPostCard(post) {
           </div>
           <div class="post-card-grid-item">
             <span class="post-content-label">📆 Oluşturulma</span>
-            <div class="post-content-value">${post.createdAt || "-"}</div>
+            <div class="post-content-value">${
+              post.createdAtFormatted || post.createdAt || "-"
+            }</div>
           </div>
         </div>
 

@@ -117,13 +117,23 @@ const writePosts = (posts) => {
       if (b.manualOrder !== undefined) return 1;
 
       // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
-      // Önce oluşturma tarihlerini alıp milisaniyeye çevir
-      const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      // Timestamp kullanarak sırala (sunucu locale'ından bağımsız)
+      const aCreatedAt = a.createdAt || 0;
+      const bCreatedAt = b.createdAt || 0;
 
-      // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
-      if (aCreatedAt && bCreatedAt) {
-        return bCreatedAt - aCreatedAt;
+      // Eğer createdAt timestamp değilse (eski kayıtlar için), string'den timestamp'e çevir
+      const aTimestamp =
+        typeof aCreatedAt === "number"
+          ? aCreatedAt
+          : new Date(aCreatedAt).getTime() || 0;
+      const bTimestamp =
+        typeof bCreatedAt === "number"
+          ? bCreatedAt
+          : new Date(bCreatedAt).getTime() || 0;
+
+      // Oluşturma timestamp'ine göre sırala (en yeni en üstte)
+      if (aTimestamp && bTimestamp) {
+        return bTimestamp - aTimestamp;
       }
 
       // Son çare olarak ID'ye göre sırala (en yeni en üstte)
@@ -202,13 +212,23 @@ app.get("/api/posts", (req, res) => {
     if (b.manualOrder !== undefined) return 1;
 
     // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
-    // Önce oluşturma tarihlerini alıp milisaniyeye çevir
-    const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    // Timestamp kullanarak sırala (sunucu locale'ından bağımsız)
+    const aCreatedAt = a.createdAt || 0;
+    const bCreatedAt = b.createdAt || 0;
 
-    // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
-    if (aCreatedAt && bCreatedAt) {
-      return bCreatedAt - aCreatedAt;
+    // Eğer createdAt timestamp değilse (eski kayıtlar için), string'den timestamp'e çevir
+    const aTimestamp =
+      typeof aCreatedAt === "number"
+        ? aCreatedAt
+        : new Date(aCreatedAt).getTime() || 0;
+    const bTimestamp =
+      typeof bCreatedAt === "number"
+        ? bCreatedAt
+        : new Date(bCreatedAt).getTime() || 0;
+
+    // Oluşturma timestamp'ine göre sırala (en yeni en üstte)
+    if (aTimestamp && bTimestamp) {
+      return bTimestamp - aTimestamp;
     }
 
     // Son çare olarak ID'ye göre sırala (en yeni en üstte)
@@ -373,14 +393,16 @@ app.post(
         fileName: files.length > 0 ? files[0].fileName : null,
         originalName: files.length > 0 ? files[0].originalName : null,
         status: "planlandı",
-        createdAt: new Date().toLocaleString("tr-TR"),
+        createdAt: Date.now(), // Timestamp olarak kaydet
+        createdAtFormatted: new Date().toLocaleString("tr-TR"), // Görüntüleme için formatlanmış
       };
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
 
       // Yeni post'un oluşturma zamanını doğru şekilde ayarla
       const now = new Date();
-      newPost.createdAt = now.toLocaleString("tr-TR");
+      newPost.createdAt = now.getTime(); // Timestamp olarak kaydet
+      newPost.createdAtFormatted = now.toLocaleString("tr-TR"); // Görüntüleme için formatlanmış
 
       // Eğer sürükle bırak yapılmışsa manuel sıralama kullanılacak,
       // yoksa createdAt zamanı ile otomatik sıralanacak
