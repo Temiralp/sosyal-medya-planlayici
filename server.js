@@ -104,7 +104,7 @@ const writePosts = (posts) => {
       console.log("Data klasörü oluşturuldu:", dir);
     }
 
-    // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
+    // Sıralama mantığını yeni post ekleme için optimize et
     const sortedPosts = posts.sort((a, b) => {
       // Öncelikle manuel sıralama var mı kontrol et
       if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
@@ -116,10 +116,21 @@ const writePosts = (posts) => {
       if (a.manualOrder !== undefined) return -1;
       if (b.manualOrder !== undefined) return 1;
 
-      // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
-      // Önce oluşturma tarihlerini alıp milisaniyeye çevir
-      const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      // Yeni eklenen post'lar her zaman en üstte olacak
+      if (a.isNewPost && !b.isNewPost) return -1;
+      if (!a.isNewPost && b.isNewPost) return 1;
+
+      // Hiçbirinde manuel sıralama yoksa, önce ISO tarihini kullan
+      const aCreatedAt = a.createdAtISO
+        ? new Date(a.createdAtISO).getTime()
+        : a.createdAt
+        ? new Date(a.createdAt).getTime()
+        : 0;
+      const bCreatedAt = b.createdAtISO
+        ? new Date(b.createdAtISO).getTime()
+        : b.createdAt
+        ? new Date(b.createdAt).getTime()
+        : 0;
 
       // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
       if (aCreatedAt && bCreatedAt) {
@@ -128,6 +139,13 @@ const writePosts = (posts) => {
 
       // Son çare olarak ID'ye göre sırala (en yeni en üstte)
       return b.id - a.id;
+    });
+
+    // Yeni post işaretini temizle (bir sonraki sıralamada sorun çıkmasın)
+    sortedPosts.forEach((post) => {
+      if (post.isNewPost) {
+        delete post.isNewPost;
+      }
     });
 
     // JSON'u string'e çevir
@@ -189,7 +207,7 @@ app.get("/api/last-update", (req, res) => {
 // Tüm postları getir
 app.get("/api/posts", (req, res) => {
   const posts = readPosts();
-  // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
+  // Geliştirilmiş sıralama mantığı
   const sortedPosts = posts.sort((a, b) => {
     // Öncelikle manuel sıralama var mı kontrol et
     if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
@@ -201,10 +219,21 @@ app.get("/api/posts", (req, res) => {
     if (a.manualOrder !== undefined) return -1;
     if (b.manualOrder !== undefined) return 1;
 
-    // Hiçbirinde manuel sıralama yoksa, en yeni oluşturulan en üstte olacak şekilde sırala
-    // Önce oluşturma tarihlerini alıp milisaniyeye çevir
-    const aCreatedAt = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const bCreatedAt = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    // Yeni eklenen post'lar her zaman en üstte olacak
+    if (a.isNewPost && !b.isNewPost) return -1;
+    if (!a.isNewPost && b.isNewPost) return 1;
+
+    // Hiçbirinde manuel sıralama yoksa, önce ISO tarihini kullan
+    const aCreatedAt = a.createdAtISO
+      ? new Date(a.createdAtISO).getTime()
+      : a.createdAt
+      ? new Date(a.createdAt).getTime()
+      : 0;
+    const bCreatedAt = b.createdAtISO
+      ? new Date(b.createdAtISO).getTime()
+      : b.createdAt
+      ? new Date(b.createdAt).getTime()
+      : 0;
 
     // Oluşturma tarihi varsa ona göre sırala (en yeni en üstte)
     if (aCreatedAt && bCreatedAt) {
@@ -356,6 +385,11 @@ app.post(
       const maxId = posts.length > 0 ? Math.max(...posts.map((p) => p.id)) : 0;
       const newId = Math.max(Date.now(), maxId + 1);
 
+      // Oluşturma zamanını hem ISO format hem de Türkçe format olarak sakla
+      const now = new Date();
+      const createdAtISO = now.toISOString(); // Sıralama için ISO format
+      const createdAtTR = now.toLocaleString("tr-TR"); // Görüntüleme için Türkçe format
+
       const newPost = {
         id: newId,
         contentType: contentType || "post",
@@ -373,17 +407,13 @@ app.post(
         fileName: files.length > 0 ? files[0].fileName : null,
         originalName: files.length > 0 ? files[0].originalName : null,
         status: "planlandı",
-        createdAt: new Date().toLocaleString("tr-TR"),
+        createdAt: createdAtTR, // Görüntüleme için Türkçe format
+        createdAtISO: createdAtISO, // Sıralama için ISO format
+        // Yeni eklenen post olduğunu işaretle (sıralama için)
+        isNewPost: true,
       };
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
-
-      // Yeni post'un oluşturma zamanını doğru şekilde ayarla
-      const now = new Date();
-      newPost.createdAt = now.toLocaleString("tr-TR");
-
-      // Eğer sürükle bırak yapılmışsa manuel sıralama kullanılacak,
-      // yoksa createdAt zamanı ile otomatik sıralanacak
 
       // Yeni postu listenin başına ekle
       posts.unshift(newPost);
