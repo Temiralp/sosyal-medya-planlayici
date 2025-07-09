@@ -393,6 +393,8 @@ app.post(
   }
 );
 
+//Tamamlandı.
+
 // Post durumunu güncelle
 app.put("/api/posts/:id/status", (req, res) => {
   try {
