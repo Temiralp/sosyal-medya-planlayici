@@ -177,26 +177,47 @@ app.get("/api/last-update", (req, res) => {
   res.json({ lastUpdate: lastDataUpdate });
 });
 
-// Tüm postları getir
+// Tüm postları getir (filtreleme ve arama ile)
 app.get("/api/posts", (req, res) => {
-  const posts = readPosts();
-  // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
-  const sortedPosts = posts.sort((a, b) => {
-    // Öncelikle manuel sıralama var mı kontrol et
-    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
-      // Her ikisinde de manuel sıralama varsa, ona göre sırala
-      return a.manualOrder - b.manualOrder;
+  try {
+    let posts = readPosts();
+    const { search, filter } = req.query;
+
+    // Arama (Search)
+    if (search) {
+      const searchTerm = search.toLowerCase();
+      posts = posts.filter(
+        (p) =>
+          (p.title && p.title.toLowerCase().includes(searchTerm)) ||
+          (p.content && p.content.toLowerCase().includes(searchTerm)) ||
+          (p.notes && p.notes.toLowerCase().includes(searchTerm))
+      );
     }
 
-    // Kullanıcı sürükle bırak yaptıysa manualOrder'a göre sırala
-    if (a.manualOrder !== undefined) return -1;
-    if (b.manualOrder !== undefined) return 1;
+    // Filtreleme (Filter)
+    if (filter) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (filter === "today") {
+        posts = posts.filter((p) => p.scheduledDate === today);
+      }
+      // Gelecekte başka filtreler eklenebilir
+    }
 
-    // Hiçbirinde manuel sıralama yoksa, ID'ye göre sırala (en yeni en üstte)
-    // ID'ler timestamp bazlı olduğu için doğru sıralama yapacak
-    return b.id - a.id;
-  });
-  res.json(sortedPosts);
+    // Sıralama
+    const sortedPosts = posts.sort((a, b) => {
+      if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+        return a.manualOrder - b.manualOrder;
+      }
+      if (a.manualOrder !== undefined) return -1;
+      if (b.manualOrder !== undefined) return 1;
+      return b.id - a.id;
+    });
+
+    res.json(sortedPosts);
+  } catch (error) {
+    console.error("Postları getirirken hata:", error);
+    res.status(500).json({ success: false, message: "Sunucu hatası" });
+  }
 });
 
 // Post sıralamasını güncelle (DİKKAT: Parametreli rotalardan önce gelmeli)

@@ -267,6 +267,27 @@ function setupEventListeners() {
     }, 250);
   });
   console.log("Window resize listener eklendi");
+
+  // Arama ve filtreleme
+  const searchInput = document.getElementById("searchInput");
+  if (searchInput) {
+    searchInput.addEventListener("keyup", () => loadPosts());
+  }
+
+  const todayFilterBtn = document.getElementById("todayFilterBtn");
+  if (todayFilterBtn) {
+    todayFilterBtn.addEventListener("click", () => {
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput.dataset.filter === "today") {
+        searchInput.dataset.filter = "";
+        todayFilterBtn.classList.remove("active");
+      } else {
+        searchInput.dataset.filter = "today";
+        todayFilterBtn.classList.add("active");
+      }
+      loadPosts();
+    });
+  }
 }
 
 // İçerik türü değiştiğinde
@@ -2657,11 +2678,22 @@ function exportData() {
   window.open("/api/export", "_blank");
 }
 
-// Postları yükle (sayfa ilk açıldığında kullanılır)
 async function loadPosts() {
+  const searchInput = document.getElementById("searchInput");
+  const searchTerm = searchInput ? searchInput.value : "";
+  const filter = searchInput ? searchInput.dataset.filter : "";
+
   console.log("Postlar yükleniyor...");
   try {
-    const response = await fetch("/api/posts");
+    let url = "/api/posts?";
+    if (searchTerm) {
+      url += `search=${encodeURIComponent(searchTerm)}&`;
+    }
+    if (filter) {
+      url += `filter=${encodeURIComponent(filter)}&`;
+    }
+
+    const response = await fetch(url);
     const posts = await response.json();
     console.log(`${posts.length} post yüklendi`);
 
