@@ -28,6 +28,10 @@
                 <input type="radio" name="contentType" value="story" />
                 <span>📱 Story</span>
               </label>
+              <label class="radio-option">
+                <input type="radio" name="contentType" value="combined" />
+                <span>📝📱 Post ve Story</span>
+              </label>
             </div>
           </div>
 
@@ -262,6 +266,12 @@
           <div class="filter-controls">
             <input type="text" id="searchInput" placeholder="Ara..." />
             <button id="todayFilterBtn" class="btn btn-info btn-sm">Bugünkü Paylaşımlar</button>
+          </div>
+          <div class="content-type-filter">
+            <button class="btn btn-secondary btn-sm" data-filter="all">Tümü</button>
+            <button class="btn btn-secondary btn-sm" data-filter="post">Postlar</button>
+            <button class="btn btn-secondary btn-sm" data-filter="story">Storyler</button>
+            <button class="btn btn-secondary btn-sm" data-filter="combined">Post ve Story</button>
           </div>
           <div class="posts-info">
             <span id="pageInfo">Sayfa 1 / 1</span>

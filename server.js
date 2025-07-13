@@ -181,7 +181,7 @@ app.get("/api/last-update", (req, res) => {
 app.get("/api/posts", (req, res) => {
   try {
     let posts = readPosts();
-    const { search, filter } = req.query;
+    const { search, filter, contentType } = req.query;
 
     // Arama (Search)
     if (search) {
@@ -201,6 +201,11 @@ app.get("/api/posts", (req, res) => {
         posts = posts.filter((p) => p.scheduledDate === today);
       }
       // Gelecekte başka filtreler eklenebilir
+    }
+
+    // contentType filtreleme
+    if (contentType) {
+      posts = posts.filter((p) => p.contentType === contentType);
     }
 
     // Sıralama
@@ -511,6 +516,15 @@ app.put(
           success: false,
           message: "Post içeriği gereklidir",
         });
+      }
+      if (contentType === "combined") {
+        if (!cleanContent && !cleanStoryLink && !cleanStoryLinkTitle) {
+          console.error("Combined paylaşım için post içeriği veya story bilgileri eksik");
+          return res.status(400).json({
+            success: false,
+            message: "Combined paylaşım için post içeriği veya story bilgileri gereklidir",
+          });
+        }
       }
 
       // selectedAccounts parse etmeyi dene

@@ -311,6 +311,12 @@ function handleContentTypeChange(event) {
     contentTextarea.required = false;
     storyLink.required = false;
     storyLinkTitle.required = false;
+  } else if (contentType === "combined") {
+    postContent.style.display = "block";
+    storyContent.style.display = "block";
+    contentTextarea.required = false; // Hem post hem story olduğu için ayrı ayrı zorunlu kılmıyoruz
+    storyLink.required = false;
+    storyLinkTitle.required = false;
   }
 
   console.log(`İçerik türü değişti: ${contentType}`);
@@ -1203,6 +1209,11 @@ function createModernPostCard(post) {
       contentDisplay = "Story içeriği";
       contentPreview = "Story içeriği";
     }
+  } else if (post.contentType === "combined") {
+    const postPart = post.content && post.content.trim() ? post.content : "";
+    const storyPart = post.storyLinkTitle && post.storyLinkTitle.trim() ? post.storyLinkTitle : "";
+    contentDisplay = `Post: ${postPart}\nStory: ${storyPart}`;
+    contentPreview = `Post: ${postPart.substring(0, 40)}... Story: ${storyPart.substring(0, 40)}...`;
   } else {
     contentDisplay = post.content && post.content.trim() ? post.content : "";
     contentPreview =
@@ -1428,7 +1439,7 @@ function createModernPostCard(post) {
       <div class="post-card-header">
         <div class="post-card-title">
           <span class="content-type-badge-modern ${post.contentType}">
-            ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
+            ${post.contentType === "story" ? "📱 Story" : post.contentType === "combined" ? "📝📱 Post ve Story" : "📝 Post"}
           </span>
           <span class="post-card-id">#${post.id}</span>
         </div>
@@ -1746,6 +1757,12 @@ function createEditForm(post) {
               } onchange="toggleEditContentType(${post.id})">
               <span>📱 Story</span>
             </label>
+            <label class="edit-radio-option">
+              <input type="radio" name="contentType" value="combined" ${
+                post.contentType === "combined" ? "checked" : ""
+              } onchange="toggleEditContentType(${post.id})">
+              <span>📝📱 Post ve Story</span>
+            </label>
           </div>
         </div>
 
@@ -2059,20 +2076,20 @@ function cancelEditMode(postId) {
 
 // Content type toggle (edit mode)
 function toggleEditContentType(postId) {
-  const postContent = document.getElementById(`edit-post-content-${postId}`);
-  const storyContent = document.getElementById(`edit-story-content-${postId}`);
-  const contentTypeRadio = document.querySelector(
-    `#edit-form-data-${postId} input[name="contentType"]:checked`
-  );
+  const form = document.getElementById(`edit-form-data-${postId}`);
+  const contentType = form.querySelector('input[name="contentType"]:checked').value;
+  const postContentDiv = form.querySelector(`#edit-post-content-${postId}`);
+  const storyContentDiv = form.querySelector(`#edit-story-content-${postId}`);
 
-  if (contentTypeRadio && postContent && storyContent) {
-    if (contentTypeRadio.value === "post") {
-      postContent.style.display = "block";
-      storyContent.style.display = "none";
-    } else {
-      postContent.style.display = "none";
-      storyContent.style.display = "block";
-    }
+  if (contentType === "post") {
+    postContentDiv.style.display = "block";
+    storyContentDiv.style.display = "none";
+  } else if (contentType === "story") {
+    postContentDiv.style.display = "none";
+    storyContentDiv.style.display = "block";
+  } else if (contentType === "combined") {
+    postContentDiv.style.display = "block";
+    storyContentDiv.style.display = "block";
   }
 }
 
