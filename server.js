@@ -168,6 +168,57 @@ const notifyPostUpdate = () => {
 };
 
 // Ana sayfa
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
+
+// Moment.js'i dahil et
+const moment = require('moment');
+
+// Bildirim gönderilen postları takip etmek için bir Set
+const notifiedPosts = new Set();
+
+// Her dakika çalışacak bildirim kontrol fonksiyonu
+setInterval(() => {
+  const posts = readPosts();
+  const now = moment();
+
+  posts.forEach(post => {
+    // Eğer post zaten 'yapıldı' ise veya bildirim gönderildiyse tekrar kontrol etme
+    if (post.status === 'yapıldı' || notifiedPosts.has(post.id)) {
+      return;
+    }
+
+    const scheduledDateTime = moment(`${post.scheduledDate} ${post.scheduledTime}`, 'DD.MM.YYYY HH:mm');
+    const diffMinutes = scheduledDateTime.diff(now, 'minutes');
+
+    let notificationMessage = '';
+
+    if (diffMinutes > 0 && diffMinutes <= 60 && diffMinutes > 30) {
+      notificationMessage = `DİKKAT: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 1 saatten az kaldı! Kalan süre: ${diffMinutes} dakika.`;
+    } else if (diffMinutes > 0 && diffMinutes <= 30 && diffMinutes > 15) {
+      notificationMessage = `UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 30 dakikadan az kaldı! Kalan süre: ${diffMinutes} dakika.`;
+    } else if (diffMinutes > 0 && diffMinutes <= 15 && diffMinutes > 0) {
+      notificationMessage = `SON UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 15 dakikadan az kaldı! Kalan süre: ${diffMinutes} dakika.`;
+    }
+
+    if (notificationMessage) {
+      io.emit('notification', {
+        id: post.id,
+        title: post.title,
+        message: notificationMessage,
+        timeRemaining: diffMinutes
+      });
+      console.log(`Bildirim gönderildi: ${notificationMessage}`);
+      // Bildirim gönderilen post'u Set'e ekle
+      notifiedPosts.add(post.id);
+    }
+  });
+}, 60 * 1000); // Her 1 dakikada bir çalıştır (60 saniye * 1000 ms)
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
