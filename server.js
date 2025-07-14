@@ -181,8 +181,8 @@ const io = new Server(server, {
 // Moment.js'i dahil et
 const moment = require("moment");
 
-// Bildirim gönderilen postları takip etmek için bir Set
-const notifiedPosts = new Set();
+// Bildirim gönderilen postları takip etmek için bir Map (post_id -> gönderilen bildirim türleri)
+const notifiedPosts = new Map();
 
 // Her dakika çalışacak bildirim kontrol fonksiyonu
 setInterval(() => {
@@ -190,8 +190,8 @@ setInterval(() => {
   const now = moment();
 
   posts.forEach((post) => {
-    // Eğer post zaten 'yapıldı' ise veya bildirim gönderildiyse tekrar kontrol etme
-    if (post.status === "yapıldı" || notifiedPosts.has(post.id)) {
+    // Eğer post zaten 'yapıldı' ise kontrol etme
+    if (post.status === "yapıldı") {
       return;
     }
 
@@ -201,26 +201,56 @@ setInterval(() => {
     );
     const diffMinutes = scheduledDateTime.diff(now, "minutes");
 
-    let notificationMessage = "";
+    // Bu post için gönderilen bildirimleri kontrol et
+    const sentNotifications = notifiedPosts.get(post.id) || new Set();
 
-    if (diffMinutes > 0 && diffMinutes <= 60 && diffMinutes > 30) {
-      notificationMessage = `DİKKAT: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 1 saatten az kaldı! Kalan süre: ${diffMinutes} dakika.`;
-    } else if (diffMinutes > 0 && diffMinutes <= 30 && diffMinutes > 15) {
-      notificationMessage = `UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 30 dakikadan az kaldı! Kalan süre: ${diffMinutes} dakika.`;
-    } else if (diffMinutes > 0 && diffMinutes <= 15 && diffMinutes > 0) {
-      notificationMessage = `SON UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 15 dakikadan az kaldı! Kalan süre: ${diffMinutes} dakika.`;
+    let notificationMessage = "";
+    let notificationType = "";
+
+    // 1 saat kala bildirim (55-65 dakika arası)
+    if (
+      diffMinutes > 0 &&
+      diffMinutes <= 65 &&
+      diffMinutes > 55 &&
+      !sentNotifications.has("1hour")
+    ) {
+      notificationMessage = `DİKKAT: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 1 saat kaldı!`;
+      notificationType = "1hour";
+    }
+    // 30 dakika kala bildirim (25-35 dakika arası)
+    else if (
+      diffMinutes > 0 &&
+      diffMinutes <= 35 &&
+      diffMinutes > 25 &&
+      !sentNotifications.has("30min")
+    ) {
+      notificationMessage = `UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 30 dakika kaldı!`;
+      notificationType = "30min";
+    }
+    // 15 dakika kala bildirim (10-20 dakika arası)
+    else if (
+      diffMinutes > 0 &&
+      diffMinutes <= 20 &&
+      diffMinutes > 10 &&
+      !sentNotifications.has("15min")
+    ) {
+      notificationMessage = `ACİL: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 15 dakika kaldı!`;
+      notificationType = "15min";
     }
 
-    if (notificationMessage) {
+    if (notificationMessage && notificationType) {
       io.emit("notification", {
         id: post.id,
         title: post.title,
         message: notificationMessage,
         timeRemaining: diffMinutes,
+        type: notificationType,
       });
       console.log(`Bildirim gönderildi: ${notificationMessage}`);
-      // Bildirim gönderilen post'u Set'e ekle
-      notifiedPosts.add(post.id);
+
+      // Bu bildirim türünü gönderildi olarak işaretle
+      sentNotifications.add(notificationType);
+      notifiedPosts.set(post.id, sentNotifications);
     }
   });
 }, 60 * 1000); // Her 1 dakikada bir çalıştır (60 saniye * 1000 ms)
