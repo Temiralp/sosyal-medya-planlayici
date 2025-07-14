@@ -311,6 +311,12 @@ function handleContentTypeChange(event) {
     contentTextarea.required = false;
     storyLink.required = false;
     storyLinkTitle.required = false;
+  } else if (contentType === "post-story") {
+    postContent.style.display = "block";
+    storyContent.style.display = "block";
+    contentTextarea.required = true;
+    storyLink.required = false;
+    storyLinkTitle.required = false;
   }
 
   console.log(`İçerik türü değişti: ${contentType}`);
@@ -679,6 +685,11 @@ async function handleFormSubmit(event) {
     showMessage("Lütfen post içeriğini yazın!", "error");
     showToast("❌ Lütfen post içeriğini yazın!", "error", 4000);
     return;
+  } else if (contentType === "post-story" && !content.trim() && !storyLink.trim()) {
+    resetSubmitButton();
+    showMessage("Lütfen post içeriğini veya story linkini yazın!", "error");
+    showToast("❌ Lütfen post içeriğini veya story linkini yazın!", "error", 4000);
+    return;
   }
 
   // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
@@ -879,6 +890,12 @@ function resetForm() {
   const storyContent = document.getElementById("storyContent");
   postContent.style.display = "block";
   storyContent.style.display = "none";
+
+  // Radyo butonunu "post" olarak işaretle
+  const postRadio = document.querySelector('input[name="contentType"][value="post"]');
+  if (postRadio) {
+    postRadio.checked = true;
+  }
 
   // Required alanlarını sıfırla
   const contentTextarea = document.getElementById("content");
@@ -1203,6 +1220,16 @@ function createModernPostCard(post) {
       contentDisplay = "Story içeriği";
       contentPreview = "Story içeriği";
     }
+  } else if (post.contentType === "post-story") {
+    contentDisplay = post.content && post.content.trim() ? post.content : "";
+    contentPreview =
+      contentDisplay.length > 120
+        ? contentDisplay.substring(0, 120) + "..."
+        : contentDisplay;
+    if (post.storyLinkTitle) {
+      contentDisplay += (contentDisplay ? "\n\n" : "") + "Story Başlığı: " + post.storyLinkTitle;
+      contentPreview += (contentPreview ? " / " : "") + "Story: " + post.storyLinkTitle;
+    }
   } else {
     contentDisplay = post.content && post.content.trim() ? post.content : "";
     contentPreview =
@@ -1428,7 +1455,7 @@ function createModernPostCard(post) {
       <div class="post-card-header">
         <div class="post-card-title">
           <span class="content-type-badge-modern ${post.contentType}">
-            ${post.contentType === "story" ? "📱 Story" : "📝 Post"}
+            ${post.contentType === "story" ? "📱 Story" : post.contentType === "post-story" ? "📝📱 Post + Story" : "📝 Post"}
           </span>
           <span class="post-card-id">#${post.id}</span>
         </div>
@@ -1746,6 +1773,12 @@ function createEditForm(post) {
               } onchange="toggleEditContentType(${post.id})">
               <span>📱 Story</span>
             </label>
+            <label class="edit-radio-option">
+              <input type="radio" name="contentType" value="post-story" ${
+                post.contentType === "post-story" ? "checked" : ""
+              } onchange="toggleEditContentType(${post.id})">
+              <span>📝📱 Post + Story</span>
+            </label>
           </div>
         </div>
 
@@ -2059,20 +2092,20 @@ function cancelEditMode(postId) {
 
 // Content type toggle (edit mode)
 function toggleEditContentType(postId) {
-  const postContent = document.getElementById(`edit-post-content-${postId}`);
-  const storyContent = document.getElementById(`edit-story-content-${postId}`);
-  const contentTypeRadio = document.querySelector(
-    `#edit-form-data-${postId} input[name="contentType"]:checked`
-  );
+  const editForm = document.getElementById(`edit-form-data-${postId}`);
+  const contentType = editForm.querySelector('input[name="contentType"]:checked').value;
+  const postContentDiv = editForm.querySelector(`#edit-post-content-${postId}`);
+  const storyContentDiv = editForm.querySelector(`#edit-story-content-${postId}`);
 
-  if (contentTypeRadio && postContent && storyContent) {
-    if (contentTypeRadio.value === "post") {
-      postContent.style.display = "block";
-      storyContent.style.display = "none";
-    } else {
-      postContent.style.display = "none";
-      storyContent.style.display = "block";
-    }
+  if (contentType === "post") {
+    postContentDiv.style.display = "block";
+    storyContentDiv.style.display = "none";
+  } else if (contentType === "story") {
+    postContentDiv.style.display = "none";
+    storyContentDiv.style.display = "block";
+  } else if (contentType === "post-story") {
+    postContentDiv.style.display = "block";
+    storyContentDiv.style.display = "block";
   }
 }
 

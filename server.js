@@ -321,6 +321,12 @@ app.post(
           success: false,
           message: "Post içeriği gereklidir",
         });
+      } else if (contentType === "post-story" && !cleanContent && !cleanStoryLink) {
+        console.error("Post veya Story içeriği boş");
+        return res.status(400).json({
+          success: false,
+          message: "Post içeriği veya Story linki gereklidir",
+        });
       }
 
       // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
@@ -510,6 +516,12 @@ app.put(
         return res.status(400).json({
           success: false,
           message: "Post içeriği gereklidir",
+        });
+      } else if (contentType === "post-story" && !cleanContent && !cleanStoryLink) {
+        console.error("Post veya Story içeriği boş");
+        return res.status(400).json({
+          success: false,
+          message: "Post içeriği veya Story linki gereklidir",
         });
       }
 
