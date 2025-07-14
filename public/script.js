@@ -213,6 +213,14 @@ document.addEventListener("DOMContentLoaded", function () {
     loadPosts();
     setupEventListeners();
 
+    // Content type filter'da "Tümü" butonunu varsayılan olarak aktif yap
+    const allFilterBtn = document.querySelector(
+      '.content-type-filter button[data-filter="all"]'
+    );
+    if (allFilterBtn) {
+      allFilterBtn.classList.add("active");
+    }
+
     // Gerçek zamanlı güncelleme kaldırıldı - HTTP istekleri ile çalışıyor
 
     console.log("Başlatma tamamlandı");
@@ -288,6 +296,36 @@ function setupEventListeners() {
       loadPosts();
     });
   }
+
+  // Content type filter butonları
+  const contentTypeFilterBtns = document.querySelectorAll(
+    ".content-type-filter button"
+  );
+  contentTypeFilterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.filter;
+
+      // Tüm butonlardan active class'ını kaldır
+      contentTypeFilterBtns.forEach((b) => b.classList.remove("active"));
+
+      // Tıklanan butona active class'ı ekle
+      btn.classList.add("active");
+
+      // searchInput'a contentType filter'ını set et
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput) {
+        if (filter === "all") {
+          searchInput.dataset.contentType = "";
+        } else {
+          searchInput.dataset.contentType = filter;
+        }
+      }
+
+      // Postları yeniden yükle
+      loadPosts();
+    });
+  });
+  console.log("Content type filter listeners eklendi");
 }
 
 // İçerik türü değiştiğinde
@@ -2733,6 +2771,7 @@ async function loadPosts() {
   const searchInput = document.getElementById("searchInput");
   const searchTerm = searchInput ? searchInput.value : "";
   const filter = searchInput ? searchInput.dataset.filter : "";
+  const contentType = searchInput ? searchInput.dataset.contentType : "";
 
   console.log("Postlar yükleniyor...");
   try {
@@ -2742,6 +2781,9 @@ async function loadPosts() {
     }
     if (filter) {
       url += `filter=${encodeURIComponent(filter)}&`;
+    }
+    if (contentType) {
+      url += `contentType=${encodeURIComponent(contentType)}&`;
     }
 
     const response = await fetch(url);
