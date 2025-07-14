@@ -4,8 +4,11 @@ const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
 const archiver = require("archiver");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -176,7 +179,7 @@ const io = new Server(server, {
 });
 
 // Moment.js'i dahil et
-const moment = require('moment');
+const moment = require("moment");
 
 // Bildirim gönderilen postları takip etmek için bir Set
 const notifiedPosts = new Set();
@@ -186,16 +189,19 @@ setInterval(() => {
   const posts = readPosts();
   const now = moment();
 
-  posts.forEach(post => {
+  posts.forEach((post) => {
     // Eğer post zaten 'yapıldı' ise veya bildirim gönderildiyse tekrar kontrol etme
-    if (post.status === 'yapıldı' || notifiedPosts.has(post.id)) {
+    if (post.status === "yapıldı" || notifiedPosts.has(post.id)) {
       return;
     }
 
-    const scheduledDateTime = moment(`${post.scheduledDate} ${post.scheduledTime}`, 'DD.MM.YYYY HH:mm');
-    const diffMinutes = scheduledDateTime.diff(now, 'minutes');
+    const scheduledDateTime = moment(
+      `${post.scheduledDate} ${post.scheduledTime}`,
+      "DD.MM.YYYY HH:mm"
+    );
+    const diffMinutes = scheduledDateTime.diff(now, "minutes");
 
-    let notificationMessage = '';
+    let notificationMessage = "";
 
     if (diffMinutes > 0 && diffMinutes <= 60 && diffMinutes > 30) {
       notificationMessage = `DİKKAT: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 1 saatten az kaldı! Kalan süre: ${diffMinutes} dakika.`;
@@ -206,11 +212,11 @@ setInterval(() => {
     }
 
     if (notificationMessage) {
-      io.emit('notification', {
+      io.emit("notification", {
         id: post.id,
         title: post.title,
         message: notificationMessage,
-        timeRemaining: diffMinutes
+        timeRemaining: diffMinutes,
       });
       console.log(`Bildirim gönderildi: ${notificationMessage}`);
       // Bildirim gönderilen post'u Set'e ekle
@@ -1040,7 +1046,7 @@ app.use((error, req, res, next) => {
 });
 
 // Sunucuyu başlat
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Sunucu çalışıyor: http://localhost:${PORT}`);
   console.log("Kullanım:");
   console.log("1. npm install");
