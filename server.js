@@ -326,7 +326,11 @@ app.post(
           success: false,
           message: "Post içeriği gereklidir",
         });
-      } else if (contentType === "post-story" && !cleanContent && !cleanStoryLink) {
+      } else if (
+        contentType === "combined" &&
+        !cleanContent &&
+        !cleanStoryLink
+      ) {
         console.error("Post veya Story içeriği boş");
         return res.status(400).json({
           success: false,
@@ -522,7 +526,11 @@ app.put(
           success: false,
           message: "Post içeriği gereklidir",
         });
-      } else if (contentType === "post-story" && !cleanContent && !cleanStoryLink) {
+      } else if (
+        contentType === "combined" &&
+        !cleanContent &&
+        !cleanStoryLink
+      ) {
         console.error("Post veya Story içeriği boş");
         return res.status(400).json({
           success: false,
@@ -531,10 +539,13 @@ app.put(
       }
       if (contentType === "combined") {
         if (!cleanContent && !cleanStoryLink && !cleanStoryLinkTitle) {
-          console.error("Combined paylaşım için post içeriği veya story bilgileri eksik");
+          console.error(
+            "Combined paylaşım için post içeriği veya story bilgileri eksik"
+          );
           return res.status(400).json({
             success: false,
-            message: "Combined paylaşım için post içeriği veya story bilgileri gereklidir",
+            message:
+              "Combined paylaşım için post içeriği veya story bilgileri gereklidir",
           });
         }
       }
