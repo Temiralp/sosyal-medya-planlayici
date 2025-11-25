@@ -102,6 +102,81 @@
             </div>
           </div>
 
+          <div class="schedule-planner">
+            <div class="planner-top">
+              <div>
+                <label>Planlama Modu</label>
+                <p class="planner-description">
+                  Tek seferlik planların yanı sıra günlük tekrarlarını burada
+                  oluşturabilirsiniz. Yukarıdaki tarih ve saat alanı seçtiğiniz
+                  tüm günler için referans alınır.
+                </p>
+              </div>
+              <div class="planner-mode-options">
+                <label class="radio-option small">
+                  <input
+                    type="radio"
+                    name="plannerMode"
+                    value="single"
+                    checked
+                  />
+                  <span>Tek Seferlik</span>
+                </label>
+                <label class="radio-option small">
+                  <input type="radio" name="plannerMode" value="daily" />
+                  <span>Her Gün</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="planner-mode-fields" data-mode="daily">
+              <div>
+                <label for="dailyStartDate">Başlangıç Tarihi</label>
+                <input type="date" id="dailyStartDate" />
+              </div>
+              <div>
+                <label for="dailyEndDate">Bitiş Tarihi</label>
+                <input type="date" id="dailyEndDate" />
+              </div>
+            </div>
+
+            <div class="planner-actions">
+              <button
+                type="button"
+                id="addManualDateBtn"
+                class="btn btn-outline"
+              >
+                ➕ Tarihi Listeye Ekle
+              </button>
+              <button
+                type="button"
+                id="generatePlanBtn"
+                class="btn btn-secondary"
+              >
+                ⚙️ Otomatik Planla
+              </button>
+              <button
+                type="button"
+                id="clearPlannedDatesBtn"
+                class="btn btn-text"
+              >
+                Temizle
+              </button>
+            </div>
+
+            <div class="planned-dates-wrapper" id="plannedDatesWrapper">
+              <div class="planned-dates-head">
+                <span>Planlanan Tarihler</span>
+                <span id="plannedDatesCount" class="badge">0</span>
+              </div>
+              <ul id="plannedDatesList" class="planned-dates"></ul>
+              <p class="planner-hint">
+                Liste boşsa sadece tek tarih planlanır. Liste dolu olduğunda her
+                tarih için ayrı paylaşım oluşur.
+              </p>
+            </div>
+          </div>
+
           <!-- Paylaşım Notu -->
           <div class="notes-section">
             <label for="notes">📝 Paylaşım Notu</label>

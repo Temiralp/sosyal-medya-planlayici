@@ -171,12 +171,17 @@ let currentEditPostId = null;
 // Yeni: Açık (expanded) durumda kalan kartları tutan Set
 const expandedPostIds = new Set();
 
+// Planlama modülü durumu
+const schedulePlannerState = {
+  mode: "single",
+  plannedDates: [],
+};
+
 // Varsayılan tarihi ayarla
 function setDefaultDate() {
   const scheduledDate = document.getElementById("scheduledDate");
   if (scheduledDate) {
-    // Bugünün tarihini YYYY-MM-DD formatında al
-    const today = new Date().toISOString().split("T")[0];
+    const today = formatDateForInput(new Date());
     scheduledDate.value = today;
     console.log(`Varsayılan tarih ayarlandı: ${today}`);
   }
@@ -326,6 +331,283 @@ function setupEventListeners() {
     });
   });
   console.log("Content type filter listeners eklendi");
+
+  initializeSchedulePlanner();
+}
+
+// Planlama modülü
+function initializeSchedulePlanner() {
+  const plannerModeRadios = document.querySelectorAll('input[name="plannerMode"]');
+  if (!plannerModeRadios.length) {
+    console.warn("Planlama modülü bileşenleri bulunamadı");
+    return;
+  }
+
+  plannerModeRadios.forEach((radio) => {
+    radio.addEventListener("change", (event) =>
+      handlePlannerModeChange(event.target.value)
+    );
+  });
+
+  const plannedDatesList = document.getElementById("plannedDatesList");
+  if (plannedDatesList && !plannedDatesList.dataset.listenerAttached) {
+    plannedDatesList.addEventListener("click", (event) => {
+      const removeBtn = event.target.closest(".remove-date-btn");
+      if (removeBtn) {
+        const index = Number(removeBtn.dataset.index);
+        removePlannedDate(index);
+      }
+    });
+    plannedDatesList.dataset.listenerAttached = "true";
+  }
+
+  const addManualDateBtn = document.getElementById("addManualDateBtn");
+  if (addManualDateBtn) {
+    addManualDateBtn.addEventListener("click", addCurrentDateToPlan);
+  }
+
+  const generatePlanBtn = document.getElementById("generatePlanBtn");
+  if (generatePlanBtn) {
+    generatePlanBtn.addEventListener("click", generatePlanFromMode);
+  }
+
+  const clearBtn = document.getElementById("clearPlannedDatesBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => clearPlannedDates());
+  }
+
+  handlePlannerModeChange(schedulePlannerState.mode);
+  updatePlannedDatesUI();
+}
+
+function handlePlannerModeChange(mode) {
+  schedulePlannerState.mode = mode;
+  const fields = document.querySelectorAll(".planner-mode-fields");
+  fields.forEach((field) => {
+    if (field.dataset.mode === mode) {
+      field.classList.add("active");
+    } else {
+      field.classList.remove("active");
+    }
+  });
+
+  const plannerWrapper = document.querySelector(".schedule-planner");
+  if (plannerWrapper) {
+    plannerWrapper.dataset.mode = mode;
+  }
+}
+
+function addCurrentDateToPlan() {
+  const scheduledDate = document.getElementById("scheduledDate").value;
+  const scheduledTime = document.getElementById("scheduledTime").value;
+
+  if (!scheduledDate || !scheduledTime) {
+    showToast("Tarih ve saat alanlarını doldurun", "warning", 3500);
+    return;
+  }
+
+  const added = addSinglePlannedDate(scheduledDate, scheduledTime);
+  if (added) {
+    showToast("Tarih plan listesine eklendi", "success", 3000);
+  } else {
+    showToast("Bu tarih zaten listede", "warning", 3000);
+  }
+}
+
+function addSinglePlannedDate(date, time) {
+  const key = `${date}-${time}`;
+  const exists = schedulePlannerState.plannedDates.some(
+    (entry) => entry.key === key
+  );
+  if (exists) {
+    return false;
+  }
+
+  schedulePlannerState.plannedDates.push({ date, time, key });
+  schedulePlannerState.plannedDates.sort(
+    (a, b) =>
+      new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`)
+  );
+  updatePlannedDatesUI();
+  return true;
+}
+
+function generatePlanFromMode() {
+  const mode = schedulePlannerState.mode;
+  if (mode === "single") {
+    showToast("Tek seferlik modda otomatik planlama yoktur", "info", 3500);
+    return;
+  }
+
+  if (mode !== "daily") {
+    showToast("Bu planlama modu artık desteklenmiyor", "warning", 3500);
+    return;
+  }
+
+  const scheduledTime = document.getElementById("scheduledTime").value;
+  if (!scheduledTime) {
+    showToast("Önce saat alanını doldurun", "error", 3500);
+    return;
+  }
+
+  const start = document.getElementById("dailyStartDate").value;
+  const end = document.getElementById("dailyEndDate").value;
+  if (!start || !end) {
+    showToast("Başlangıç ve bitiş tarihlerini girin", "error", 3500);
+    return;
+  }
+  const generatedDates = generateDailyDates(start, end, scheduledTime);
+
+  if (!generatedDates.length) {
+    showToast("Kriterlere uygun tarih bulunamadı", "warning", 4000);
+    return;
+  }
+
+  let addedCount = 0;
+  generatedDates.forEach((entry) => {
+    if (addSinglePlannedDate(entry.date, entry.time)) {
+      addedCount++;
+    }
+  });
+
+  if (addedCount > 0) {
+    showToast(
+      `${addedCount} yeni tarih plan listesine eklendi`,
+      "success",
+      4000
+    );
+  } else {
+    showToast("Yeni tarih eklenmedi, tüm tarihler listede vardı", "warning", 4000);
+  }
+}
+
+function generateDailyDates(start, end, time) {
+  const dates = [];
+  const startDate = parseDateValue(start);
+  const endDate = parseDateValue(end);
+  if (!startDate || !endDate || startDate > endDate) {
+    return dates;
+  }
+
+  for (
+    let cursor = new Date(startDate);
+    cursor <= endDate;
+    cursor.setDate(cursor.getDate() + 1)
+  ) {
+    dates.push({
+      date: formatDateForInput(cursor),
+      time,
+    });
+  }
+  return dates;
+}
+
+function removePlannedDate(index) {
+  if (index < 0 || index >= schedulePlannerState.plannedDates.length) {
+    return;
+  }
+  schedulePlannerState.plannedDates.splice(index, 1);
+  updatePlannedDatesUI();
+}
+
+function clearPlannedDates() {
+  schedulePlannerState.plannedDates = [];
+  updatePlannedDatesUI();
+}
+
+function updatePlannedDatesUI() {
+  const list = document.getElementById("plannedDatesList");
+  const countBadge = document.getElementById("plannedDatesCount");
+  const wrapper = document.getElementById("plannedDatesWrapper");
+
+  if (!list || !countBadge || !wrapper) return;
+
+  if (schedulePlannerState.plannedDates.length === 0) {
+    list.innerHTML =
+      '<li class="planned-date-item planned-date-empty">Henüz tarih eklenmedi</li>';
+    wrapper.classList.remove("has-items");
+  } else {
+    list.innerHTML = schedulePlannerState.plannedDates
+      .map(
+        (entry, index) => `
+          <li class="planned-date-item">
+            <span>${formatPlannerDate(entry.date)} • ${entry.time}</span>
+            <button type="button" class="remove-date-btn" data-index="${index}">Sil</button>
+          </li>
+        `
+      )
+      .join("");
+    wrapper.classList.add("has-items");
+  }
+
+  countBadge.textContent = schedulePlannerState.plannedDates.length;
+}
+
+function formatPlannerDate(date) {
+  const parsedDate = parseDateValue(date);
+  if (!parsedDate) return date;
+  return parsedDate.toLocaleDateString("tr-TR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function createDateFromInput(value) {
+  if (!value) return null;
+  const parts = value.split("-");
+  if (parts.length !== 3) return null;
+  const [yearStr, monthStr, dayStr] = parts;
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return null;
+  }
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
+function formatDateForInput(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateValue(value) {
+  return createDateFromInput(value);
+}
+
+function resetPlannerState() {
+  schedulePlannerState.mode = "single";
+  schedulePlannerState.plannedDates = [];
+
+  const singleRadio = document.querySelector(
+    'input[name="plannerMode"][value="single"]'
+  );
+  if (singleRadio) {
+    singleRadio.checked = true;
+  }
+
+  [
+    "dailyStartDate",
+    "dailyEndDate",
+  ].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.value = "";
+  });
+
+  handlePlannerModeChange("single");
+  updatePlannedDatesUI();
 }
 
 // İçerik türü değiştiğinde
@@ -665,11 +947,15 @@ async function handleFormSubmit(event) {
   event.preventDefault();
   console.log("Form gönderiliyor...");
 
-  // Submit butonunu bul ve loading durumuna geçir
   const submitButton = document.querySelector('button[type="submit"]');
   const originalButtonText = submitButton.innerHTML;
 
-  // Butonu devre dışı bırak ve loading mesajı göster
+  const resetSubmitButton = () => {
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonText;
+    submitButton.style.opacity = "1";
+  };
+
   submitButton.disabled = true;
   submitButton.innerHTML = "⏳ Biraz bekleyin...";
   submitButton.style.opacity = "0.7";
@@ -696,16 +982,9 @@ async function handleFormSubmit(event) {
     scheduledDate,
     scheduledTime,
     selectedAccounts: selectedAccounts.length,
+    planCount: schedulePlannerState.plannedDates.length,
   });
 
-  // Butonu eski haline döndüren fonksiyon
-  const resetSubmitButton = () => {
-    submitButton.disabled = false;
-    submitButton.innerHTML = originalButtonText;
-    submitButton.style.opacity = "1";
-  };
-
-  // Validation
   if (!title.trim()) {
     resetSubmitButton();
     showMessage("Lütfen paylaşım başlığını yazın!", "error");
@@ -738,8 +1017,6 @@ async function handleFormSubmit(event) {
     return;
   }
 
-  // Story için link ve başlık kontrolü kaldırıldı - artık opsiyonel
-
   if (selectedAccounts.length === 0) {
     resetSubmitButton();
     showMessage("En az bir hesap seçin!", "error");
@@ -747,6 +1024,115 @@ async function handleFormSubmit(event) {
     return;
   }
 
+  const scheduleEntries =
+    schedulePlannerState.plannedDates.length > 0
+      ? [...schedulePlannerState.plannedDates]
+      : [{ date: scheduledDate, time: scheduledTime }];
+
+  const isPlanBatch = schedulePlannerState.plannedDates.length > 0;
+  const planBatchId = isPlanBatch
+    ? `plan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    : "";
+  const planGeneratedAt = isPlanBatch ? new Date().toISOString() : "";
+  const planTotal = scheduleEntries.length;
+  const basePlannerMode = isPlanBatch
+    ? schedulePlannerState.mode || "single"
+    : "single";
+
+  const progressElements = {
+    container: document.getElementById("uploadProgress"),
+    fill: document.getElementById("progressFill"),
+    text: document.getElementById("progressText"),
+    percent: document.getElementById("progressPercent"),
+    speed: document.getElementById("uploadSpeed"),
+  };
+
+  const hasFiles = fileInput.files && fileInput.files.length > 0;
+
+  if (hasFiles && progressElements.container) {
+    progressElements.container.style.display = "block";
+    progressElements.fill.style.width = "0%";
+    progressElements.percent.textContent = "0%";
+    progressElements.text.textContent = "Dosyalar yükleniyor...";
+    progressElements.speed.textContent = "";
+  }
+
+  try {
+    for (let index = 0; index < scheduleEntries.length; index++) {
+      const entry = scheduleEntries[index];
+      const formData = buildPostFormData(
+        {
+          contentType,
+          title,
+          content,
+          notes,
+          storyLink,
+          storyLinkTitle,
+          scheduledDate: entry.date,
+          scheduledTime: entry.time,
+          fileInput,
+        },
+        {
+          plannerMode: planBatchId ? basePlannerMode : "single",
+          planBatchId: planBatchId || "",
+          planSequence: planBatchId ? index + 1 : "",
+          planTotal: planBatchId ? planTotal : "",
+          planGeneratedAt: planBatchId ? planGeneratedAt : "",
+        }
+      );
+
+      const result = await submitPostRequest(formData, {
+        progressElements,
+        hasFiles,
+        current: index + 1,
+        total: scheduleEntries.length,
+      });
+
+      if (result?.post) {
+        addNewPostToList(result.post);
+      }
+    }
+
+    const successMessage =
+      scheduleEntries.length === 1
+        ? "Paylaşım başarıyla planlandı!"
+        : `${scheduleEntries.length} paylaşım başarıyla planlandı!`;
+
+    showMessage(successMessage, "success");
+    showToast(`🎉 ${successMessage}`, "success", 5000);
+    resetForm();
+
+    setTimeout(() => {
+      loadPosts();
+    }, 800);
+  } catch (error) {
+    console.error("Planlama hatası:", error);
+    showMessage(error.message || "Sunucu hatası!", "error");
+    showToast(`❌ ${error.message || "Sunucu hatası"}`, "error", 5000);
+  } finally {
+    resetSubmitButton();
+    if (progressElements.container) {
+      setTimeout(() => {
+        progressElements.container.style.display = "none";
+      }, 1500);
+    }
+  }
+}
+
+function buildPostFormData(
+  {
+    contentType,
+    title,
+    content,
+    notes,
+    storyLink,
+    storyLinkTitle,
+    scheduledDate,
+    scheduledTime,
+    fileInput,
+  },
+  plannerInfo = {}
+) {
   const formData = new FormData();
   formData.append("contentType", contentType);
   formData.append("title", title.trim());
@@ -757,8 +1143,12 @@ async function handleFormSubmit(event) {
   formData.append("scheduledDate", scheduledDate);
   formData.append("scheduledTime", scheduledTime);
   formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
+  formData.append("plannerMode", plannerInfo.plannerMode || "single");
+  formData.append("planBatchId", plannerInfo.planBatchId || "");
+  formData.append("planSequence", plannerInfo.planSequence || "");
+  formData.append("planTotal", plannerInfo.planTotal || "");
+  formData.append("planGeneratedAt", plannerInfo.planGeneratedAt || "");
 
-  // Birden fazla dosya ekleme
   if (fileInput.files && fileInput.files.length > 0) {
     for (let i = 0; i < fileInput.files.length; i++) {
       formData.append("files", fileInput.files[i]);
@@ -766,153 +1156,89 @@ async function handleFormSubmit(event) {
     console.log(`${fileInput.files.length} dosya eklendi`);
   }
 
-  try {
-    console.log("API'ye gönderiliyor...");
+  return formData;
+}
 
-    // Progress bar'ı göster
-    const progressContainer = document.getElementById("uploadProgress");
-    const progressFill = document.getElementById("progressFill");
-    const progressText = document.getElementById("progressText");
-    const progressPercent = document.getElementById("progressPercent");
-    const uploadSpeed = document.getElementById("uploadSpeed");
+function submitPostRequest(formData, options = {}) {
+  const { progressElements, hasFiles, current = 1, total = 1 } = options;
+  const planLabel = total > 1 ? `Plan ${current}/${total}` : "Plan";
 
-    // Dosya varsa progress bar'ı göster
-    if (fileInput.files && fileInput.files.length > 0) {
-      progressContainer.style.display = "block";
-      progressFill.style.width = "0%";
-      progressPercent.textContent = "0%";
-      progressText.textContent = "Dosyalar yükleniyor...";
-      uploadSpeed.textContent = "";
-    }
-
-    // XMLHttpRequest ile progress tracking
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     let startTime = Date.now();
-    let lastLoaded = 0;
 
-    // Progress event listener
+    if (hasFiles && progressElements?.text) {
+      progressElements.text.textContent = `${planLabel} • Dosyalar yükleniyor...`;
+    }
+
     xhr.upload.addEventListener("progress", function (e) {
+      if (!hasFiles || !progressElements || !progressElements.fill) return;
       if (e.lengthComputable) {
         const percentComplete = Math.round((e.loaded / e.total) * 100);
         const currentTime = Date.now();
-        const timeElapsed = (currentTime - startTime) / 1000; // saniye
-        const bytesPerSecond = e.loaded / timeElapsed;
+        const timeElapsed = (currentTime - startTime) / 1000;
+        const bytesPerSecond = e.loaded / Math.max(timeElapsed, 1);
         const mbPerSecond = (bytesPerSecond / (1024 * 1024)).toFixed(2);
 
-        // Progress bar'ı güncelle
-        progressFill.style.width = percentComplete + "%";
-        progressPercent.textContent = percentComplete + "%";
+        progressElements.fill.style.width = percentComplete + "%";
+        progressElements.percent.textContent = percentComplete + "%";
 
         if (percentComplete < 100) {
-          progressText.textContent = `Dosyalar yükleniyor... (${formatFileSize(
+          progressElements.text.textContent = `${planLabel} • ${formatFileSize(
             e.loaded
-          )} / ${formatFileSize(e.total)})`;
-          uploadSpeed.textContent = `Yükleme hızı: ${mbPerSecond} MB/s`;
+          )} / ${formatFileSize(e.total)}`;
+          if (progressElements.speed) {
+            progressElements.speed.textContent = `Yükleme hızı: ${mbPerSecond} MB/s`;
+          }
         } else {
-          progressText.textContent = "Yükleme tamamlandı, işleniyor...";
-          uploadSpeed.textContent = "";
+          progressElements.text.textContent = `${planLabel} • Dosyalar işlendi`;
+          if (progressElements.speed) {
+            progressElements.speed.textContent = "";
+          }
         }
       }
     });
 
-    // Response handler
     xhr.onload = function () {
+      if (xhr.status !== 200) {
+        console.error("HTTP Hatası:", xhr.status, xhr.statusText);
+        console.error("Sunucu yanıtı:", xhr.responseText);
+        reject(new Error(`Sunucu hatası (${xhr.status})`));
+        return;
+      }
+
+      let result;
       try {
-        // HTTP status kontrolü önce yap
-        if (xhr.status !== 200) {
-          progressContainer.style.display = "none";
-          resetSubmitButton();
-          console.error("HTTP Hatası:", xhr.status, xhr.statusText);
-          console.error("Sunucu yanıtı:", xhr.responseText);
-          showMessage(
-            `Sunucu hatası (${xhr.status}): ${xhr.statusText}`,
-            "error"
-          );
-          return;
-        }
+        result = JSON.parse(xhr.responseText);
+      } catch (parseError) {
+        console.error("JSON parse hatası:", parseError);
+        reject(new Error("Sunucu yanıtı okunamadı"));
+        return;
+      }
 
-        // JSON parse etmeyi dene
-        let result;
-        try {
-          result = JSON.parse(xhr.responseText);
-        } catch (parseError) {
-          progressContainer.style.display = "none";
-          resetSubmitButton();
-          console.error("JSON parse hatası:", parseError);
-          console.error("Sunucu yanıtı:", xhr.responseText);
-          showMessage("Sunucu yanıt formatı hatalı!", "error");
-          return;
-        }
-
-        console.log("API sonucu:", result);
-
-        if (result.success) {
-          progressText.textContent = "Paylaşım başarıyla planlandı!";
-          showMessage("Paylaşım başarıyla planlandı!", "success");
-          showToast("🎉 Yeni paylaşım başarıyla oluşturuldu!", "success", 5000);
-          resetSubmitButton();
-          resetForm();
-
-          // Yeni post'u dinamik olarak listeye ekle
-          addNewPostToList(result.post);
-
-          // Güvenlik için post listesini yeniden yükle
-          setTimeout(() => {
-            loadPosts();
-          }, 1000);
-
-          // Progress bar'ı 2 saniye sonra gizle
-          setTimeout(() => {
-            progressContainer.style.display = "none";
-          }, 2000);
-        } else {
-          progressContainer.style.display = "none";
-          resetSubmitButton();
-          showMessage(
-            "Hata: " + (result.message || "Bilinmeyen hata"),
-            "error"
-          );
-        }
-      } catch (error) {
-        progressContainer.style.display = "none";
-        resetSubmitButton();
-        console.error("Response handler hatası:", error);
-        showMessage("İstek işleme hatası!", "error");
+      if (result.success) {
+        resolve(result);
+      } else {
+        reject(new Error(result.message || "Sunucu hatası"));
       }
     };
 
-    // Error handler
     xhr.onerror = function () {
-      progressContainer.style.display = "none";
-      resetSubmitButton(); // Butonu eski haline döndür
-      console.error("Upload hatası");
-      showMessage("Yükleme hatası!", "error");
+      reject(new Error("Yükleme hatası"));
     };
 
-    // Abort handler
     xhr.onabort = function () {
-      progressContainer.style.display = "none";
-      resetSubmitButton(); // Butonu eski haline döndür
-      showMessage("Yükleme iptal edildi!", "error");
+      reject(new Error("Yükleme iptal edildi"));
     };
-
-    // Send request
-    xhr.open("POST", "/api/posts");
 
     xhr.timeout = 1800000;
     xhr.ontimeout = function () {
-      progressContainer.style.display = "none";
-      resetSubmitButton();
-      console.error("Upload timeout");
+      reject(new Error("İstek zaman aşımına uğradı"));
     };
 
+    xhr.open("POST", "/api/posts");
     xhr.send(formData);
-  } catch (error) {
-    document.getElementById("uploadProgress").style.display = "none";
-    resetSubmitButton(); // Butonu eski haline döndür
-    console.error("API Hatası:", error);
-    showMessage("Sunucu hatası!", "error");
-  }
+  });
 }
 
 // Form sıfırla
@@ -930,6 +1256,7 @@ function resetForm() {
   document.getElementById("postForm").reset();
   selectedAccounts = [];
   clearAll();
+  resetPlannerState();
 
   // Post/Story alanlarını sıfırla
   const postContent = document.getElementById("postContent");
@@ -1453,6 +1780,9 @@ function createModernPostCard(post) {
     iptal: { icon: "❌", text: "İptal" },
   };
   const currentStatus = statusInfo[post.status] || statusInfo["planlandı"];
+  const planSummaryText = getPlanSummaryText(post);
+  const planDetailText = getPlanDetailText(post);
+  const planEntries = getPlanEntries(post);
 
   card.innerHTML = `
     <!-- Edit Mode Indicator -->
@@ -1539,6 +1869,16 @@ function createModernPostCard(post) {
           <div class="post-summary-meta-item">
             ${currentStatus.icon} ${currentStatus.text}
           </div>
+
+          ${
+            planSummaryText
+              ? `
+            <div class="post-summary-meta-item plan-meta">
+              🗓️ ${planSummaryText}
+            </div>
+          `
+              : ""
+          }
           
           ${
             fileCount > 0
@@ -1636,9 +1976,58 @@ function createModernPostCard(post) {
             <span class="post-content-label">📆 Oluşturulma</span>
             <div class="post-content-value">${post.createdAt || "-"}</div>
           </div>
+          ${
+            planDetailText
+              ? `
+            <div class="post-card-grid-item">
+              <span class="post-content-label">🗂️ Plan Bilgisi</span>
+              <div class="post-content-value plan-detail">${planDetailText}</div>
+            </div>
+          `
+              : ""
+          }
         </div>
 
         ${filesHtml}
+        ${
+          planEntries.length > 0
+            ? `
+        <div class="plan-entries-section">
+          <div class="plan-entries-header">
+            <span>📅 Plan Kayıtları</span>
+            <span>${planEntries.length} paylaşım</span>
+          </div>
+          <div class="plan-entries-list">
+            ${planEntries
+              .map(
+                (entry) => `
+              <div class="plan-entry-item ${
+                entry.id === post.id ? "plan-entry-current" : ""
+              }">
+                <div class="plan-entry-info">
+                  <div class="plan-entry-date">${formatPlanEntryDate(
+                    entry.scheduledDate
+                  )} • ${entry.scheduledTime}</div>
+                  ${
+                    entry.sequenceLabel
+                      ? `<span class="plan-entry-seq">${entry.sequenceLabel}</span>`
+                      : ""
+                  }
+                </div>
+                <div class="plan-entry-actions">
+                  <button type="button" class="plan-entry-btn" title="Göster" onclick="showPlanEntry(${entry.id})">👁️</button>
+                  <button type="button" class="plan-entry-btn" title="Düzenle" onclick="editPlanEntry(${entry.id})">✏️</button>
+                  <button type="button" class="plan-entry-btn danger" title="Sil" onclick="deletePlanEntry(${entry.id})">🗑️</button>
+                </div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        </div>
+        `
+            : ""
+        }
         ${progressHtml}
         
         <!-- Accordion content'in sonunda detayları gizle butonu -->
@@ -1654,6 +2043,118 @@ function createModernPostCard(post) {
     </div>
   `;
 
+  return card;
+}
+
+function getPlanModeLabel(mode) {
+  if (!mode || mode === "single") return "";
+  const labels = {
+    daily: "Günlük",
+    weekly: "Haftalık",
+    monthly: "Aylık",
+    dailyRecurring: "Günlük",
+  };
+  return labels[mode] || mode;
+}
+
+function getPlanSummaryText(post) {
+  if (!post || !post.planBatchId) return "";
+  const mode =
+    post.plannerMode ||
+    post.planMode ||
+    (post.planBatchId ? "plan" : "single");
+  const label = getPlanModeLabel(mode);
+  const parts = [];
+  parts.push(label ? `${label} planı` : "Planlı paylaşım");
+
+  const sequence = parseInt(post.planSequence, 10);
+  const total = parseInt(post.planTotal, 10);
+  if (
+    !Number.isNaN(sequence) &&
+    !Number.isNaN(total) &&
+    total > 0 &&
+    sequence > 0
+  ) {
+    parts.push(`${sequence}/${total}`);
+  }
+
+  return parts.join(" • ");
+}
+
+function getPlanDetailText(post) {
+  if (!post || !post.planBatchId) return "";
+  const summary = getPlanSummaryText(post);
+  const generatedAt = post.planGeneratedAt
+    ? new Date(post.planGeneratedAt).toLocaleString("tr-TR")
+    : "";
+
+  return [summary, generatedAt ? `Oluşturulma: ${generatedAt}` : ""]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function getPlanEntries(post) {
+  if (!post || !post.planBatchId || !Array.isArray(allPosts)) return [];
+  const entries = allPosts
+    .filter((p) => p.planBatchId === post.planBatchId)
+    .map((item) => ({
+      id: item.id,
+      scheduledDate: item.scheduledDate,
+      scheduledTime: item.scheduledTime,
+      sequenceLabel:
+        item.planSequence && item.planTotal
+          ? `${item.planSequence}/${item.planTotal}`
+          : item.planSequence
+          ? `${item.planSequence}`
+          : "",
+    }));
+
+  entries.sort((a, b) => {
+    const aDate = new Date(`${a.scheduledDate}T${a.scheduledTime}`);
+    const bDate = new Date(`${b.scheduledDate}T${b.scheduledTime}`);
+    return aDate - bDate;
+  });
+
+  return entries;
+}
+
+function formatPlanEntryDate(date) {
+  return formatPlannerDate(date);
+}
+
+function showPlanEntry(postId) {
+  focusPlanEntry(postId);
+}
+
+function editPlanEntry(postId) {
+  const card = focusPlanEntry(postId);
+  if (card) {
+    startEditMode(postId);
+  }
+}
+
+function deletePlanEntry(postId) {
+  const cardExists = focusPlanEntry(postId);
+  if (!cardExists) {
+    showToast(
+      "Paylaşım bu sayfada değil, mevcut sayfada işlem yapılamaz.",
+      "warning",
+      4000
+    );
+    return;
+  }
+  deletePost(postId);
+}
+
+function focusPlanEntry(postId) {
+  const card = document.getElementById(`post-card-${postId}`);
+  if (!card) {
+    console.warn("Plan kartı mevcut sayfada bulunamadı:", postId);
+    return null;
+  }
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add("plan-highlight");
+  setTimeout(() => card.classList.remove("plan-highlight"), 2000);
   return card;
 }
 
@@ -1812,6 +2313,28 @@ function createEditForm(post) {
   return `
     <div class="edit-form-section">
       <form id="edit-form-data-${post.id}">
+        <input type="hidden" name="plannerMode" value="${escapeHtml(
+          post.plannerMode || "single"
+        )}">
+        <input type="hidden" name="planBatchId" value="${escapeHtml(
+          post.planBatchId || ""
+        )}">
+        <input type="hidden" name="planSequence" value="${post.planSequence ?? ""}">
+        <input type="hidden" name="planTotal" value="${post.planTotal ?? ""}">
+        <input type="hidden" name="planGeneratedAt" value="${escapeHtml(
+          post.planGeneratedAt || ""
+        )}">
+
+        ${
+          post.planBatchId
+            ? `
+        <div class="edit-form-group plan-info-banner">
+          <div class="plan-info-badge">🗓️ Planlı Paylaşım</div>
+          <p>${getPlanDetailText(post)}</p>
+        </div>
+        `
+            : ""
+        }
         <!-- Content Type Selection -->
         <div class="edit-form-group">
           <label class="edit-form-label">İçerik Türü</label>

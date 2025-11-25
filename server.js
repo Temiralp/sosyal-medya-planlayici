@@ -184,6 +184,12 @@ const moment = require("moment");
 // Bildirim gönderilen postları takip etmek için bir Map (post_id -> gönderilen bildirim türleri)
 const notifiedPosts = new Map();
 
+const parseNullableInt = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
 // Her dakika çalışacak bildirim kontrol fonksiyonu
 setInterval(() => {
   const posts = readPosts();
@@ -380,6 +386,11 @@ app.post(
         scheduledDate,
         scheduledTime,
         selectedAccounts,
+        plannerMode,
+        planBatchId,
+        planSequence,
+        planTotal,
+        planGeneratedAt,
       } = req.body;
 
       // Veriyi temizle (boşluk karakterlerini kaldır)
@@ -388,6 +399,12 @@ app.post(
       const cleanNotes = (notes || "").trim();
       const cleanStoryLink = (storyLink || "").trim();
       const cleanStoryLinkTitle = (storyLinkTitle || "").trim();
+      const cleanPlannerMode = (plannerMode || "").trim() || "single";
+      const cleanPlanBatchId = (planBatchId || "").trim();
+      const planSequenceNumber = parseNullableInt(planSequence);
+      const planTotalNumber = parseNullableInt(planTotal);
+      const cleanPlanGeneratedAt = (planGeneratedAt || "").trim();
+      const hasPlanBatch = !!cleanPlanBatchId;
 
       // Validasyon kontrolleri
       if (!cleanTitle) {
@@ -479,6 +496,13 @@ app.post(
         originalName: files.length > 0 ? files[0].originalName : null,
         status: "planlandı",
         createdAt: new Date().toLocaleString("tr-TR"),
+        plannerMode: hasPlanBatch ? cleanPlannerMode : "single",
+        planBatchId: hasPlanBatch ? cleanPlanBatchId : null,
+        planSequence: hasPlanBatch ? planSequenceNumber : null,
+        planTotal: hasPlanBatch ? planTotalNumber : null,
+        planGeneratedAt: hasPlanBatch
+          ? cleanPlanGeneratedAt || new Date().toISOString()
+          : null,
       };
 
       console.log("Yeni post objesi oluşturuldu:", newPost);
@@ -570,6 +594,11 @@ app.put(
         scheduledTime,
         selectedAccounts,
         keepExistingFiles,
+        plannerMode,
+        planBatchId,
+        planSequence,
+        planTotal,
+        planGeneratedAt,
       } = req.body;
 
       const posts = readPosts();
@@ -725,6 +754,26 @@ app.put(
         scheduledDate,
         scheduledTime,
         selectedAccounts: parsedSelectedAccounts,
+        plannerMode:
+          incomingPlannerMode !== undefined
+            ? incomingPlannerMode || "single"
+            : existingPost.plannerMode || "single",
+        planBatchId:
+          incomingPlanBatchId !== undefined
+            ? incomingPlanBatchId || null
+            : existingPost.planBatchId || null,
+        planSequence:
+          incomingPlanSequence !== undefined
+            ? incomingPlanSequence
+            : existingPost.planSequence || null,
+        planTotal:
+          incomingPlanTotal !== undefined
+            ? incomingPlanTotal
+            : existingPost.planTotal || null,
+        planGeneratedAt:
+          incomingPlanGeneratedAt !== undefined
+            ? incomingPlanGeneratedAt || existingPost.planGeneratedAt || null
+            : existingPost.planGeneratedAt || null,
         files: updatedFiles.length > 0 ? updatedFiles : undefined,
         // Eski alanları temizle
         fileName: undefined,
