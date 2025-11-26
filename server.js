@@ -755,24 +755,24 @@ app.put(
         scheduledTime,
         selectedAccounts: parsedSelectedAccounts,
         plannerMode:
-          incomingPlannerMode !== undefined
-            ? incomingPlannerMode || "single"
+          plannerMode !== undefined
+            ? plannerMode || "single"
             : existingPost.plannerMode || "single",
         planBatchId:
-          incomingPlanBatchId !== undefined
-            ? incomingPlanBatchId || null
+          planBatchId !== undefined
+            ? planBatchId || null
             : existingPost.planBatchId || null,
         planSequence:
-          incomingPlanSequence !== undefined
-            ? incomingPlanSequence
+          planSequence !== undefined
+            ? parseNullableInt(planSequence)
             : existingPost.planSequence || null,
         planTotal:
-          incomingPlanTotal !== undefined
-            ? incomingPlanTotal
+          planTotal !== undefined
+            ? parseNullableInt(planTotal)
             : existingPost.planTotal || null,
         planGeneratedAt:
-          incomingPlanGeneratedAt !== undefined
-            ? incomingPlanGeneratedAt || existingPost.planGeneratedAt || null
+          planGeneratedAt !== undefined
+            ? planGeneratedAt || existingPost.planGeneratedAt || null
             : existingPost.planGeneratedAt || null,
         files: updatedFiles.length > 0 ? updatedFiles : undefined,
         // Eski alanları temizle
