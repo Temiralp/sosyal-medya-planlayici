@@ -38,6 +38,11 @@ const accountGroups = {
     "Qualitasspa Eskişehir",
     "AFunfair (Funfair)",
     "Özdilekteyim",
+    "Safahat Döner",
+    "Özdilek Lokum",
+    "Safahat Bowl",
+    "Gusto Plus Market",
+    "Vertice Restaurant",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -122,6 +127,10 @@ const accountPlatforms = {
   "Qualitasspa Eskişehir": ["Facebook", "Instagram", "Twitter"],
   "AFunfair (Funfair)": ["Facebook", "Instagram"],
   Özdilekteyim: ["Facebook", "Instagram", "Twitter"],
+  "Safahat Döner": ["Facebook", "Instagram", "Twitter"],
+  "Safahat Bowl": ["Facebook", "Instagram", "Twitter"],
+  "Gusto Plus Market": ["Facebook", "Instagram", "Twitter"],
+  "Vertice Restaurant": ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
