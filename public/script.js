@@ -55,6 +55,9 @@ const accountGroups = {
     "Tabiat Tarım",
     "My Auto",
     "Özdilek Lokum",
+    "Travelzone",
+    "FishGate",
+    "FlowerRange",
   ],
   test: ["testhesap_ozoz", "test_ozd_01", "test_ozd_02", "testhesapyeni"],
 };
@@ -140,6 +143,9 @@ const accountPlatforms = {
   "Tabiat Tarım": ["Facebook", "Instagram", "Twitter"],
   "My Auto": ["Facebook", "Instagram"],
   "Özdilek Lokum": ["Facebook", "Instagram"],
+  Travelzone: ["Facebook", "Instagram", "Twitter"],
+  FishGate: ["Facebook", "Instagram", "Twitter"],
+  FlowerRange: ["Facebook", "Instagram", "Twitter"],
 
   // Test Hesapları
   testhesap_ozoz: ["Facebook", "Instagram", "Twitter"],
