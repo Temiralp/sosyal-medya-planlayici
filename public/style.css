@@ -1528,6 +1528,49 @@ tr:hover {
   align-items: center;
 }
 
+.date-time-filter {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+}
+
+.date-time-filter-inputs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.date-time-filter-inputs > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-time-filter-inputs label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+}
+
+.date-time-filter-inputs input[type="date"],
+.date-time-filter-inputs input[type="time"] {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.date-time-filter-inputs input[type="date"]:focus,
+.date-time-filter-inputs input[type="time"]:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
 #searchInput {
   padding: 8px 12px;
   border: 1px solid #ddd;
@@ -1649,6 +1692,24 @@ tr:hover {
   .page-numbers {
     order: -1;
     justify-content: center;
+    width: 100%;
+  }
+
+  .date-time-filter-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-time-filter-inputs > div {
+    width: 100%;
+  }
+
+  .date-time-filter-inputs input[type="date"],
+  .date-time-filter-inputs input[type="time"] {
+    width: 100%;
+  }
+
+  .date-time-filter-inputs button {
     width: 100%;
   }
 }

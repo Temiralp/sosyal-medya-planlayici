@@ -347,6 +347,50 @@ function setupEventListeners() {
   });
   console.log("Content type filter listeners eklendi");
 
+  // Tarih ve saat filtreleme butonları
+  const applyDateTimeFilterBtn = document.getElementById("applyDateTimeFilterBtn");
+  const clearDateTimeFilterBtn = document.getElementById("clearDateTimeFilterBtn");
+  
+  if (applyDateTimeFilterBtn) {
+    applyDateTimeFilterBtn.addEventListener("click", () => {
+      const filterDate = document.getElementById("filterDate")?.value;
+      const filterTime = document.getElementById("filterTime")?.value;
+      
+      if (!filterDate && !filterTime) {
+        showToast("Lütfen en az bir filtre seçin (Tarih veya Saat)", "warning", 3000);
+        return;
+      }
+      
+      // Postları yeniden yükle (filtreleme loadPosts içinde yapılıyor)
+      loadPosts();
+      
+      // Buton durumunu güncelle
+      applyDateTimeFilterBtn.classList.add("active");
+      const filterInfo = [];
+      if (filterDate) filterInfo.push(`Tarih: ${filterDate}`);
+      if (filterTime) filterInfo.push(`Saat: ${filterTime}`);
+      showToast(`Filtreleme uygulandı: ${filterInfo.join(", ")}`, "success", 2000);
+    });
+  }
+  
+  if (clearDateTimeFilterBtn) {
+    clearDateTimeFilterBtn.addEventListener("click", () => {
+      const filterDate = document.getElementById("filterDate");
+      const filterTime = document.getElementById("filterTime");
+      
+      if (filterDate) filterDate.value = "";
+      if (filterTime) filterTime.value = "";
+      
+      // Buton durumunu güncelle
+      applyDateTimeFilterBtn?.classList.remove("active");
+      
+      // Postları yeniden yükle
+      loadPosts();
+      
+      showToast("Filtreler temizlendi", "info", 2000);
+    });
+  }
+
   initializeSchedulePlanner();
 }
 
@@ -3325,8 +3369,31 @@ async function loadPosts() {
     }
 
     const response = await fetch(url);
-    const posts = await response.json();
+    let posts = await response.json();
     console.log(`${posts.length} post yüklendi`);
+
+    // Tarih ve saat filtreleme (frontend'de)
+    const filterDate = document.getElementById("filterDate")?.value;
+    const filterTime = document.getElementById("filterTime")?.value;
+    
+    if (filterDate || filterTime) {
+      posts = posts.filter((post) => {
+        let matches = true;
+        
+        // Tarih filtresi
+        if (filterDate && post.scheduledDate !== filterDate) {
+          matches = false;
+        }
+        
+        // Saat filtresi
+        if (filterTime && post.scheduledTime !== filterTime) {
+          matches = false;
+        }
+        
+        return matches;
+      });
+      console.log(`Tarih/saat filtresinden sonra ${posts.length} post kaldı`);
+    }
 
     // Server'dan gelen sıralama zaten doğru (manuel sıralama varsa korunur, yoksa ID'ye göre sıralı)
     // Client tarafında tekrar sıralamaya gerek yok
