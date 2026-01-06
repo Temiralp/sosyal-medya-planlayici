@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: "5000mb" }));
-app.use(express.urlencoded({ limit: "5000mb", extended: true }));
+app.use(express.json({ limit: "10gb" }));
+app.use(express.urlencoded({ limit: "10gb", extended: true }));
 app.use(express.static("public"));
 
 // Klasörleri oluştur
@@ -41,10 +41,10 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 1024 * 5, // 5GB dosya boyutu limiti
+    fileSize: 1024 * 1024 * 1024 * 10, // 10GB dosya boyutu limiti
     files: 500, // Maksimum 500 dosya
     fields: 1000, // Maksimum 1000 form alanı
-    fieldSize: 50 * 1024 * 1024, // Her bir form alanı için 50MB limit
+    fieldSize: 100 * 1024 * 1024, // Her bir form alanı için 100MB limit
     fieldNameSize: 200, // Form alanı adı için maksimum karakter sayısı
   },
 });
@@ -1095,7 +1095,7 @@ app.use((error, req, res, next) => {
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(413).json({
         success: false,
-        message: `Dosya çok büyük! Maksimum 5GB yükleyebilirsiniz.`,
+        message: `Dosya çok büyük! Maksimum 10GB yükleyebilirsiniz.`,
       });
     }
 
@@ -1116,7 +1116,7 @@ app.use((error, req, res, next) => {
     if (error.code === "LIMIT_FIELD_SIZE") {
       return res.status(413).json({
         success: false,
-        message: "Form alanı çok büyük! Her bir form alanı için maksimum 50MB gönderebilirsiniz.",
+        message: "Form alanı çok büyük! Her bir form alanı için maksimum 100MB gönderebilirsiniz.",
       });
     }
 
@@ -1137,7 +1137,7 @@ app.use((error, req, res, next) => {
   if (error.type === "entity.too.large") {
     return res.status(413).json({
       success: false,
-      message: "İstek çok büyük! Maksimum 5GB veri gönderebilirsiniz.",
+      message: "İstek çok büyük! Maksimum 10GB veri gönderebilirsiniz.",
     });
   }
 
