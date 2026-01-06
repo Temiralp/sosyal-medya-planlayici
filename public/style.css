@@ -1633,6 +1633,8 @@ tr:hover {
 .date-time-filter-inputs button {
   white-space: nowrap;
   flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #searchInput {
@@ -1793,19 +1795,25 @@ tr:hover {
   }
 
   .date-time-filter-inputs {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    align-items: stretch;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: end;
   }
 
   .date-time-filter-inputs > div {
     width: 100%;
+    min-width: 0;
+  }
+
+  .date-time-filter-inputs > div:first-child,
+  .date-time-filter-inputs > div:nth-child(2) {
+    min-width: 0;
   }
 
   .date-time-filter-inputs input[type="date"],
   .date-time-filter-inputs input[type="time"] {
     width: 100%;
-    padding: 12px 14px;
+    padding: 12px 8px;
     font-size: 16px; /* iOS Safari zoom önleme için minimum 16px */
     box-sizing: border-box;
     min-height: 48px; /* Touch-friendly boyut */
@@ -1815,17 +1823,21 @@ tr:hover {
   }
 
   .date-time-filter-inputs button {
+    grid-column: span 1;
     width: 100%;
-    padding: 12px 14px;
-    font-size: 14px;
+    padding: 12px 6px;
+    font-size: 12px;
     margin-top: 0;
     min-height: 48px; /* Touch-friendly boyut */
     touch-action: manipulation;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .date-time-filter-inputs label {
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 13px;
+    margin-bottom: 6px;
     font-weight: 600;
   }
 }
@@ -1851,28 +1863,40 @@ tr:hover {
   }
 
   .date-time-filter-inputs {
-    gap: 8px;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+    align-items: end;
+  }
+
+  .date-time-filter-inputs > div {
+    min-width: 0;
   }
 
   .date-time-filter-inputs input[type="date"],
   .date-time-filter-inputs input[type="time"] {
-    padding: 12px;
+    padding: 10px 6px;
     font-size: 16px; /* iOS Safari zoom önleme için minimum 16px */
     min-height: 48px; /* Touch-friendly boyut */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    width: 100%;
   }
 
   .date-time-filter-inputs button {
-    padding: 12px 14px;
-    font-size: 14px;
+    grid-column: span 1;
+    padding: 12px 4px;
+    font-size: 11px;
     min-height: 48px; /* Touch-friendly boyut */
     touch-action: manipulation;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .date-time-filter-inputs label {
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: 6px;
   }
 }
@@ -1884,32 +1908,46 @@ tr:hover {
   }
 
   .date-time-filter-inputs {
-    gap: 8px;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+    align-items: end;
+  }
+
+  .date-time-filter-inputs > div {
+    min-width: 0;
   }
 
   .date-time-filter-inputs input[type="date"],
   .date-time-filter-inputs input[type="time"] {
-    padding: 10px;
+    padding: 10px 6px;
     font-size: 16px; /* iOS Safari için minimum */
     min-height: 44px;
+    width: 100%;
   }
 
   .date-time-filter-inputs button {
-    padding: 10px 12px;
-    font-size: 13px;
+    grid-column: span 1;
+    padding: 10px 4px;
+    font-size: 11px;
     min-height: 44px;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
 /* Landscape mod için mobil cihazlar */
 @media (max-width: 768px) and (orientation: landscape) {
   .date-time-filter-inputs {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto auto;
     gap: 10px;
+    align-items: end;
   }
 
   .date-time-filter-inputs button {
-    grid-column: span 2;
+    grid-column: span 1;
+    white-space: nowrap;
   }
 }
 
