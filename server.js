@@ -41,9 +41,11 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 1024,
-    files: 100,
-    fields: 500,
+    fileSize: 1024 * 1024 * 1024 * 5, // 5GB dosya boyutu limiti
+    files: 500, // Maksimum 500 dosya
+    fields: 1000, // Maksimum 1000 form alanı
+    fieldSize: 50 * 1024 * 1024, // Her bir form alanı için 50MB limit
+    fieldNameSize: 200, // Form alanı adı için maksimum karakter sayısı
   },
 });
 
@@ -1093,27 +1095,49 @@ app.use((error, req, res, next) => {
     if (error.code === "LIMIT_FILE_SIZE") {
       return res.status(413).json({
         success: false,
-        message: `Dosya çok büyük! Maksimum 1GB yükleyebilirsiniz.`,
+        message: `Dosya çok büyük! Maksimum 5GB yükleyebilirsiniz.`,
       });
     }
 
     if (error.code === "LIMIT_FILE_COUNT") {
       return res.status(400).json({
         success: false,
-        message: "Çok fazla dosya! Maksimum 10 dosya yükleyebilirsiniz.",
+        message: "Çok fazla dosya! Maksimum 500 dosya yükleyebilirsiniz.",
       });
     }
 
     if (error.code === "LIMIT_FIELD_COUNT") {
       return res.status(400).json({
         success: false,
-        message: "Çok fazla form alanı!",
+        message: "Çok fazla form alanı! Maksimum 1000 form alanı gönderebilirsiniz.",
+      });
+    }
+
+    if (error.code === "LIMIT_FIELD_SIZE") {
+      return res.status(413).json({
+        success: false,
+        message: "Form alanı çok büyük! Her bir form alanı için maksimum 50MB gönderebilirsiniz.",
+      });
+    }
+
+    if (error.code === "LIMIT_FIELD_NAME_SIZE") {
+      return res.status(400).json({
+        success: false,
+        message: "Form alanı adı çok uzun!",
       });
     }
 
     return res.status(400).json({
       success: false,
       message: "Dosya yükleme hatası: " + error.message,
+    });
+  }
+
+  // Express body parser limit hatası için özel kontrol
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({
+      success: false,
+      message: "İstek çok büyük! Maksimum 5GB veri gönderebilirsiniz.",
     });
   }
 
