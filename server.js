@@ -107,7 +107,7 @@ const writePosts = (posts) => {
       console.log("Data klasörü oluşturuldu:", dir);
     }
 
-    // Manuel sıralama varsa ona göre, değilse tarih ve saate göre sırala
+    // Manuel sıralama varsa ona göre, değilse oluşturma tarihine göre sırala (en yeni en başta)
     const sortedPosts = posts.sort((a, b) => {
       // Öncelikle manuel sıralama var mı kontrol et
       if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
@@ -119,11 +119,9 @@ const writePosts = (posts) => {
       if (a.manualOrder !== undefined) return -1;
       if (b.manualOrder !== undefined) return 1;
 
-      // Tarih ve saate göre sırala (Eskiden yeniye)
-      const dateA = moment(`${a.scheduledDate} ${a.scheduledTime}`, ["YYYY-MM-DD HH:mm", "DD.MM.YYYY HH:mm"]);
-      const dateB = moment(`${b.scheduledDate} ${b.scheduledTime}`, ["YYYY-MM-DD HH:mm", "DD.MM.YYYY HH:mm"]);
-      
-      return dateA.diff(dateB);
+      // Hiçbirinde manuel sıralama yoksa, ID'ye göre sırala (en yeni en üstte)
+      // ID'ler timestamp bazlı olduğu için doğru sıralama yapacak
+      return b.id - a.id;
     });
 
     // JSON'u string'e çevir
@@ -310,12 +308,7 @@ app.get("/api/posts", (req, res) => {
       }
       if (a.manualOrder !== undefined) return -1;
       if (b.manualOrder !== undefined) return 1;
-      
-      // Tarih ve saate göre sırala (Eskiden yeniye)
-      const dateA = moment(`${a.scheduledDate} ${a.scheduledTime}`, ["YYYY-MM-DD HH:mm", "DD.MM.YYYY HH:mm"]);
-      const dateB = moment(`${b.scheduledDate} ${b.scheduledTime}`, ["YYYY-MM-DD HH:mm", "DD.MM.YYYY HH:mm"]);
-      
-      return dateA.diff(dateB);
+      return b.id - a.id;
     });
 
     res.json(sortedPosts);
