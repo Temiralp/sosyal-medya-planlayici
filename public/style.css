@@ -2674,6 +2674,104 @@ tr:hover {
   font-weight: 600;
 }
 
+/* Dark Mode Specific Overrides for Post List */
+.dark-mode .post-card {
+  background: #1e1e1e !important;
+  border: 1px solid #333 !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .post-card:hover {
+  box-shadow: none !important;
+  border-color: #444 !important;
+  transform: none !important;
+}
+
+.dark-mode .post-content-value {
+  background: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border-left-color: var(--primary-color) !important;
+}
+
+.dark-mode .post-file-item {
+  background: #2d2d2d !important;
+  border-color: #444 !important;
+}
+
+.dark-mode .progress-summary {
+  background: #2d2d2d !important;
+}
+
+.dark-mode .progress-summary:hover {
+  background: #333 !important;
+}
+
+.dark-mode .progress-summary-text {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .post-content-label {
+  color: #a0a0a0 !important;
+}
+
+.dark-mode .post-card-grid-item {
+  background: #2d2d2d !important;
+  border-color: #444 !important;
+}
+
+.dark-mode .post-card-grid-item:hover {
+  background: #2d2d2d !important;
+  transform: none !important;
+}
+
+.dark-mode .post-card-accordion-header {
+  background: #1e1e1e !important;
+  border-bottom-color: #333 !important;
+}
+
+.dark-mode .post-card.expanded .post-card-accordion-header {
+  background: #252525 !important;
+  border-bottom-color: #333 !important;
+}
+
+.dark-mode .post-summary-content {
+  color: #ffffff !important;
+}
+
+.dark-mode .post-card-content {
+  background: #383838 !important;
+  /* Lighter grey for content area */
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .post-status-header {
+  background: #2d2d2d !important;
+  border-bottom-color: #444 !important;
+}
+
+.dark-mode .post-status-header .status-label {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .post-title-header {
+  color: #ffffff !important;
+}
+
+.dark-mode .post-title-header strong {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.dark-mode .post-header {
+  background: #333 !important;
+  /* Slightly lighter than card bg */
+  border-bottom-color: #444 !important;
+}
+
+.dark-mode .accordion-toggle-text {
+  color: #ffffff !important;
+}
+
 .progress-toggle {
   color: #6c757d;
   font-size: 1.2rem;

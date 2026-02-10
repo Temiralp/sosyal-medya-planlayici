@@ -1684,7 +1684,7 @@ function createModernPostCard(post) {
       post.storyLinkTitle && post.storyLinkTitle.trim()
         ? post.storyLinkTitle
         : "";
-    contentDisplay = `Post: ${postPart}\nStory: ${storyPart}`;
+    contentDisplay = postPart;
     contentPreview = `Post: ${postPart.substring(
       0,
       40
@@ -1832,22 +1832,42 @@ function createModernPostCard(post) {
   }
 
   // Story link HTML
+  // Story link ve başlık HTML
   let storyLinkHtml = "";
-  if (post.contentType === "story" && post.storyLink) {
-    storyLinkHtml = `
-      <div class="post-content-section">
-        <span class="post-content-label">🔗 Story Link</span>
-        <div class="post-content-value">
-          <a href="${post.storyLink
-      }" target="_blank" style="color: #3498db; text-decoration: none;">${post.storyLink
-      }</a>
-          <button class="copy-content-btn" onclick="copyToClipboard('${post.storyLink.replace(
+  if (post.contentType === "story" || post.contentType === "combined") {
+    // Story Başlığı
+    if (post.storyLinkTitle && post.storyLinkTitle.trim()) {
+      storyLinkHtml += `
+        <div class="post-content-section">
+          <span class="post-content-label">🏷️ Story Başlığı</span>
+          <div class="post-content-value">
+            ${escapeHtml(post.storyLinkTitle)}
+            <button class="copy-content-btn" onclick="copyToClipboard('${post.storyLinkTitle.replace(
         /'/g,
         "\\'"
       )}', this)">📋</button>
+          </div>
         </div>
-      </div>
-    `;
+      `;
+    }
+
+    // Story Link
+    if (post.storyLink && post.storyLink.trim()) {
+      storyLinkHtml += `
+        <div class="post-content-section">
+          <span class="post-content-label">🔗 Story Link</span>
+          <div class="post-content-value">
+            <a href="${post.storyLink
+        }" target="_blank" style="color: var(--primary-color); text-decoration: none; word-break: break-all;">${post.storyLink
+        }</a>
+            <button class="copy-content-btn" onclick="copyToClipboard('${post.storyLink.replace(
+          /'/g,
+          "\\'"
+        )}', this)">📋</button>
+          </div>
+        </div>
+      `;
+    }
   }
 
   // Status class belirleme
