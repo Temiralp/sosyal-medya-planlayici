@@ -64030,6 +64030,364 @@
     "manualOrder": 1753
   },
   {
+    "id": 1770649555268,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-16",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:55",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 8,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649554212,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-15",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:54",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 7,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649554073,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-14",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:54",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 6,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649553936,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-13",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:53",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 5,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649553803,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-12",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:53",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 4,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649552467,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-11",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:52",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 3,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649552113,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-10",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:52",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 2,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649551789,
+    "contentType": "post",
+    "title": "TestSeriPaylasim2",
+    "content": "Test",
+    "notes": "Denemeeeee2",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-09",
+    "scheduledTime": "19:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:05:51",
+    "plannerMode": "daily",
+    "planBatchId": "plan-1770649551680-xbalkl",
+    "planSequence": 1,
+    "planTotal": 8,
+    "planGeneratedAt": "2026-02-09T15:05:51.681Z",
+    "updatedAt": "10.02.2026 11:15:46",
+    "files": [
+      {
+        "fileName": "1770711346425-120146342.jpeg",
+        "originalName": "profiterol.jpg.jpeg",
+        "mimetype": "image/jpeg",
+        "size": 960322
+      }
+    ]
+  },
+  {
+    "id": 1770649419050,
+    "contentType": "post",
+    "title": "TestTopluPaylasim",
+    "content": "Testt",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-09",
+    "scheduledTime": "18:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 18:03:39",
+    "plannerMode": "single",
+    "planBatchId": null,
+    "planSequence": null,
+    "planTotal": null,
+    "planGeneratedAt": null
+  },
+  {
+    "id": 1770647652445,
+    "contentType": "post",
+    "title": "Test3",
+    "content": "Test2",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-09",
+    "scheduledTime": "10:00",
+    "selectedAccounts": [
+      "Özdilek AVM-Facebook",
+      "Özdilek AVM-Instagram",
+      "Özdilek AVM-Twitter"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 17:34:12",
+    "plannerMode": "single",
+    "planBatchId": null,
+    "planSequence": null,
+    "planTotal": null,
+    "planGeneratedAt": null
+  },
+  {
+    "id": 1770647614311,
+    "contentType": "post",
+    "title": "Test2",
+    "content": "Testt22",
+    "notes": "",
+    "storyLink": "",
+    "storyLinkTitle": "",
+    "scheduledDate": "2026-02-09",
+    "scheduledTime": "15:00",
+    "selectedAccounts": [
+      "Özdilek Holding-Facebook",
+      "Özdilek Holding-Instagram",
+      "Özdilek Holding-Twitter",
+      "Özdilek Holding-LinkedIn"
+    ],
+    "completedAccounts": [],
+    "files": [],
+    "fileName": null,
+    "originalName": null,
+    "status": "planlandı",
+    "createdAt": "09.02.2026 17:33:34",
+    "plannerMode": "single",
+    "planBatchId": null,
+    "planSequence": null,
+    "planTotal": null,
+    "planGeneratedAt": null
+  },
+  {
     "id": 1769333685163,
     "contentType": "combined",
     "title": "Safahat Lokantası Fırın Sütlaç",
@@ -82260,7 +82618,7 @@
     ],
     "fileName": "1767973553483-903855657.jpg",
     "originalName": "kapitone magâ Ã¥aza 2160-2700post.jpg",
-    "status": "planlandı",
+    "status": "yapıldı",
     "createdAt": "09.01.2026 15:45:53",
     "plannerMode": "daily",
     "planBatchId": "plan-1767973539334-7hahcf",
@@ -101018,4 +101376,5 @@
     "planSequence": 3,
     "planTotal": 16,
     "planGeneratedAt": "2025-11-25T13:51:24.317Z"
-  }]
+  }
+]

@@ -232,6 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeAccountSelection();
     loadPosts();
     setupEventListeners();
+    initializeDarkMode(); // Dark mode başlat
 
     // Content type filter'da "Tümü" butonunu varsayılan olarak aktif yap
     const allFilterBtn = document.querySelector(
@@ -347,23 +348,47 @@ function setupEventListeners() {
   });
   console.log("Content type filter listeners eklendi");
 
+  // Status filter butonları
+  const statusFilterBtns = document.querySelectorAll(".status-filter button");
+  statusFilterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const status = btn.dataset.status;
+
+      // Tüm butonlardan active class'ını kaldır
+      statusFilterBtns.forEach((b) => b.classList.remove("active"));
+
+      // Tıklanan butona active class'ı ekle
+      btn.classList.add("active");
+
+      // searchInput'a status filter'ını set et
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput) {
+        searchInput.dataset.status = status;
+      }
+
+      // Postları yeniden yükle
+      loadPosts();
+    });
+  });
+  console.log("Status filter listeners eklendi");
+
   // Tarih ve saat filtreleme butonları
   const applyDateTimeFilterBtn = document.getElementById("applyDateTimeFilterBtn");
   const clearDateTimeFilterBtn = document.getElementById("clearDateTimeFilterBtn");
-  
+
   if (applyDateTimeFilterBtn) {
     applyDateTimeFilterBtn.addEventListener("click", () => {
       const filterDate = document.getElementById("filterDate")?.value;
       const filterTime = document.getElementById("filterTime")?.value;
-      
+
       if (!filterDate && !filterTime) {
         showToast("Lütfen en az bir filtre seçin (Tarih veya Saat)", "warning", 3000);
         return;
       }
-      
+
       // Postları yeniden yükle (filtreleme loadPosts içinde yapılıyor)
       loadPosts();
-      
+
       // Buton durumunu güncelle
       applyDateTimeFilterBtn.classList.add("active");
       const filterInfo = [];
@@ -372,21 +397,21 @@ function setupEventListeners() {
       showToast(`Filtreleme uygulandı: ${filterInfo.join(", ")}`, "success", 2000);
     });
   }
-  
+
   if (clearDateTimeFilterBtn) {
     clearDateTimeFilterBtn.addEventListener("click", () => {
       const filterDate = document.getElementById("filterDate");
       const filterTime = document.getElementById("filterTime");
-      
+
       if (filterDate) filterDate.value = "";
       if (filterTime) filterTime.value = "";
-      
+
       // Buton durumunu güncelle
       applyDateTimeFilterBtn?.classList.remove("active");
-      
+
       // Postları yeniden yükle
       loadPosts();
-      
+
       showToast("Filtreler temizlendi", "info", 2000);
     });
   }
@@ -1426,8 +1451,7 @@ function showToast(message, type, duration = 4000) {
 
   // Toast stil
   toast.style.cssText = `
-    background: ${
-      type === "success" ? "#27ae60" : type === "error" ? "#e74c3c" : "#3498db"
+    background: ${type === "success" ? "#27ae60" : type === "error" ? "#e74c3c" : "#3498db"
     };
     color: white;
     padding: 15px 20px;
@@ -1505,11 +1529,11 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
       updatePostInList(result.post);
 
       // Hesap durumuna göre toast mesajı
-      const accountName = accountKey.split("-")[0];
       const message = checkbox.checked
         ? `✅ ${accountName} hesabı tamamlandı olarak işaretlendi!`
         : `⏳ ${accountName} hesabı beklemede olarak işaretlendi!`;
       showToast(message, "success", 2000);
+      playNotificationSound('statusChange');
     } else {
       checkbox.checked = !checkbox.checked; // Geri al
       showMessage("Hata: " + result.message, "error");
@@ -1680,20 +1704,19 @@ function createModernPostCard(post) {
     fileCount = post.files.length;
     filesHtml = `
       <div class="post-files-section">
-        <span class="post-content-label">📎 Dosyalar (${
-          post.files.length
-        })</span>
+        <span class="post-content-label">📎 Dosyalar (${post.files.length
+      })</span>
         <div class="post-files-list">
           ${post.files
-            .map((file) => {
-              const fileType =
-                file.mimetype && file.mimetype.includes("image") ? "🖼️" : "🎬";
-              const fileSize = file.size
-                ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                : "";
-              const fileName = file.originalName || file.fileName;
+        .map((file) => {
+          const fileType =
+            file.mimetype && file.mimetype.includes("image") ? "🖼️" : "🎬";
+          const fileSize = file.size
+            ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+            : "";
+          const fileName = file.originalName || file.fileName;
 
-              return `
+          return `
               <div class="post-file-item">
                 <span class="post-file-icon">${fileType}</span>
                 <div class="post-file-info">
@@ -1706,18 +1729,17 @@ function createModernPostCard(post) {
                 </div>
               </div>
             `;
-            })
-            .join("")}
+        })
+        .join("")}
         </div>
-        ${
-          post.files.length > 1
-            ? `
+        ${post.files.length > 1
+        ? `
           <div style="margin-top: 12px;">
             <a href="/api/download-all/${post.id}" class="file-action-btn download">📦 Tümünü İndir (ZIP)</a>
           </div>
         `
-            : ""
-        }
+        : ""
+      }
       </div>
     `;
   } else if (post.fileName) {
@@ -1774,9 +1796,8 @@ function createModernPostCard(post) {
                    class="progress-account-checkbox"
                    ${isCompleted ? "checked" : ""} 
                    onclick="event.stopPropagation();"
-                   onchange="toggleAccountComplete(${
-                     post.id
-                   }, '${accountKey}', this, event)">
+                   onchange="toggleAccountComplete(${post.id
+              }, '${accountKey}', this, event)">
             <label class="progress-account-label" onclick="event.stopPropagation();">${accountName} - ${platform}</label>
           </div>
         `;
@@ -1817,15 +1838,13 @@ function createModernPostCard(post) {
       <div class="post-content-section">
         <span class="post-content-label">🔗 Story Link</span>
         <div class="post-content-value">
-          <a href="${
-            post.storyLink
-          }" target="_blank" style="color: #3498db; text-decoration: none;">${
-      post.storyLink
-    }</a>
+          <a href="${post.storyLink
+      }" target="_blank" style="color: #3498db; text-decoration: none;">${post.storyLink
+      }</a>
           <button class="copy-content-btn" onclick="copyToClipboard('${post.storyLink.replace(
-            /'/g,
-            "\\'"
-          )}', this)">📋</button>
+        /'/g,
+        "\\'"
+      )}', this)">📋</button>
         </div>
       </div>
     `;
@@ -1845,13 +1864,11 @@ function createModernPostCard(post) {
 
   card.innerHTML = `
     <!-- Edit Mode Indicator -->
-    <div class="edit-mode-indicator" id="edit-indicator-${
-      post.id
+    <div class="edit-mode-indicator" id="edit-indicator-${post.id
     }" style="display: none;"></div>
 
     <!-- Düzenlendi Banner -->
-    <div class="edited-banner" id="edited-banner-${
-      post.id
+    <div class="edited-banner" id="edited-banner-${post.id
     }" style="display: none; background: #f39c12; color: white; padding: 8px 15px; font-size: 0.9rem; font-weight: 500; text-align: center; border-radius: 5px 5px 0 0;">
       ✏️ Bu paylaşım düzenlendi
     </div>
@@ -1861,29 +1878,23 @@ function createModernPostCard(post) {
       <span class="status-label">DURUM</span>
       <div class="post-title-header">
         <strong>${escapeHtml(
-          post.contentType === "story" && post.storyLinkTitle
-            ? post.storyLinkTitle
-            : post.title
-        )}</strong>
+      post.contentType === "story" && post.storyLinkTitle
+        ? post.storyLinkTitle
+        : post.title
+    )}</strong>
       </div>
       <div class="status-dropdown-container">
-        <select class="status-dropdown-header status-${
-          post.status
-        }" onchange="updateStatus(${
-    post.id
-  }, this.value)" onclick="event.stopPropagation();">
-          <option value="planlandı" ${
-            post.status === "planlandı" ? "selected" : ""
-          }>📅 Planlandı</option>
-          <option value="yapıldı" ${
-            post.status === "yapıldı" ? "selected" : ""
-          }>✅ Yapıldı</option>
-          <option value="beklemede" ${
-            post.status === "beklemede" ? "selected" : ""
-          }>⏳ Beklemede</option>
-          <option value="iptal" ${
-            post.status === "iptal" ? "selected" : ""
-          }>❌ İptal</option>
+        <select class="status-dropdown-header status-${post.status
+    }" onchange="updateStatus(${post.id
+    }, this.value)" onclick="event.stopPropagation();">
+          <option value="planlandı" ${post.status === "planlandı" ? "selected" : ""
+    }>📅 Planlandı</option>
+          <option value="yapıldı" ${post.status === "yapıldı" ? "selected" : ""
+    }>✅ Yapıldı</option>
+          <option value="beklemede" ${post.status === "beklemede" ? "selected" : ""
+    }>⏳ Beklemede</option>
+          <option value="iptal" ${post.status === "iptal" ? "selected" : ""
+    }>❌ İptal</option>
         </select>
       </div>
     </div>
@@ -1893,23 +1904,20 @@ function createModernPostCard(post) {
       <div class="post-card-header">
         <div class="post-card-title">
           <span class="content-type-badge-modern ${post.contentType}">
-            ${
-              post.contentType === "story"
-                ? "📱 Story"
-                : post.contentType === "combined"
-                ? "📝📱 Post ve Story"
-                : "📝 Post"
-            }
+            ${post.contentType === "story"
+      ? "📱 Story"
+      : post.contentType === "combined"
+        ? "📝📱 Post ve Story"
+        : "📝 Post"
+    }
           </span>
           <span class="post-card-id">#${post.id}</span>
         </div>
         <div class="post-card-actions">
-          <button class="btn btn-warning btn-icon" onclick="event.stopPropagation(); startEditMode(${
-            post.id
-          })" title="Düzenle">✏️</button>
-          <button class="btn btn-danger btn-icon" onclick="event.stopPropagation(); deletePost(${
-            post.id
-          })" title="Sil">🗑️</button>
+          <button class="btn btn-warning btn-icon" onclick="event.stopPropagation(); startEditMode(${post.id
+    })" title="Düzenle">✏️</button>
+          <button class="btn btn-danger btn-icon" onclick="event.stopPropagation(); deletePost(${post.id
+    })" title="Sil">🗑️</button>
         </div>
       </div>
 
@@ -1920,63 +1928,55 @@ function createModernPostCard(post) {
         
         <div class="post-summary-meta">
           <div class="post-summary-meta-item">
-            📅 ${new Date(post.scheduledDate).toLocaleDateString("tr-TR")} • ${
-    post.scheduledTime
-  }
+            📅 ${new Date(post.scheduledDate).toLocaleDateString("tr-TR")} • ${post.scheduledTime
+    }
           </div>
           
           <div class="post-summary-meta-item">
             ${currentStatus.icon} ${currentStatus.text}
           </div>
 
-          ${
-            planSummaryText
-              ? `
+          ${planSummaryText
+      ? `
             <div class="post-summary-meta-item plan-meta">
               🗓️ ${planSummaryText}
             </div>
           `
-              : ""
-          }
+      : ""
+    }
           
-          ${
-            fileCount > 0
-              ? `
+          ${fileCount > 0
+      ? `
             <div class="post-summary-meta-item has-files">
               📎 ${fileCount} dosya
             </div>
           `
-              : ""
-          }
+      : ""
+    }
           
-          ${
-            totalCount > 0
-              ? `
+          ${totalCount > 0
+      ? `
             <div class="post-summary-meta-item has-progress">
               📊 ${completedCount}/${totalCount}
             </div>
           `
-              : ""
-          }
+      : ""
+    }
         </div>
         
         <!-- Accordion açıkken butonu göstermeyeceğiz, altta olacak -->
-        <button class="accordion-toggle-btn" onclick="toggleAccordion(${
-          post.id
-        }, event)" type="button" id="accordion-toggle-top-${post.id}">
-          <span class="accordion-toggle-text" id="accordion-text-${
-            post.id
-          }">Detayları göster</span>
-          <span class="accordion-toggle-icon" id="accordion-icon-${
-            post.id
-          }">▶</span>
+        <button class="accordion-toggle-btn" onclick="toggleAccordion(${post.id
+    }, event)" type="button" id="accordion-toggle-top-${post.id}">
+          <span class="accordion-toggle-text" id="accordion-text-${post.id
+    }">Detayları göster</span>
+          <span class="accordion-toggle-icon" id="accordion-icon-${post.id
+    }">▶</span>
         </button>
       </div>
     </div>
 
     <!-- Edit Form (Hidden by default) -->
-    <div class="edit-form-container" id="edit-form-${
-      post.id
+    <div class="edit-form-container" id="edit-form-${post.id
     }" style="display: none;">
       ${createEditForm(post)}
     </div>
@@ -1984,48 +1984,45 @@ function createModernPostCard(post) {
     <!-- Accordion Content - Collapsible -->
     <div class="post-card-accordion-content" id="accordion-content-${post.id}">
       <div class="post-card-content">
-        ${
-          contentDisplay
-            ? `
+        ${contentDisplay
+      ? `
           <div class="post-content-section">
-            <span class="post-content-label">${
-              post.contentType === "story" ? "📱 Story Başlığı" : "📝 İçerik"
-            }</span>
+            <span class="post-content-label">${post.contentType === "story" ? "📱 Story Başlığı" : "📝 İçerik"
+      }</span>
             <div class="post-content-value">
               ${escapeHtml(contentDisplay)}
               <button class="copy-content-btn" onclick="copyToClipboard(\`${contentDisplay
-                .replace(/`/g, "\\`")
-                .replace(/\\/g, "\\\\")}\`, this)">📋</button>
+        .replace(/`/g, "\\`")
+        .replace(/\\/g, "\\\\")}\`, this)">📋</button>
             </div>
           </div>
         `
-            : ""
-        }
+      : ""
+    }
 
         ${storyLinkHtml}
 
-        ${
-          post.notes && post.notes.trim()
-            ? `
+        ${post.notes && post.notes.trim()
+      ? `
           <div class="post-content-section">
             <span class="post-content-label">📝 Notlar</span>
             <div class="post-content-value">
               ${escapeHtml(post.notes)}
               <button class="copy-content-btn" onclick="copyToClipboard(\`${post.notes
-                .replace(/`/g, "\\`")
-                .replace(/\\/g, "\\\\")}\`, this)">📋</button>
+        .replace(/`/g, "\\`")
+        .replace(/\\/g, "\\\\")}\`, this)">📋</button>
             </div>
           </div>
         `
-            : ""
-        }
+      : ""
+    }
 
         <div class="post-card-grid">
           <div class="post-card-grid-item">
             <span class="post-content-label">📅 Tarih</span>
             <div class="post-content-value">${new Date(
-              post.scheduledDate
-            ).toLocaleDateString("tr-TR")}</div>
+      post.scheduledDate
+    ).toLocaleDateString("tr-TR")}</div>
           </div>
           <div class="post-card-grid-item">
             <span class="post-content-label">🕐 Saat</span>
@@ -2035,22 +2032,20 @@ function createModernPostCard(post) {
             <span class="post-content-label">📆 Oluşturulma</span>
             <div class="post-content-value">${post.createdAt || "-"}</div>
           </div>
-          ${
-            planDetailText
-              ? `
+          ${planDetailText
+      ? `
             <div class="post-card-grid-item">
               <span class="post-content-label">🗂️ Plan Bilgisi</span>
               <div class="post-content-value plan-detail">${planDetailText}</div>
             </div>
           `
-              : ""
-          }
+      : ""
+    }
         </div>
 
         ${filesHtml}
-        ${
-          planEntries.length > 0
-            ? `
+        ${planEntries.length > 0
+      ? `
         <div class="plan-entries-section">
           <div class="plan-entries-header">
             <span>📅 Plan Kayıtları</span>
@@ -2058,20 +2053,18 @@ function createModernPostCard(post) {
           </div>
           <div class="plan-entries-list">
             ${planEntries
-              .map(
-                (entry) => `
-              <div class="plan-entry-item ${
-                entry.id === post.id ? "plan-entry-current" : ""
-              }">
+        .map(
+          (entry) => `
+              <div class="plan-entry-item ${entry.id === post.id ? "plan-entry-current" : ""
+            }">
                 <div class="plan-entry-info">
                   <div class="plan-entry-date">${formatPlanEntryDate(
-                    entry.scheduledDate
-                  )} • ${entry.scheduledTime}</div>
-                  ${
-                    entry.sequenceLabel
-                      ? `<span class="plan-entry-seq">${entry.sequenceLabel}</span>`
-                      : ""
-                  }
+              entry.scheduledDate
+            )} • ${entry.scheduledTime}</div>
+                  ${entry.sequenceLabel
+              ? `<span class="plan-entry-seq">${entry.sequenceLabel}</span>`
+              : ""
+            }
                 </div>
                 <div class="plan-entry-actions">
                   <button type="button" class="plan-entry-btn" title="Göster" onclick="showPlanEntry(${entry.id})">👁️</button>
@@ -2080,21 +2073,19 @@ function createModernPostCard(post) {
                 </div>
               </div>
             `
-              )
-              .join("")}
+        )
+        .join("")}
           </div>
         </div>
         `
-            : ""
-        }
+      : ""
+    }
         ${progressHtml}
         
         <!-- Accordion content'in sonunda detayları gizle butonu -->
-        <button class="accordion-toggle-btn" onclick="toggleAccordion(${
-          post.id
-        }, event)" type="button" id="accordion-toggle-bottom-${
-    post.id
-  }" style="display: none;">
+        <button class="accordion-toggle-btn" onclick="toggleAccordion(${post.id
+    }, event)" type="button" id="accordion-toggle-bottom-${post.id
+    }" style="display: none;">
           <span class="accordion-toggle-text">Detayları gizle</span>
           <span class="accordion-toggle-icon">▼</span>
         </button>
@@ -2164,8 +2155,8 @@ function getPlanEntries(post) {
         item.planSequence && item.planTotal
           ? `${item.planSequence}/${item.planTotal}`
           : item.planSequence
-          ? `${item.planSequence}`
-          : "",
+            ? `${item.planSequence}`
+            : "",
     }));
 
   entries.sort((a, b) => {
@@ -2366,53 +2357,49 @@ function createEditForm(post) {
     post.files && Array.isArray(post.files)
       ? post.files
       : post.fileName
-      ? [{ fileName: post.fileName, originalName: post.originalName }]
-      : [];
+        ? [{ fileName: post.fileName, originalName: post.originalName }]
+        : [];
 
   return `
     <div class="edit-form-section">
       <form id="edit-form-data-${post.id}">
         <input type="hidden" name="plannerMode" value="${escapeHtml(
-          post.plannerMode || "single"
-        )}">
+    post.plannerMode || "single"
+  )}">
         <input type="hidden" name="planBatchId" value="${escapeHtml(
-          post.planBatchId || ""
-        )}">
+    post.planBatchId || ""
+  )}">
         <input type="hidden" name="planSequence" value="${post.planSequence ?? ""}">
         <input type="hidden" name="planTotal" value="${post.planTotal ?? ""}">
         <input type="hidden" name="planGeneratedAt" value="${escapeHtml(
-          post.planGeneratedAt || ""
-        )}">
+    post.planGeneratedAt || ""
+  )}">
 
-        ${
-          post.planBatchId
-            ? `
+        ${post.planBatchId
+      ? `
         <div class="edit-form-group plan-info-banner">
           <div class="plan-info-badge">🗓️ Planlı Paylaşım</div>
           <p>${getPlanDetailText(post)}</p>
         </div>
         `
-            : ""
-        }
+      : ""
+    }
         <!-- Content Type Selection -->
         <div class="edit-form-group">
           <label class="edit-form-label">İçerik Türü</label>
           <div class="edit-content-type-options">
             <label class="edit-radio-option">
-              <input type="radio" name="contentType" value="post" ${
-                post.contentType === "post" ? "checked" : ""
-              } onchange="toggleEditContentType(${post.id})">
+              <input type="radio" name="contentType" value="post" ${post.contentType === "post" ? "checked" : ""
+    } onchange="toggleEditContentType(${post.id})">
               <span>📝 Post</span>
             </label>
             <label class="edit-radio-option">
-              <input type="radio" name="contentType" value="story" ${
-                post.contentType === "story" ? "checked" : ""
-              } onchange="toggleEditContentType(${post.id})">
+              <input type="radio" name="contentType" value="story" ${post.contentType === "story" ? "checked" : ""
+    } onchange="toggleEditContentType(${post.id})">
               <span>📱 Story</span>              </label>
               <label class="edit-radio-option">
-                <input type="radio" name="contentType" value="combined" ${
-                  post.contentType === "combined" ? "checked" : ""
-                } onchange="toggleEditContentType(${post.id})">
+                <input type="radio" name="contentType" value="combined" ${post.contentType === "combined" ? "checked" : ""
+    } onchange="toggleEditContentType(${post.id})">
                 <span>📝📱 Post ve Story</span>
               </label>
           </div>
@@ -2421,38 +2408,32 @@ function createEditForm(post) {
         <!-- Title -->
         <div class="edit-form-group">
           <label class="edit-form-label">📝 Paylaşım Başlığı</label>
-          <input type="text" name="title" class="edit-form-input" value="${
-            post.title || ""
-          }" required>
+          <input type="text" name="title" class="edit-form-input" value="${post.title || ""
+    }" required>
         </div>
 
         <!-- Content Fields -->
         <div id="edit-content-fields-${post.id}">
           <!-- Post Content -->
-          <div class="edit-form-group" id="edit-post-content-${post.id}" ${
-    post.contentType === "story" ? 'style="display:none"' : ""
-  }>
+          <div class="edit-form-group" id="edit-post-content-${post.id}" ${post.contentType === "story" ? 'style="display:none"' : ""
+    }>
             <label class="edit-form-label">📝 Post İçeriği</label>
-            <textarea name="content" class="edit-form-textarea" rows="4">${
-              post.content || ""
-            }</textarea>
+            <textarea name="content" class="edit-form-textarea" rows="4">${post.content || ""
+    }</textarea>
           </div>
 
           <!-- Story Fields -->
-          <div id="edit-story-content-${post.id}" ${
-    post.contentType === "post" ? 'style="display:none"' : ""
-  }>
+          <div id="edit-story-content-${post.id}" ${post.contentType === "post" ? 'style="display:none"' : ""
+    }>
             <div class="edit-form-group">
               <label class="edit-form-label">📱 Story Başlığı</label>
-              <input type="text" name="storyLinkTitle" class="edit-form-input" value="${
-                post.storyLinkTitle || ""
-              }">
+              <input type="text" name="storyLinkTitle" class="edit-form-input" value="${post.storyLinkTitle || ""
+    }">
             </div>
             <div class="edit-form-group">
               <label class="edit-form-label">🔗 Story Link URL'si</label>
-              <input type="url" name="storyLink" class="edit-form-input" value="${
-                post.storyLink || ""
-              }">
+              <input type="url" name="storyLink" class="edit-form-input" value="${post.storyLink || ""
+    }">
             </div>
           </div>
         </div>
@@ -2460,24 +2441,21 @@ function createEditForm(post) {
         <!-- Notes -->
         <div class="edit-form-group">
           <label class="edit-form-label">📝 Notlar</label>
-          <textarea name="notes" class="edit-form-textarea" rows="3">${
-            post.notes || ""
-          }</textarea>
+          <textarea name="notes" class="edit-form-textarea" rows="3">${post.notes || ""
+    }</textarea>
         </div>
 
         <!-- Date and Time -->
         <div class="edit-form-grid">
           <div class="edit-form-group">
             <label class="edit-form-label">📅 Tarih</label>
-            <input type="date" name="scheduledDate" class="edit-form-input" value="${
-              post.scheduledDate
-            }" required>
+            <input type="date" name="scheduledDate" class="edit-form-input" value="${post.scheduledDate
+    }" required>
           </div>
           <div class="edit-form-group">
             <label class="edit-form-label">🕐 Saat</label>
-            <input type="time" name="scheduledTime" class="edit-form-input" value="${
-              post.scheduledTime
-            }" required>
+            <input type="time" name="scheduledTime" class="edit-form-input" value="${post.scheduledTime
+    }" required>
           </div>
         </div>
 
@@ -2489,25 +2467,24 @@ function createEditForm(post) {
             <p style="margin: 8px 0; font-size: 0.85rem; color: #6c757d;">Yeni dosyalar seçin (mevcut dosyalar korunacak)</p>
           </div>
           
-          ${
-            existingFiles.length > 0
-              ? `
+          ${existingFiles.length > 0
+      ? `
             <div class="edit-existing-files">
               <div class="edit-existing-files-title">Mevcut Dosyalar:</div>
               ${existingFiles
-                .map(
-                  (file) => `
+        .map(
+          (file) => `
                 <div class="edit-existing-file-item">
                   <span>📎</span>
                   <span>${file.originalName || file.fileName}</span>
                 </div>
               `
-                )
-                .join("")}
+        )
+        .join("")}
             </div>
           `
-              : ""
-          }
+      : ""
+    }
         </div>
 
         <!-- Account Selection -->
@@ -2522,14 +2499,12 @@ function createEditForm(post) {
 
         <!-- Actions -->
         <div class="edit-actions">
-          <button type="button" class="edit-btn cancel" onclick="cancelEditMode(${
-            post.id
-          })">
+          <button type="button" class="edit-btn cancel" onclick="cancelEditMode(${post.id
+    })">
             ❌ İptal
           </button>
-          <button type="button" class="edit-btn save" onclick="savePost(${
-            post.id
-          })">
+          <button type="button" class="edit-btn save" onclick="savePost(${post.id
+    })">
             💾 Kaydet
           </button>
         </div>
@@ -2564,9 +2539,8 @@ function createEditAccountGroups(selectedAccounts) {
                 const isSelected = selectedAccounts.includes(accountKey);
                 return `
               <div class="edit-account-item">
-                <input type="checkbox" name="selectedAccounts" value="${accountKey}" ${
-                  isSelected ? "checked" : ""
-                }>
+                <input type="checkbox" name="selectedAccounts" value="${accountKey}" ${isSelected ? "checked" : ""
+                  }>
                 <label>${account} - ${platform}</label>
               </div>
             `;
@@ -3131,6 +3105,7 @@ async function updateStatus(postId, newStatus) {
     if (result.success) {
       showMessage("Durum güncellendi!", "success");
       showToast("📝 Paylaşım durumu güncellendi!", "success", 3000);
+      playNotificationSound('statusChange');
 
       // Post'u dinamik olarak güncelle (accordion durumunu koruyarak)
       updatePostInList(result.post);
@@ -3354,6 +3329,7 @@ async function loadPosts() {
   const searchTerm = searchInput ? searchInput.value : "";
   const filter = searchInput ? searchInput.dataset.filter : "";
   const contentType = searchInput ? searchInput.dataset.contentType : "";
+  const status = searchInput ? searchInput.dataset.status : "";
 
   console.log("Postlar yükleniyor...");
   try {
@@ -3367,6 +3343,9 @@ async function loadPosts() {
     if (contentType) {
       url += `contentType=${encodeURIComponent(contentType)}&`;
     }
+    if (status) {
+      url += `status=${encodeURIComponent(status)}&`;
+    }
 
     const response = await fetch(url);
     let posts = await response.json();
@@ -3375,21 +3354,21 @@ async function loadPosts() {
     // Tarih ve saat filtreleme (frontend'de)
     const filterDate = document.getElementById("filterDate")?.value;
     const filterTime = document.getElementById("filterTime")?.value;
-    
+
     if (filterDate || filterTime) {
       posts = posts.filter((post) => {
         let matches = true;
-        
+
         // Tarih filtresi
         if (filterDate && post.scheduledDate !== filterDate) {
           matches = false;
         }
-        
+
         // Saat filtresi
         if (filterTime && post.scheduledTime !== filterTime) {
           matches = false;
         }
-        
+
         return matches;
       });
       console.log(`Tarih/saat filtresinden sonra ${posts.length} post kaldı`);
@@ -3521,6 +3500,7 @@ async function checkForUpdates() {
       lastKnownUpdate = result.lastUpdate;
       await loadPosts();
       showToast("📄 Veriler güncellendi!", "info", 2000);
+      playNotificationSound('dataUpdate');
     }
   } catch (error) {
     console.error("Güncelleme kontrol hatası:", error);
@@ -3550,6 +3530,60 @@ function stopPolling() {
     clearInterval(pollingInterval);
     pollingInterval = null;
     console.log("Polling durduruldu");
+  }
+}
+
+// ============================================================================
+// BİLDİRİM SESLERİ
+// ============================================================================
+
+const NOTIFICATION_SOUNDS = {
+  // Hafif "Pop" sesi - Veri güncellendiğinde
+  updated: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU", // Kısa placeholder, aşağıda daha düzgün bir ses üreteceğim veya Web Audio API kullanacağım.
+
+  // "Ding" sesi - İşlem başarılı/Durum değişti
+  success: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"
+};
+
+// Web Audio API ile ses üretme (Base64 yerine daha temiz ve hafif)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playNotificationSound(type) {
+  if (!audioCtx) return;
+
+  // Tarayıcı kısıtlamaları için context'i resume et
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  if (type === 'statusChange') {
+    // Hafif, kısa "blip" sesi (Durum değişimi - Eski dataUpdate sesi)
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz
+    oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Düşük ses
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.1);
+  } else if (type === 'dataUpdate') {
+    // "Ding" / "Başarılı" sesi (Veri güncelleme - Eski statusChange sesi)
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
+    oscillator.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + 0.1); // Yükselen ton
+
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // Biraz daha sesli
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.3);
   }
 }
 
@@ -3587,6 +3621,13 @@ window.addEventListener("blur", () => {
 
 // Sayfa yüklendiğinde polling'i başlat
 document.addEventListener("DOMContentLoaded", () => {
+  // Kullanıcı etkileşimi sonrası ses çalabilmek için bir yere tıklanmasını bekle
+  document.body.addEventListener('click', function () {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }, { once: true });
+
   // Mevcut DOMContentLoaded event'ine ek olarak çalışacak
   setTimeout(() => {
     console.log("Polling mekanizması başlatılıyor...");
@@ -3598,3 +3639,39 @@ document.addEventListener("DOMContentLoaded", () => {
 window.addEventListener("beforeunload", () => {
   stopPolling();
 });
+
+// ============================================================================
+// DARK MODE
+// ============================================================================
+
+function initializeDarkMode() {
+  const toggleBtn = document.getElementById("darkModeToggle");
+  if (!toggleBtn) return;
+
+  // Kayıtlı tercihi kontrol et
+  const savedTheme = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
+    document.body.classList.add("dark-mode");
+    toggleBtn.textContent = "☀️";
+    toggleBtn.title = "Aydınlık Mod";
+  } else {
+    document.body.classList.remove("dark-mode");
+    toggleBtn.textContent = "🌙";
+    toggleBtn.title = "Karanlık Mod";
+  }
+
+  // Event listener ekle
+  toggleBtn.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    const isDark = document.body.classList.contains("dark-mode");
+
+    // Tercihi kaydet
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+
+    // Buton ikonunu güncelle
+    toggleBtn.textContent = isDark ? "☀️" : "🌙";
+    toggleBtn.title = isDark ? "Aydınlık Mod" : "Karanlık Mod";
+  });
+}

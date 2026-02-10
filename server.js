@@ -6,6 +6,7 @@ const cors = require("cors");
 const archiver = require("archiver");
 const http = require("http");
 const { Server } = require("socket.io");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const server = http.createServer(app);
@@ -15,7 +16,47 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: "10gb" }));
 app.use(express.urlencoded({ limit: "10gb", extended: true }));
+app.use(cookieParser());
+
+// Authentication Middleware
+const isAuthenticated = (req, res, next) => {
+  const token = req.cookies.auth_token;
+  if (token === "admin_logged_in") {
+    next();
+  } else {
+    if (req.path.startsWith("/api")) {
+      res.status(401).json({ success: false, message: "Unauthorized" });
+    } else {
+      res.redirect("/login.html");
+    }
+  }
+};
+
+// Public Routes
 app.use(express.static("public"));
+
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  if (username === "admin" && password === "ozdilek123!") {
+    res.cookie("auth_token", "admin_logged_in", { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }); // 1 day
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
+  }
+});
+
+app.get("/logout", (req, res) => {
+  res.clearCookie("auth_token");
+  res.redirect("/login.html");
+});
+
+// Protected File Routes
+app.get("/", isAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, "private", "dashboard.html"));
+});
+
+// Protect all API routes
+app.use("/api", isAuthenticated);
 
 // Klasörleri oluştur
 const createDirectories = () => {
@@ -146,7 +187,7 @@ const writePosts = (posts) => {
       if (process.env.NODE_ENV === "production") {
         // Üretim ortamında dosya yazma işleminin tamamlanması için kısa bekleme
         const start = Date.now();
-        while (Date.now() - start < 50) {} // 50ms bekleme
+        while (Date.now() - start < 50) { } // 50ms bekleme
       }
 
       return true;
@@ -276,7 +317,7 @@ app.get("/api/last-update", (req, res) => {
 app.get("/api/posts", (req, res) => {
   try {
     let posts = readPosts();
-    const { search, filter, contentType } = req.query;
+    const { search, filter, contentType, status } = req.query;
 
     // Arama (Search)
     if (search) {
@@ -303,8 +344,19 @@ app.get("/api/posts", (req, res) => {
       posts = posts.filter((p) => p.contentType === contentType);
     }
 
+    // Status filtreleme
+    if (status) {
+      posts = posts.filter((p) => p.status === status);
+    }
+
     // Sıralama
     const sortedPosts = posts.sort((a, b) => {
+      // Eğer 'today' filtresi varsa, saate göre artan sıralama yap (Erken saat önce)
+      if (filter === "today") {
+        return a.scheduledTime.localeCompare(b.scheduledTime);
+      }
+
+      // Diğer durumlarda manuel sıralama veya ID'ye göre (en yeni en üstte)
       if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
         return a.manualOrder - b.manualOrder;
       }
@@ -753,7 +805,7 @@ app.put(
         notes: cleanNotes,
         storyLink: cleanStoryLink,
         storyLinkTitle: cleanStoryLinkTitle,
-        scheduledDate,
+        scheduledDate, // Bu sadece mevcut post için değişir
         scheduledTime,
         selectedAccounts: parsedSelectedAccounts,
         plannerMode:
@@ -793,6 +845,39 @@ app.put(
 
       // Güncellenen post'u kaydet
       posts[postIndex] = updatedPost;
+
+      // EĞER BU BİR BATCH PAYLAŞIM İSE, DİĞERLERİNİ DE GÜNCELLE
+      if (updatedPost.planBatchId) {
+        console.log(
+          `Batch güncelleme başlatıldı. Batch ID: ${updatedPost.planBatchId}`
+        );
+        let batchUpdateCount = 0;
+
+        posts.forEach((p, index) => {
+          // Kendi post'umuz değilse ve aynı batch ID'ye sahipse
+          if (p.id !== updatedPost.id && p.planBatchId === updatedPost.planBatchId) {
+            // Sadece ortak alanları güncelle, tarihi ve ID'yi koru
+            posts[index] = {
+              ...p,
+              contentType: updatedPost.contentType,
+              title: updatedPost.title,
+              content: updatedPost.content,
+              notes: updatedPost.notes,
+              storyLink: updatedPost.storyLink,
+              storyLinkTitle: updatedPost.storyLinkTitle,
+              // scheduledDate: p.scheduledDate, // Tarihi KORU!
+              scheduledTime: updatedPost.scheduledTime, // Saati güncelle (isteğe bağlı, genellikle aynı olur)
+              selectedAccounts: updatedPost.selectedAccounts,
+              files: updatedPost.files, // Dosyaları da eşitle
+              updatedAt: updatedPost.updatedAt,
+            };
+            batchUpdateCount++;
+          }
+        });
+        console.log(
+          `${batchUpdateCount} adet bağlı paylaşım güncellendi (Tarihler korundu).`
+        );
+      }
 
       if (writePosts(posts)) {
         // Gerçek zamanlı güncelleme bildirimi gönder
