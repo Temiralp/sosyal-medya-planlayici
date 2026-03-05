@@ -1043,9 +1043,10 @@ app.get("/api/download/:fileName", (req, res) => {
     }
 
     // Dosyayı orijinal ismiyle indirme için header'ları ayarla
+    const encodedOriginalName = encodeURIComponent(originalName);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${originalName}"`
+      `attachment; filename*=UTF-8''${encodedOriginalName}`
     );
     res.setHeader("Content-Type", "application/octet-stream");
 
@@ -1112,9 +1113,10 @@ app.get("/api/download-all/:postId", (req, res) => {
 
     // Response header'larını ayarla
     res.setHeader("Content-Type", "application/zip");
+    const encodedZipName = encodeURIComponent(zipFileName);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${zipFileName}"`
+      `attachment; filename*=UTF-8''${encodedZipName}`
     );
 
     // Hata yakalama
