@@ -22,6 +22,8 @@ app.use(cookieParser());
 const isAuthenticated = (req, res, next) => {
   const token = req.cookies.auth_token;
   if (token === "admin_logged_in") {
+    // Kayan oturum süresi (sliding session) - Her istekte çerezi 1 gün daha uzat
+    res.cookie("auth_token", "admin_logged_in", { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
     next();
   } else {
     if (req.path.startsWith("/api")) {
@@ -408,7 +410,7 @@ app.put("/api/posts/reorder", (req, res) => {
     if (writePosts(finalPosts)) {
       // Gerçek zamanlı güncelleme bildirimi gönder
       notifyPostUpdate();
-      res.json({ success: true, message: "Sıralama güncellendi" });
+      res.json({ success: true, message: "Sıralama güncellendi", lastUpdate: lastDataUpdate });
     } else {
       res
         .status(500)
@@ -578,7 +580,7 @@ app.post(
         // Gerçek zamanlı güncelleme bildirimi gönder
         notifyPostUpdate();
         console.log("Post başarıyla kaydedildi");
-        res.json({ success: true, post: newPost });
+        res.json({ success: true, post: newPost, lastUpdate: lastDataUpdate });
       } else {
         console.error("Veri yazma hatası");
         res.status(500).json({ success: false, message: "Veri kaydedilemedi" });
@@ -616,7 +618,7 @@ app.put("/api/posts/:id/status", (req, res) => {
     if (writePosts(posts)) {
       // Gerçek zamanlı güncelleme bildirimi gönder
       notifyPostUpdate();
-      res.json({ success: true, post: posts[postIndex] });
+      res.json({ success: true, post: posts[postIndex], lastUpdate: lastDataUpdate });
     } else {
       res.status(500).json({ success: false, message: "Veri güncellenemedi" });
     }
@@ -887,6 +889,7 @@ app.put(
           success: true,
           message: "Post başarıyla güncellendi",
           post: updatedPost,
+          lastUpdate: lastDataUpdate,
         });
       } else {
         res.status(500).json({
@@ -939,7 +942,7 @@ app.put("/api/posts/:id/complete", (req, res) => {
     if (writePosts(posts)) {
       // Gerçek zamanlı güncelleme bildirimi gönder
       notifyPostUpdate();
-      res.json({ success: true, post: posts[postIndex] });
+      res.json({ success: true, post: posts[postIndex], lastUpdate: lastDataUpdate });
     } else {
       res.status(500).json({ success: false, message: "Veri güncellenemedi" });
     }
@@ -985,7 +988,7 @@ app.delete("/api/posts/:id", (req, res) => {
     if (writePosts(posts)) {
       // Gerçek zamanlı güncelleme bildirimi gönder
       notifyPostUpdate();
-      res.json({ success: true });
+      res.json({ success: true, lastUpdate: lastDataUpdate });
     } else {
       res.status(500).json({ success: false, message: "Veri silinemedi" });
     }

@@ -17,15 +17,15 @@
       <h1>ÖZDİLEK&SEMANTİK SOSYAL MEDYA PLANLAMA SİSTEMİ</h1>
       <div style="display: flex; gap: 10px; align-items: center;">
         <button id="darkModeToggle" class="btn"
-          style="background-color: #34495e; color: white; padding: 0.25rem 0.6rem;" title="Karanlık Mod">
+          style="background-color: #34495e; color: white; display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; font-size: 14px; border: none; cursor: pointer;" title="Karanlık Mod">
           🌙
         </button>
         <a href="https://mkafka.ozdilekteyim.com/auth/login" target="_blank" class="btn"
-          style="background-color: orange; color: white; text-decoration: none; font-size: 0.875rem; padding: 0.25rem 0.5rem;">Özdilek
-          Portal</a>
+          style="background-color: orange; color: white; text-decoration: none; display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none;">Özdilek Portal</a>
+        <button id="holdingSharingBtn" class="btn-holding-sharing" style="height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 700; box-sizing: border-box;">Holding Paylaşımı</button>
         <a href="https://suite.adjust.com/login" target="_blank" class="btn"
-          style="background-color: black; color: white; text-decoration: none; font-size: 0.875rem; padding: 0.25rem 0.5rem;">Adjust</a>
-        <a href="/logout" class="btn btn-danger btn-sm" style="text-decoration: none;">Çıkış Yap</a>
+          style="background-color: black; color: white; text-decoration: none; display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none;">Adjust</a>
+        <a href="/logout" class="btn btn-danger btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none;">Çıkış Yap</a>
       </div>
     </div>
 
@@ -375,6 +375,29 @@
             Son »»
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Holding Sharing Checklist Modal -->
+  <div id="holdingModal" class="holding-modal">
+    <div class="holding-modal-content">
+      <div class="holding-modal-header">
+        <h2>🏢 Holding Paylaşımı Kontrol Listesi</h2>
+        <span class="holding-modal-close" id="holdingModalClose">&times;</span>
+      </div>
+      <div class="holding-modal-tabs">
+        <button class="holding-tab-btn active" data-tab="post">📝 Post</button>
+        <button class="holding-tab-btn" data-tab="reels">🎬 Reels</button>
+        <button class="holding-tab-btn" data-tab="triple">📚 3lü Post</button>
+        <button class="holding-tab-btn" data-tab="story">📱 Story</button>
+      </div>
+      <div class="holding-modal-body">
+        <div id="holdingChecklistContainer"></div>
+      </div>
+      <div class="holding-modal-footer">
+        <button id="resetChecklistBtn" style="background-color: #7f8c8d; color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Temizle</button>
+        <button id="closeChecklistBtn" style="background-color: #e74c3c; color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-left: 10px;">Kapat</button>
       </div>
     </div>
   </div>

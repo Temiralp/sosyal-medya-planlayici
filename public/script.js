@@ -63,6 +63,9 @@ const accountGroups = {
     "Travelzone",
     "FishGate",
     "FlowerRange",
+    "CrewUp",
+    "Floretta",
+    "Nev Ev Tekstili",
   ],
   test: ["testhesap_ozoz", "test_ozd_01", "test_ozd_02", "testhesapyeni"],
 };
@@ -155,6 +158,9 @@ const accountPlatforms = {
   Travelzone: ["Facebook", "Instagram", "Twitter"],
   FishGate: ["Facebook", "Instagram", "Twitter"],
   FlowerRange: ["Facebook", "Instagram", "Twitter"],
+  CrewUp: ["Facebook", "Instagram", "Twitter", "LinkedIn"],
+  Floretta: ["Facebook", "Instagram", "Twitter"],
+  "Nev Ev Tekstili": ["Facebook", "Instagram", "Twitter"],
 
   // Test Hesapları
   testhesap_ozoz: ["Facebook", "Instagram", "Twitter"],
@@ -233,6 +239,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadPosts();
     setupEventListeners();
     initializeDarkMode(); // Dark mode başlat
+    initializeHoldingChecklist(); // Holding Checklist'i başlat
 
     // Content type filter'da "Tümü" butonunu varsayılan olarak aktif yap
     const allFilterBtn = document.querySelector(
@@ -1173,6 +1180,9 @@ async function handleFormSubmit(event) {
       });
 
       if (result?.post) {
+        if (result.lastUpdate) {
+          lastKnownUpdate = result.lastUpdate;
+        }
         addNewPostToList(result.post);
       }
     }
@@ -1184,6 +1194,7 @@ async function handleFormSubmit(event) {
 
     showMessage(successMessage, "success");
     showToast(`🎉 ${successMessage}`, "success", 5000);
+    playNotificationSound('newPost');
     resetForm();
 
     setTimeout(() => {
@@ -1525,6 +1536,9 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
     const result = await response.json();
 
     if (result.success) {
+      if (result.lastUpdate) {
+        lastKnownUpdate = result.lastUpdate;
+      }
       // Post'u dinamik olarak güncelle
       updatePostInList(result.post);
 
@@ -1897,11 +1911,7 @@ function createModernPostCard(post) {
     <div class="post-status-header">
       <span class="status-label">DURUM</span>
       <div class="post-title-header">
-        <strong>${escapeHtml(
-      post.contentType === "story" && post.storyLinkTitle
-        ? post.storyLinkTitle
-        : post.title
-    )}</strong>
+        <strong>${escapeHtml(post.title)}</strong>
       </div>
       <div class="status-dropdown-container">
         <select class="status-dropdown-header status-${post.status
@@ -2362,6 +2372,9 @@ async function savePostsOrder() {
       console.error("❌ Sıralama kaydedilemedi:", result.message);
       showToast("❌ Sıralama kaydedilemedi!", "error", 3000);
     } else {
+      if (result.lastUpdate) {
+        lastKnownUpdate = result.lastUpdate;
+      }
       console.log("✅ Sıralama başarıyla kaydedildi");
       showToast("💾 Sıralama kaydedildi!", "success", 2000);
     }
@@ -2812,8 +2825,12 @@ async function savePost(postId) {
     const result = await response.json();
 
     if (result.success) {
+      if (result.lastUpdate) {
+        lastKnownUpdate = result.lastUpdate;
+      }
       showMessage("Paylaşım başarıyla güncellendi!", "success");
       showToast("🟠 Paylaşım başarıyla düzenlendi!", "warning", 5000);
+      playNotificationSound('editPost');
 
       // Edit mode'dan çık
       cancelEditMode(postId);
@@ -3123,6 +3140,9 @@ async function updateStatus(postId, newStatus) {
     const result = await response.json();
 
     if (result.success) {
+      if (result.lastUpdate) {
+        lastKnownUpdate = result.lastUpdate;
+      }
       showMessage("Durum güncellendi!", "success");
       showToast("📝 Paylaşım durumu güncellendi!", "success", 3000);
       playNotificationSound('statusChange');
@@ -3173,6 +3193,9 @@ async function deletePost(postId) {
     const result = await response.json();
 
     if (result.success) {
+      if (result.lastUpdate) {
+        lastKnownUpdate = result.lastUpdate;
+      }
       showMessage("Paylaşım silindi!", "success");
       showToast("🗑️ Paylaşım başarıyla silindi!", "error", 3000);
 
@@ -3558,11 +3581,8 @@ function stopPolling() {
 // ============================================================================
 
 const NOTIFICATION_SOUNDS = {
-  // Hafif "Pop" sesi - Veri güncellendiğinde
-  updated: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU", // Kısa placeholder, aşağıda daha düzgün bir ses üreteceğim veya Web Audio API kullanacağım.
-
-  // "Ding" sesi - İşlem başarılı/Durum değişti
-  success: "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU"
+  updated: "",
+  success: ""
 };
 
 // Web Audio API ile ses üretme (Base64 yerine daha temiz ve hafif)
@@ -3576,34 +3596,58 @@ function playNotificationSound(type) {
     audioCtx.resume();
   }
 
-  const oscillator = audioCtx.createOscillator();
-  const gainNode = audioCtx.createGain();
+  const playTone = (frequency, duration, typeOfOscillator = 'sine', gainStart = 0.1, delay = 0) => {
+    setTimeout(() => {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
 
-  oscillator.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-  if (type === 'statusChange') {
-    // Hafif, kısa "blip" sesi (Durum değişimi - Eski dataUpdate sesi)
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); // 800Hz
-    oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+        osc.type = typeOfOscillator;
+        osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
 
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Düşük ses
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(gainStart, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (err) {
+        console.error("Ses çalma hatası:", err);
+      }
+    }, delay * 1000);
+  };
+
+  if (type === 'newPost') {
+    // Yeni post girişi: Yukarı doğru giden neşeli double-chime (Ding-Dong)
+    playTone(523, 0.15, 'sine', 0.12, 0);
+    playTone(659, 0.15, 'sine', 0.12, 0.08);
+    playTone(784, 0.25, 'sine', 0.12, 0.16);
+  } else if (type === 'editPost') {
+    // Düzenleme: Yumuşak bir geçiş melodisi (Triangle dalga ile E5 -> A4)
+    playTone(659, 0.18, 'triangle', 0.1, 0);
+    playTone(440, 0.25, 'triangle', 0.1, 0.10);
+  } else if (type === 'statusChange') {
+    // Durum güncelleme: Kısa, dinamik bir pop / sweep tonu
+    try {
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.12);
+      gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    } catch (err) {
+      console.error(err);
+    }
   } else if (type === 'dataUpdate') {
-    // "Ding" / "Başarılı" sesi (Veri güncelleme - Eski statusChange sesi)
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime);
-    oscillator.frequency.linearRampToValueAtTime(1000, audioCtx.currentTime + 0.1); // Yükselen ton
-
-    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // Biraz daha sesli
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.3);
+    // Arka plan polling güncellemesi: Çok hafif ve rahatsız etmeyen kısa bir ses
+    playTone(350, 0.08, 'sine', 0.04, 0);
   }
 }
 
@@ -3694,4 +3738,153 @@ function initializeDarkMode() {
     toggleBtn.textContent = isDark ? "☀️" : "🌙";
     toggleBtn.title = isDark ? "Aydınlık Mod" : "Karanlık Mod";
   });
+}
+
+// ============================================================================
+// HOLDİNG PAYLAŞIMI CHECKLIST MODAL & LOGIC
+// ============================================================================
+
+const holdingQuestions = {
+  post: [
+    "ORTAK PAYLAŞIM MI?",
+    "X İÇİN 4 GÖRSEL SEÇİLDİ Mİ",
+    "STORY'E İLK FOTOĞRAFLA MI TAŞINACAK",
+    "STORY'E YAZILI MI TAŞINACAK",
+    "STORY ARKAPLAN RENGİ NASIL OLACAK",
+    "STORY'E GİZLİ ETİKETLENECEK HESAPLAR VAR MI",
+    "Emir Murat Özdilek GÖNDERİDE Mİ (GÖNDERİDEYSE HER FOTOĞRAFTA ETİKETLENECEK)",
+    "REPOST VE HİKAYEYE TAŞIMA YAPACAK HESAPLAR VAR MI?",
+    "STORY ÖNE ÇIKARMALARA EKLENECEK Mİ?",
+    "HOLDİNG SAYFASINDAKİ 3LÜLER KAYIYORSA SPOR SALONU VEYA KİLO VERDİKTEN HANGİSİ ARŞİVLENECEK VEYA ARŞİVDEN ÇIKARILACAK MI",
+    "AÇIKLAMADAKİ ETİKETLER HER SOSYAL MEDYA PLATFORMUNA GÖRE DÜZENLENDİ Mİ?"
+  ],
+  reels: [
+    "ORTAK PAYLAŞIM MI?",
+    "X İÇİN MEDİA STUDİODA PAYLAŞLIP KAPAK EKLENDİ Mİ",
+    "KAPAK SEÇİLDİ Mİ",
+    "FARKLI TELEFONDAN KAPAK KONTROL EDİLDİ Mİ",
+    "STORY'E GİZLİ ETİKETLENECEK HESAPLAR VAR MI",
+    "REPOST VE HİKAYEYE TAŞIMA YAPACAK HESAPLAR VAR MI?",
+    "STORY ÖNE ÇIKARMALARA EKLENECEK Mİ?",
+    "HOLDİNG SAYFASINDAKİ 3LÜLER KAYIYORSA SPOR SALONU VEYA KİLO VERDİKTEN HANGİSİ ARŞİVLENECEK VEYA ARŞİVDEN ÇIKARILACAK MI",
+    "AÇIKLAMADAKİ ETİKETLER HER SOSYAL MEDYA PLATFORMUNA GÖRE DÜZENLENDİ Mİ?",
+    "ANA IZGARADA OLACAK MI?"
+  ],
+  triple: [
+    "ORTAK PAYLAŞIM MI?",
+    "X LİNKEDİN FACEBOOK İÇİN TEK GÖRSEL OLUŞTURULDU MU",
+    "STORY'E ORTADAKİ GÖRSEL Mİ TAŞINACAK",
+    "STORY'E YAZILI MI TAŞINACAK",
+    "STORY ARKAPLAN RENGİ NASIL OLACAK",
+    "STORY'E GİZLİ ETİKETLENECEK HESAPLAR VAR MI",
+    "Emir Murat Özdilek GÖNDERİDE Mİ (GÖNDERİDEYSE HER FOTOĞRAFTA ETİKETLENECEK)",
+    "REPOST VE HİKAYEYE TAŞIMA YAPACAK HESAPLAR VAR MI?",
+    "STORY ÖNE ÇIKARMALARA EKLENECEK Mİ?",
+    "SABİTLEME YAPILACAK MI",
+    "AÇIKLAMADAKİ ETİKETLER HER SOSYAL MEDYA PLATFORMUNA GÖRE DÜZENLENDİ Mİ?",
+    "FACEBOOKDA 3LÜ OLARAK PAYLAŞMASIN, PAYLAŞMIŞSA SİL"
+  ],
+  story: [
+    "STORY'E GİZLİ ETİKETLENECEK HESAPLAR VAR MI"
+  ]
+};
+
+function renderHoldingChecklist(tabName) {
+  const container = document.getElementById("holdingChecklistContainer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const questions = holdingQuestions[tabName] || [];
+  if (questions.length === 0) {
+    container.innerHTML = "<p>Soru bulunmuyor.</p>";
+    return;
+  }
+
+  const ul = document.createElement("ul");
+  ul.className = "holding-checklist";
+
+  questions.forEach((q, index) => {
+    const li = document.createElement("li");
+    li.className = "holding-checklist-item";
+    const checkboxId = `holding-check-${tabName}-${index}`;
+
+    li.innerHTML = `
+      <input type="checkbox" id="${checkboxId}" />
+      <label for="${checkboxId}">${escapeHtml(q)}</label>
+    `;
+
+    const checkbox = li.querySelector("input");
+    checkbox.addEventListener("change", function () {
+      if (this.checked) {
+        li.classList.add("checked");
+      } else {
+        li.classList.remove("checked");
+      }
+    });
+
+    ul.appendChild(li);
+  });
+
+  container.appendChild(ul);
+}
+
+function initializeHoldingChecklist() {
+  const modal = document.getElementById("holdingModal");
+  const btn = document.getElementById("holdingSharingBtn");
+  const closeSpan = document.getElementById("holdingModalClose");
+  const closeBtn = document.getElementById("closeChecklistBtn");
+  const resetBtn = document.getElementById("resetChecklistBtn");
+
+  if (!modal || !btn) return;
+
+  btn.addEventListener("click", () => {
+    modal.style.display = "block";
+    setActiveTab("post");
+  });
+
+  const closeModal = () => {
+    modal.style.display = "none";
+  };
+
+  if (closeSpan) closeSpan.addEventListener("click", closeModal);
+  if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
+  window.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Tab click listeners
+  const tabs = document.querySelectorAll(".holding-tab-btn");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", function () {
+      tabs.forEach(t => t.classList.remove("active"));
+      this.classList.add("active");
+      const tabName = this.getAttribute("data-tab");
+      renderHoldingChecklist(tabName);
+    });
+  });
+
+  function setActiveTab(tabName) {
+    tabs.forEach(t => {
+      if (t.getAttribute("data-tab") === tabName) {
+        t.classList.add("active");
+      } else {
+        t.classList.remove("active");
+      }
+    });
+    renderHoldingChecklist(tabName);
+  }
+
+  // Reset checklist
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      const checkboxes = document.querySelectorAll("#holdingChecklistContainer input[type='checkbox']");
+      checkboxes.forEach(cb => {
+        cb.checked = false;
+        cb.dispatchEvent(new Event("change"));
+      });
+    });
+  }
 }
