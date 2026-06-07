@@ -3265,6 +3265,50 @@ function removePostFromList(postId) {
 function updatePostInList(updatedPost) {
   console.log("Post listede güncelleniyor:", updatedPost.id);
 
+  // Aktif filtreleri kontrol et
+  const searchInput = document.getElementById("searchInput");
+  const activeStatusFilter = searchInput ? searchInput.dataset.status : "";
+  const activeContentTypeFilter = searchInput ? searchInput.dataset.contentType : "";
+  const activeTodayFilter = searchInput ? searchInput.dataset.filter : "";
+  const filterDate = document.getElementById("filterDate")?.value;
+  const filterTime = document.getElementById("filterTime")?.value;
+
+  let stillMatches = true;
+
+  if (activeStatusFilter && updatedPost.status !== activeStatusFilter) {
+    stillMatches = false;
+  }
+  if (activeContentTypeFilter && updatedPost.contentType !== activeContentTypeFilter) {
+    stillMatches = false;
+  }
+  if (activeTodayFilter === "today") {
+    const today = new Date().toISOString().slice(0, 10);
+    if (updatedPost.scheduledDate !== today) {
+      stillMatches = false;
+    }
+  }
+  if (filterDate && updatedPost.scheduledDate !== filterDate) {
+    stillMatches = false;
+  }
+  if (filterTime && updatedPost.scheduledTime !== filterTime) {
+    stillMatches = false;
+  }
+  if (searchInput && searchInput.value) {
+    const term = searchInput.value.toLowerCase();
+    const titleMatch = updatedPost.title && updatedPost.title.toLowerCase().includes(term);
+    const contentMatch = updatedPost.content && updatedPost.content.toLowerCase().includes(term);
+    const notesMatch = updatedPost.notes && updatedPost.notes.toLowerCase().includes(term);
+    if (!titleMatch && !contentMatch && !notesMatch) {
+      stillMatches = false;
+    }
+  }
+
+  if (!stillMatches) {
+    console.log("Post artık aktif filtrelere uymuyor, liste yeniden yükleniyor...");
+    loadPosts();
+    return;
+  }
+
   // Post'u listede bul ve güncelle
   const postIndex = allPosts.findIndex((post) => post.id == updatedPost.id);
 
