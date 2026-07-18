@@ -192,6 +192,10 @@ let currentEditPostId = null;
 // Yeni: Açık (expanded) durumda kalan kartları tutan Set
 const expandedPostIds = new Set();
 
+// Benzersiz istemci kimliği (diğer sekme/kullanıcılardan ayırt etmek için)
+const clientId = Math.random().toString(36).substring(2) + Date.now().toString();
+let editHeartbeatInterval = null;
+
 // Planlama modülü durumu
 const schedulePlannerState = {
   mode: "single",
@@ -329,24 +333,70 @@ function setupEventListeners() {
   const contentTypeFilterBtns = document.querySelectorAll(
     ".content-type-filter button"
   );
+  
+  // Varsayılan olarak Tümü butonunu aktif yapalım (sayfa ilk yüklendiğinde)
+  const allBtn = Array.from(contentTypeFilterBtns).find(b => b.dataset.filter === "all");
+  if (allBtn && !Array.from(contentTypeFilterBtns).some(b => b.classList.contains("active"))) {
+    allBtn.classList.add("active");
+  }
+
   contentTypeFilterBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       const filter = btn.dataset.filter;
 
-      // Tüm butonlardan active class'ını kaldır
-      contentTypeFilterBtns.forEach((b) => b.classList.remove("active"));
+      if (filter === "all") {
+        // Tümü tıklanırsa, sadece Tümü aktif olsun, diğer tipler deaktif olsun
+        contentTypeFilterBtns.forEach((b) => {
+          if (b.dataset.filter !== "daily") {
+            b.classList.remove("active");
+          }
+        });
+        btn.classList.add("active");
+      } else if (filter === "daily") {
+        // Günlük plan filtresi toggle olsun
+        btn.classList.toggle("active");
+      } else {
+        // Bireysel tipler (post, story, combined) toggle olsun
+        btn.classList.toggle("active");
+        
+        // Tümü butonunu deaktif et
+        if (allBtn) {
+          allBtn.classList.remove("active");
+        }
 
-      // Tıklanan butona active class'ı ekle
-      btn.classList.add("active");
+        // Eğer hiçbir bireysel tip aktif kalmadıysa, Tümü butonunu tekrar aktif et
+        const anyTypeActive = Array.from(contentTypeFilterBtns).some(
+          (b) => b.classList.contains("active") && b.dataset.filter !== "all" && b.dataset.filter !== "daily"
+        );
+        if (!anyTypeActive && allBtn) {
+          allBtn.classList.add("active");
+        }
+      }
 
-      // searchInput'a contentType filter'ını set et
+      // Seçili tipleri ve plan modunu toplayalım
+      const activeTypes = [];
+      let isDailySelected = false;
+
+      contentTypeFilterBtns.forEach((b) => {
+        if (b.classList.contains("active")) {
+          if (b.dataset.filter === "daily") {
+            isDailySelected = true;
+          } else if (b.dataset.filter !== "all") {
+            activeTypes.push(b.dataset.filter);
+          }
+        }
+      });
+
+      // searchInput dataset'ine kaydedelim
       const searchInput = document.getElementById("searchInput");
       if (searchInput) {
-        if (filter === "all") {
+        // Eğer hiçbir tip seçilmediyse veya Tümü aktifse contentType boş kalır (bütün tipler listelenir)
+        if (activeTypes.length === 0 || (allBtn && allBtn.classList.contains("active"))) {
           searchInput.dataset.contentType = "";
         } else {
-          searchInput.dataset.contentType = filter;
+          searchInput.dataset.contentType = activeTypes.join(",");
         }
+        searchInput.dataset.plannerMode = isDailySelected ? "daily" : "";
       }
 
       // Postları yeniden yükle
@@ -1887,6 +1937,7 @@ function createModernPostCard(post) {
   // Status class belirleme
   const statusInfo = {
     planlandı: { icon: "📅", text: "Planlandı" },
+    yapılıyor: { icon: "⚙️", text: "Yapılıyor" },
     yapıldı: { icon: "✅", text: "Yapıldı" },
     beklemede: { icon: "⏳", text: "Beklemede" },
     iptal: { icon: "❌", text: "İptal" },
@@ -1913,12 +1964,17 @@ function createModernPostCard(post) {
       <div class="post-title-header">
         <strong>${escapeHtml(post.title)}</strong>
       </div>
-      <div class="status-dropdown-container">
+      <div class="status-dropdown-container" style="display: flex; align-items: center; gap: 8px;">
+        <span class="edit-warning-text" id="edit-warning-${post.id}">
+          ⚠️ Şu an başka bir kullanıcı düzenliyor
+        </span>
         <select class="status-dropdown-header status-${post.status
     }" onchange="updateStatus(${post.id
     }, this.value)" onclick="event.stopPropagation();">
           <option value="planlandı" ${post.status === "planlandı" ? "selected" : ""
     }>📅 Planlandı</option>
+          <option value="yapılıyor" ${post.status === "yapılıyor" ? "selected" : ""
+    }>⚙️ Yapılıyor</option>
           <option value="yapıldı" ${post.status === "yapıldı" ? "selected" : ""
     }>✅ Yapıldı</option>
           <option value="beklemede" ${post.status === "beklemede" ? "selected" : ""
@@ -2587,6 +2643,47 @@ function createEditAccountGroups(selectedAccounts) {
     .join("");
 }
 
+// Edit durumu yönetimi ve Heartbeat fonksiyonları
+function startEditHeartbeat(postId) {
+  stopEditHeartbeat();
+  sendEditStatus(postId, true);
+  editHeartbeatInterval = setInterval(() => {
+    if (currentEditPostId === postId) {
+      sendEditStatus(postId, true);
+    } else {
+      stopEditHeartbeat();
+    }
+  }, 4000); // 4 saniyede bir heartbeat gönder
+}
+
+function stopEditHeartbeat() {
+  if (editHeartbeatInterval) {
+    clearInterval(editHeartbeatInterval);
+    editHeartbeatInterval = null;
+  }
+}
+
+async function sendEditStatus(postId, isEditing) {
+  try {
+    const response = await fetch(`/api/posts/${postId}/editing`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ clientId, isEditing }),
+    });
+    
+    // Eğer sunucu bu postun başkası tarafından düzenlendiğini dönerse
+    const result = await response.json();
+    if (isEditing && result.success === false && result.isEditing) {
+      showToast("⚠️ Bu paylaşım başka bir kullanıcı tarafından düzenleniyor!", "error", 4000);
+      cancelEditMode(postId);
+    }
+  } catch (error) {
+    console.error("Edit durumu gönderme hatası:", error);
+  }
+}
+
 // Edit mode başlat
 function startEditMode(postId) {
   // Kart zaten edit-modundaysa tekrar işlem yapma
@@ -2597,6 +2694,7 @@ function startEditMode(postId) {
 
   // Aktif düzenlenen post'u kaydet (mobilde yeniden render durumunda korunur)
   currentEditPostId = postId;
+  startEditHeartbeat(postId);
 
   const card = document.getElementById(`post-card-${postId}`);
   const editForm = document.getElementById(`edit-form-${postId}`);
@@ -2677,6 +2775,8 @@ function cancelEditMode(postId) {
   // Düzenleme modu kapatıldığında takip değişkenini sıfırla
   if (currentEditPostId === postId) {
     currentEditPostId = null;
+    stopEditHeartbeat();
+    sendEditStatus(postId, false);
   }
 
   // ... existing code ...
@@ -2932,6 +3032,9 @@ function toggleAccordion(postId, event) {
       card.classList.add("expanded");
       topButton.style.display = "none";
       bottomButton.style.display = "flex";
+      
+      // Detaylar açıldığında hemen en güncel düzenleme kilidi durumunu getir
+      checkForUpdates();
     }
   }
 
@@ -3417,6 +3520,7 @@ async function loadPosts() {
   const filter = searchInput ? searchInput.dataset.filter : "";
   const contentType = searchInput ? searchInput.dataset.contentType : "";
   const status = searchInput ? searchInput.dataset.status : "";
+  const plannerMode = searchInput ? searchInput.dataset.plannerMode : "";
 
   console.log("Postlar yükleniyor...");
   try {
@@ -3432,6 +3536,9 @@ async function loadPosts() {
     }
     if (status) {
       url += `status=${encodeURIComponent(status)}&`;
+    }
+    if (plannerMode) {
+      url += `plannerMode=${encodeURIComponent(plannerMode)}&`;
     }
 
     const response = await fetch(url);
@@ -3574,11 +3681,32 @@ let lastKnownUpdate = Date.now();
 let pollingInterval = null;
 let isPageActive = true;
 
+// Diğer kullanıcıların düzenleme durumunu güncelle
+function updateActiveEditsUI(activeEdits) {
+  const cards = document.querySelectorAll(".post-card");
+  cards.forEach((card) => {
+    const postId = card.id.replace("post-card-", "");
+    const warningEl = document.getElementById(`edit-warning-${postId}`);
+    if (!warningEl) return;
+
+    const editorClientId = activeEdits[postId];
+    if (editorClientId && editorClientId !== clientId) {
+      warningEl.style.display = "inline-flex";
+    } else {
+      warningEl.style.display = "none";
+    }
+  });
+}
+
 // Son güncelleme zamanını kontrol et
 async function checkForUpdates() {
   try {
     const response = await fetch("/api/last-update");
     const result = await response.json();
+
+    if (result.activeEdits) {
+      updateActiveEditsUI(result.activeEdits);
+    }
 
     if (result.lastUpdate > lastKnownUpdate) {
       console.log(
