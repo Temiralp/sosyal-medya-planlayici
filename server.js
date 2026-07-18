@@ -102,12 +102,24 @@ let lastDataUpdate = Date.now();
 const activeEdits = new Map();
 const EDIT_TIMEOUT = 10000; // 10 saniye hareketsizlikte lock düşer
 
-const cleanExpiredEdits = () => {
+// Aktif görüntülenen paylaşımları takip et (postId -> { clientId, lastActive })
+const activeViews = new Map();
+const VIEW_TIMEOUT = 10000; // 10 saniye hareketsizlikte lock düşer
+
+const cleanExpiredLocks = () => {
   const now = Date.now();
+  // Düzenleme kilitlerini temizle
   for (const [postId, editInfo] of activeEdits.entries()) {
     if (now - editInfo.lastActive > EDIT_TIMEOUT) {
       activeEdits.delete(postId);
       console.log(`Edit lock expired for post ${postId}`);
+    }
+  }
+  // Görüntüleme kilitlerini temizle
+  for (const [postId, viewInfo] of activeViews.entries()) {
+    if (now - viewInfo.lastActive > VIEW_TIMEOUT) {
+      activeViews.delete(postId);
+      console.log(`View lock expired for post ${postId}`);
     }
   }
 };
@@ -324,16 +336,21 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Son güncelleme zamanını ve aktif düzenlemeleri getir (polling için)
+// Son güncelleme zamanını ve aktif durumları getir (polling için)
 app.get("/api/last-update", (req, res) => {
-  cleanExpiredEdits();
+  cleanExpiredLocks();
   const edits = {};
   for (const [postId, editInfo] of activeEdits.entries()) {
     edits[postId] = editInfo.clientId;
   }
+  const views = {};
+  for (const [postId, viewInfo] of activeViews.entries()) {
+    views[postId] = viewInfo.clientId;
+  }
   res.json({ 
     lastUpdate: lastDataUpdate,
-    activeEdits: edits
+    activeEdits: edits,
+    activeViews: views
   });
 });
 
@@ -347,7 +364,7 @@ app.post("/api/posts/:id/editing", (req, res) => {
       return res.status(400).json({ success: false, message: "clientId gerekli" });
     }
 
-    cleanExpiredEdits();
+    cleanExpiredLocks();
 
     if (isEditing) {
       // Başka biri düzenliyor mu kontrol et
@@ -373,6 +390,34 @@ app.post("/api/posts/:id/editing", (req, res) => {
     }
   } catch (error) {
     console.error("Editing status error:", error);
+    res.status(500).json({ success: false, message: "Sunucu hatası" });
+  }
+});
+
+// Post görüntüleme durumunu güncelle (heartbeat)
+app.post("/api/posts/:id/viewing", (req, res) => {
+  try {
+    const { id } = req.params;
+    const { clientId, isViewing } = req.body;
+
+    if (!clientId) {
+      return res.status(400).json({ success: false, message: "clientId gerekli" });
+    }
+
+    cleanExpiredLocks();
+
+    if (isViewing) {
+      activeViews.set(id, { clientId, lastActive: Date.now() });
+      res.json({ success: true, isViewing: true });
+    } else {
+      const currentView = activeViews.get(id);
+      if (currentView && currentView.clientId === clientId) {
+        activeViews.delete(id);
+      }
+      res.json({ success: true, isViewing: false });
+    }
+  } catch (error) {
+    console.error("Viewing status error:", error);
     res.status(500).json({ success: false, message: "Sunucu hatası" });
   }
 });
@@ -415,13 +460,13 @@ app.get("/api/posts", (req, res) => {
       posts = posts.filter((p) => allowedModes.includes(p.plannerMode) || allowedModes.includes(p.planMode));
     }
 
-    // Status filtreleme
+    // Status filtreleme (çoklu seçim desteği)
     if (status) {
-      if (status === "planlandı") {
-        posts = posts.filter((p) => p.status === "planlandı" || p.status === "yapılıyor");
-      } else {
-        posts = posts.filter((p) => p.status === status);
+      const allowedStatuses = status.split(",");
+      if (allowedStatuses.includes("planlandı") && !allowedStatuses.includes("yapılıyor")) {
+        allowedStatuses.push("yapılıyor");
       }
+      posts = posts.filter((p) => allowedStatuses.includes(p.status));
     }
 
     // Sıralama

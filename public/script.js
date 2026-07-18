@@ -407,20 +407,55 @@ function setupEventListeners() {
 
   // Status filter butonları
   const statusFilterBtns = document.querySelectorAll(".status-filter button");
+  const allStatusBtn = Array.from(statusFilterBtns).find(b => b.dataset.status === "");
+
+  // Varsayılan olarak Tüm Durumlar butonunu aktif yapalım (sayfa ilk yüklendiğinde)
+  if (allStatusBtn && !Array.from(statusFilterBtns).some(b => b.classList.contains("active"))) {
+    allStatusBtn.classList.add("active");
+  }
+
   statusFilterBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       const status = btn.dataset.status;
 
-      // Tüm butonlardan active class'ını kaldır
-      statusFilterBtns.forEach((b) => b.classList.remove("active"));
+      if (status === "") {
+        // Tüm Durumlar tıklanırsa, sadece o aktif kalsın
+        statusFilterBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      } else {
+        // Bireysel durum toggle olsun
+        btn.classList.toggle("active");
+        
+        // Tüm Durumlar butonunu deaktif et
+        if (allStatusBtn) {
+          allStatusBtn.classList.remove("active");
+        }
 
-      // Tıklanan butona active class'ı ekle
-      btn.classList.add("active");
+        // Eğer hiçbir bireysel durum aktif kalmadıysa, Tüm Durumlar'ı tekrar aktif et
+        const anyStatusActive = Array.from(statusFilterBtns).some(
+          (b) => b.classList.contains("active") && b.dataset.status !== ""
+        );
+        if (!anyStatusActive && allStatusBtn) {
+          allStatusBtn.classList.add("active");
+        }
+      }
 
-      // searchInput'a status filter'ını set et
+      // Seçili durumları toplayalım
+      const activeStatuses = [];
+      statusFilterBtns.forEach((b) => {
+        if (b.classList.contains("active") && b.dataset.status !== "") {
+          activeStatuses.push(b.dataset.status);
+        }
+      });
+
+      // searchInput dataset'ine kaydedelim
       const searchInput = document.getElementById("searchInput");
       if (searchInput) {
-        searchInput.dataset.status = status;
+        if (activeStatuses.length === 0 || (allStatusBtn && allStatusBtn.classList.contains("active"))) {
+          searchInput.dataset.status = "";
+        } else {
+          searchInput.dataset.status = activeStatuses.join(",");
+        }
       }
 
       // Postları yeniden yükle
@@ -1968,6 +2003,9 @@ function createModernPostCard(post) {
         <span class="edit-warning-text" id="edit-warning-${post.id}">
           ⚠️ Şu an başka bir kullanıcı düzenliyor
         </span>
+        <span class="view-warning-text" id="view-warning-${post.id}">
+          👁️ Şu anda başka bir kullanıcı bunu paylaşıyor
+        </span>
         <select class="status-dropdown-header status-${post.status
     }" onchange="updateStatus(${post.id
     }, this.value)" onclick="event.stopPropagation();">
@@ -2684,6 +2722,28 @@ async function sendEditStatus(postId, isEditing) {
   }
 }
 
+// Görüntüleme durumu yönetimi (detaylar açıldığında)
+async function sendViewStatus(postId, isViewing) {
+  try {
+    await fetch(`/api/posts/${postId}/viewing`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ clientId, isViewing }),
+    });
+  } catch (error) {
+    console.error("Görüntüleme durumu gönderme hatası:", error);
+  }
+}
+
+// Tüm açık kartların görüntüleme durumunu periyodik olarak yenileyelim (Heartbeat)
+setInterval(() => {
+  expandedPostIds.forEach((postId) => {
+    sendViewStatus(postId, true);
+  });
+}, 4000);
+
 // Edit mode başlat
 function startEditMode(postId) {
   // Kart zaten edit-modundaysa tekrar işlem yapma
@@ -3038,12 +3098,14 @@ function toggleAccordion(postId, event) {
     }
   }
 
-  // Accordion durumuna göre Set'i güncelle
+  // Accordion durumuna göre Set'i güncelle ve sunucuya bildir
   if (card) {
     if (card.classList.contains("expanded")) {
       expandedPostIds.add(postId);
+      sendViewStatus(postId, true);
     } else {
       expandedPostIds.delete(postId);
+      sendViewStatus(postId, false);
     }
   }
 }
@@ -3698,6 +3760,23 @@ function updateActiveEditsUI(activeEdits) {
   });
 }
 
+// Diğer kullanıcıların görüntüleme durumunu güncelle
+function updateActiveViewsUI(activeViews) {
+  const cards = document.querySelectorAll(".post-card");
+  cards.forEach((card) => {
+    const postId = card.id.replace("post-card-", "");
+    const warningEl = document.getElementById(`view-warning-${postId}`);
+    if (!warningEl) return;
+
+    const viewerClientId = activeViews[postId];
+    if (viewerClientId && viewerClientId !== clientId) {
+      warningEl.style.display = "inline-flex";
+    } else {
+      warningEl.style.display = "none";
+    }
+  });
+}
+
 // Son güncelleme zamanını kontrol et
 async function checkForUpdates() {
   try {
@@ -3706,6 +3785,9 @@ async function checkForUpdates() {
 
     if (result.activeEdits) {
       updateActiveEditsUI(result.activeEdits);
+    }
+    if (result.activeViews) {
+      updateActiveViewsUI(result.activeViews);
     }
 
     if (result.lastUpdate > lastKnownUpdate) {
