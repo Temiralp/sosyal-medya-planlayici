@@ -244,6 +244,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupEventListeners();
     initializeDarkMode(); // Dark mode başlat
     initializeHoldingChecklist(); // Holding Checklist'i başlat
+    initializeLateWarning(); // Geç kalmış paylaşım uyarısını başlat
 
     // Content type filter'da "Tümü" butonunu varsayılan olarak aktif yap
     const allFilterBtn = document.querySelector(
@@ -265,6 +266,17 @@ document.addEventListener("DOMContentLoaded", function () {
 // Event listeners
 function setupEventListeners() {
   console.log("Event listener'lar kuruluyor...");
+
+  // Late Warning toggle change
+  const lateWarningToggle = document.getElementById("lateWarningToggle");
+  if (lateWarningToggle) {
+    lateWarningToggle.addEventListener("change", function() {
+      const isChecked = this.checked;
+      localStorage.setItem("lateWarningEnabled", isChecked ? "true" : "false");
+      checkLatePosts();
+      console.log("Late warning toggled:", isChecked);
+    });
+  }
 
   // Form submit
   const form = document.getElementById("postForm");
@@ -3638,6 +3650,8 @@ async function loadPosts() {
     if (countElement) {
       countElement.textContent = posts.length;
     }
+    // Geciken paylaşımları kontrol et
+    checkLatePosts();
   } catch (error) {
     console.error("Post yükleme hatası:", error);
     showMessage("Postlar yüklenemedi!", "error");
@@ -4140,5 +4154,170 @@ function initializeHoldingChecklist() {
         cb.dispatchEvent(new Event("change"));
       });
     });
+  }
+}
+
+// ============================================================================
+// GEÇ KALINMIŞ PAYLAŞIM UYARISI MEKANİZMASI (Europe/Istanbul Timezone)
+// ============================================================================
+
+let latePostIds = [];
+let currentLateIndex = 0;
+let lateWarningInterval = null;
+
+function initializeLateWarning() {
+  const lateWarningToggle = document.getElementById("lateWarningToggle");
+  if (lateWarningToggle) {
+    const isEnabled = localStorage.getItem("lateWarningEnabled") === "true";
+    lateWarningToggle.checked = isEnabled;
+  }
+
+  // Floating button click listener
+  const floatingBtn = document.getElementById("lateWarningFloatingBtn");
+  if (floatingBtn) {
+    floatingBtn.addEventListener("click", () => {
+      if (latePostIds.length === 0) return;
+
+      const postId = latePostIds[currentLateIndex % latePostIds.length];
+      currentLateIndex++;
+
+      console.log(`Geciken paylaşıma odaklanılıyor: ${postId}`);
+      focusOnPost(postId);
+    });
+  }
+
+  // Her 30 saniyede bir otomatik kontrol et
+  if (lateWarningInterval) {
+    clearInterval(lateWarningInterval);
+  }
+  lateWarningInterval = setInterval(checkLatePosts, 30000);
+}
+
+async function focusOnPost(postId) {
+  // Check if post card is currently in the DOM
+  let card = document.getElementById(`post-card-${postId}`);
+  
+  if (!card) {
+    // Reset all filters to load all posts
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      searchInput.value = "";
+      searchInput.dataset.filter = "";
+      searchInput.dataset.contentType = "";
+      searchInput.dataset.status = "";
+      searchInput.dataset.plannerMode = "";
+    }
+    
+    const filterDate = document.getElementById("filterDate");
+    if (filterDate) filterDate.value = "";
+    
+    const filterTime = document.getElementById("filterTime");
+    if (filterTime) filterTime.value = "";
+    
+    document.querySelectorAll(".content-type-filter button").forEach(b => b.classList.remove("active"));
+    const allFilterBtn = document.querySelector('.content-type-filter button[data-filter="all"]');
+    if (allFilterBtn) allFilterBtn.classList.add("active");
+    
+    document.querySelectorAll(".status-filter button").forEach(b => b.classList.remove("active"));
+    const allStatusBtn = document.querySelector('.status-filter button[data-status=""]');
+    if (allStatusBtn) allStatusBtn.classList.add("active");
+    
+    const todayFilterBtn = document.getElementById("todayFilterBtn");
+    if (todayFilterBtn) todayFilterBtn.classList.remove("active");
+
+    console.log("Filtreler sıfırlanıyor ve postlar yeniden yükleniyor...");
+    await loadPosts();
+  }
+
+  // Find post in allPosts array
+  const postIndex = allPosts.findIndex(p => p.id == postId);
+  if (postIndex !== -1) {
+    const page = Math.floor(postIndex / postsPerPage) + 1;
+    goToPage(page);
+    
+    setTimeout(() => {
+      const targetCard = document.getElementById(`post-card-${postId}`);
+      if (targetCard) {
+        if (!targetCard.classList.contains("expanded")) {
+          const toggleBtn = document.getElementById(`accordion-toggle-top-${postId}`);
+          if (toggleBtn) toggleBtn.click();
+        }
+        targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        targetCard.classList.add("plan-highlight");
+        setTimeout(() => {
+          targetCard.classList.remove("plan-highlight");
+        }, 3000);
+      }
+    }, 150);
+  }
+}
+
+async function checkLatePosts() {
+  const isEnabled = localStorage.getItem("lateWarningEnabled") === "true";
+  const floatingBtn = document.getElementById("lateWarningFloatingBtn");
+  
+  if (!isEnabled) {
+    if (floatingBtn) floatingBtn.style.display = "none";
+    latePostIds = [];
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/posts");
+    const posts = await response.json();
+    
+    let currentDateStr = "";
+    let currentTimeStr = "";
+    try {
+      const svStr = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Istanbul" });
+      const parts = svStr.split(" ");
+      if (parts.length >= 2) {
+        currentDateStr = parts[0];
+        currentTimeStr = parts[1].substring(0, 5); // HH:mm
+      }
+    } catch (err) {
+      console.error("İstanbul saati alınamadı, yerel saat kullanılacak:", err);
+      const now = new Date();
+      currentDateStr = now.toISOString().slice(0, 10);
+      currentTimeStr = String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0');
+    }
+
+    if (!currentDateStr || !currentTimeStr) return;
+
+    latePostIds = posts
+      .filter(post => {
+        if (post.status !== "planlandı") return false;
+        
+        // Sadece bugünün paylaşımları için kontrol et
+        if (post.scheduledDate === currentDateStr) {
+          // Günlük planlanan paylaşımlarda sadece 1. gün (sequence = 1) olanlar için uyarı ver,
+          // 2. gün ve sonraki günlerdekiler için uyarı verme.
+          if (post.planBatchId && post.planSequence) {
+            const seq = parseInt(post.planSequence, 10);
+            if (!isNaN(seq) && seq > 1) {
+              return false;
+            }
+          }
+          return post.scheduledTime < currentTimeStr;
+        }
+        return false;
+      })
+      .map(post => post.id);
+
+    console.log(`Geciken post sayısı (Global): ${latePostIds.length}`, latePostIds);
+
+    if (floatingBtn) {
+      if (latePostIds.length > 0) {
+        floatingBtn.style.display = "flex";
+        const countEl = document.getElementById("lateWarningCount");
+        if (countEl) {
+          countEl.textContent = latePostIds.length;
+        }
+      } else {
+        floatingBtn.style.display = "none";
+      }
+    }
+  } catch (err) {
+    console.error("Geciken postları kontrol ederken hata oluştu:", err);
   }
 }

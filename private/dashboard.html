@@ -16,6 +16,13 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <h1>ÖZDİLEK&SEMANTİK SOSYAL MEDYA PLANLAMA SİSTEMİ</h1>
       <div style="display: flex; gap: 10px; align-items: center;">
+        <!-- Geç Kalınmış Paylaşım Uyarısı Aktif/Pasif Toggle -->
+        <label class="late-warning-toggle" title="Geç Kalınmış Paylaşım Uyarısı">
+          <input type="checkbox" id="lateWarningToggle" />
+          <span class="late-warning-toggle-slider"></span>
+          <span class="late-warning-toggle-label">⏰ Geciken Uyarı</span>
+        </label>
+
         <button id="darkModeToggle" class="btn"
           style="background-color: #34495e; color: white; display: inline-flex; align-items: center; justify-content: center; height: 36px; width: 36px; padding: 0; border-radius: 6px; font-size: 14px; border: none; cursor: pointer;" title="Karanlık Mod">
           🌙
@@ -406,6 +413,13 @@
         <button id="closeChecklistBtn" style="background-color: #e74c3c; color: white; border: none; padding: 0.35rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-left: 10px;">Kapat</button>
       </div>
     </div>
+  </div>
+
+  <!-- Late Warning Floating Button -->
+  <div id="lateWarningFloatingBtn" class="late-warning-floating-btn" style="display: none;">
+    <span class="late-warning-icon">🚨</span>
+    <span class="late-warning-count" id="lateWarningCount">0</span>
+    <span class="late-warning-text">Geciken Paylaşım Var!</span>
   </div>
 
   <script src="script.js"></script>
