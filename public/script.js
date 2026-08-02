@@ -3,22 +3,22 @@ const accountGroups = {
   ana: ["Özdilek Holding", "Özdilek AVM"],
   avm: [
     "Özdilek AVM",
-    "ÖzdilekPark M Geçit (Özdilek Geçit AVM)",
     "Özdilek İzmir",
     "Özdilek Eskişehir",
     "Özdilek Afyonkarahisar (Özdilek Afyon AVM)",
     "Özdilek Yalova",
     "Özdilek Kocaeli",
     "Özdilek Bolu",
-    "Özdilek Manisa Turgutlu",
-    "Özdilek Uşak",
     "Özdilek Bursa",
     "Özdilek Düzce",
   ],
   park: [
+    "ÖzdilekPark Bursa Geçit",
     "ÖzdilekPark Bursa Nilüfer",
     "ÖzdilekPark Antalya",
     "ÖzdilekPark İstanbul",
+    "ÖzdilekPark Manisa Turgutlu",
+    "ÖzdilekPark Uşak",
     "Wyndham Grand İstanbul Levent Hotel & Conference Center",
     "Wyndham Grand İzmir Özdilek Thermal & Spa",
   ],
@@ -43,6 +43,7 @@ const accountGroups = {
     "Safahat Bowl",
     "Gusto Plus Market",
     "Vertice Restaurant",
+    "Partly Cloudy Cafe",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -80,7 +81,7 @@ const accountPlatforms = {
   "ÖzdilekPark Bursa Nilüfer": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark Antalya": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark İstanbul": ["Facebook", "Instagram", "Twitter"],
-  "ÖzdilekPark M Geçit (Özdilek Geçit AVM)": [
+  "ÖzdilekPark Bursa Geçit": [
     "Facebook",
     "Instagram",
     "Twitter",
@@ -95,8 +96,8 @@ const accountPlatforms = {
   "Özdilek Yalova": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Kocaeli": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bolu": ["Facebook", "Instagram", "Twitter"],
-  "Özdilek Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
-  "Özdilek Uşak": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Uşak": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bursa": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Düzce": ["Facebook", "Instagram", "Twitter"],
 
@@ -134,6 +135,7 @@ const accountPlatforms = {
   "Safahat Bowl": ["Facebook", "Instagram", "Twitter"],
   "Gusto Plus Market": ["Facebook", "Instagram", "Twitter"],
   "Vertice Restaurant": ["Facebook", "Instagram", "Twitter"],
+  "Partly Cloudy Cafe": ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
@@ -803,6 +805,26 @@ function checkScheduledTime(dateStr, timeStr) {
   const nowUtc = Date.now();
   
   return (targetUtc - nowUtc) / 60000;
+}
+
+// Eski hesap isimlerini veritabanını değiştirmeden arayüz ve listelemede yeni isimlerle dinamik olarak eşler.
+function normalizePostAccounts(post) {
+  if (!post) return post;
+  if (post.selectedAccounts && Array.isArray(post.selectedAccounts)) {
+    post.selectedAccounts = post.selectedAccounts.map(acc => 
+      acc.replace("Özdilek Manisa Turgutlu", "ÖzdilekPark Manisa Turgutlu")
+         .replace("Özdilek Uşak", "ÖzdilekPark Uşak")
+         .replace("ÖzdilekPark M Geçit (Özdilek Geçit AVM)", "ÖzdilekPark Bursa Geçit")
+    );
+  }
+  if (post.completedAccounts && Array.isArray(post.completedAccounts)) {
+    post.completedAccounts = post.completedAccounts.map(acc => 
+      acc.replace("Özdilek Manisa Turgutlu", "ÖzdilekPark Manisa Turgutlu")
+         .replace("Özdilek Uşak", "ÖzdilekPark Uşak")
+         .replace("ÖzdilekPark M Geçit (Özdilek Geçit AVM)", "ÖzdilekPark Bursa Geçit")
+    );
+  }
+  return post;
 }
 
 function formatDateForInput(date) {
@@ -3527,6 +3549,7 @@ function removePostFromList(postId) {
 
 // Post'u dinamik olarak listede güncelle
 function updatePostInList(updatedPost) {
+  updatedPost = normalizePostAccounts(updatedPost);
   console.log("Post listede güncelleniyor:", updatedPost.id);
 
   // Aktif filtreleri kontrol et
@@ -3704,6 +3727,7 @@ async function loadPosts() {
 
     const response = await fetch(url);
     let posts = await response.json();
+    posts = posts.map(normalizePostAccounts);
     console.log(`${posts.length} post yüklendi`);
 
     // Tarih ve saat filtreleme (frontend'de)
