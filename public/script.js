@@ -3030,20 +3030,6 @@ async function savePost(postId) {
   }
 
   try {
-    const scheduledDate = form.querySelector('[name="scheduledDate"]').value;
-    const scheduledTime = form.querySelector('[name="scheduledTime"]').value;
-
-    const diff = checkScheduledTime(scheduledDate, scheduledTime);
-    if (diff < 10) {
-      if (saveButton) {
-        saveButton.disabled = false;
-        saveButton.innerHTML = "💾 Kaydet";
-      }
-      showMessage("Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error");
-      showToast("⚠️ Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error", 4000);
-      return;
-    }
-
     const formData = new FormData();
 
     // Form verilerini topla

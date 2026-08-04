@@ -685,7 +685,7 @@ app.post(
         fileName: files.length > 0 ? files[0].fileName : null,
         originalName: files.length > 0 ? files[0].originalName : null,
         status: "planlandı",
-        createdAt: new Date().toLocaleString("tr-TR"),
+        createdAt: new Date().toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" }),
         plannerMode: hasPlanBatch ? cleanPlannerMode : "single",
         planBatchId: hasPlanBatch ? cleanPlanBatchId : null,
         planSequence: hasPlanBatch ? planSequenceNumber : null,
@@ -699,7 +699,7 @@ app.post(
 
       // Yeni post'un oluşturma zamanını doğru şekilde ayarla
       const now = new Date();
-      newPost.createdAt = now.toLocaleString("tr-TR");
+      newPost.createdAt = now.toLocaleString("tr-TR", { timeZone: "Europe/Istanbul" });
 
       // Eğer sürükle bırak yapılmışsa manuel sıralama kullanılacak,
       // yoksa createdAt zamanı ile otomatik sıralanacak
@@ -825,18 +825,7 @@ app.put(
         });
       }
 
-      // Tarih ve saat en az 10 dakika sonrası olmalı kontrolü (İstanbul UTC+3, 1 dk pay bıraktık)
-      const scheduledDateTime = moment(`${scheduledDate} ${scheduledTime}`, "YYYY-MM-DD HH:mm").utcOffset(180, true);
-      const nowIstanbul = moment().utcOffset(180);
-      const diffMinutes = scheduledDateTime.diff(nowIstanbul, "minutes");
 
-      if (diffMinutes < 9) {
-        console.error("Planlama tarihi en az 10 dakika sonrası olmalıdır");
-        return res.status(400).json({
-          success: false,
-          message: "Planlama tarihi en az 10 dakika sonrası olmalıdır!",
-        });
-      }
 
       // İçerik türüne göre validasyon
       if (contentType === "post" && !cleanContent) {
@@ -983,6 +972,7 @@ app.put(
         originalName: undefined,
         // Updated timestamp ekle
         updatedAt: new Date().toLocaleString("tr-TR", {
+          timeZone: "Europe/Istanbul",
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
