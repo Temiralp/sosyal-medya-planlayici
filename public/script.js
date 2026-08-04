@@ -3916,6 +3916,11 @@ function playNotificationSound(type) {
   } else if (type === 'dataUpdate') {
     // Arka plan polling güncellemesi: Çok hafif ve rahatsız etmeyen kısa bir ses
     playTone(350, 0.08, 'sine', 0.04, 0);
+  } else if (type === 'lateWarningAlarm') {
+    // Rahatsız edici ve sürekli çalan klasik siren/alarm sesi (Tiz, sert ve yüksek sesli sawtooth dalga ile)
+    playTone(987.77, 0.15, 'sawtooth', 0.25, 0);      // Tiz Si (B5) tonu
+    playTone(987.77, 0.15, 'sawtooth', 0.25, 0.2);    // İkinci Tiz Beep
+    playTone(783.99, 0.25, 'sawtooth', 0.25, 0.4);    // Kalın Sol (G5) tonu - Siren hissi
   }
 }
 
@@ -4162,8 +4167,10 @@ function initializeHoldingChecklist() {
 // ============================================================================
 
 let latePostIds = [];
+let previousLatePostIds = [];
 let currentLateIndex = 0;
 let lateWarningInterval = null;
+let alarmInterval = null;
 
 function initializeLateWarning() {
   const lateWarningToggle = document.getElementById("lateWarningToggle");
@@ -4252,6 +4259,25 @@ async function focusOnPost(postId) {
   }
 }
 
+function startAlarmLoop() {
+  if (alarmInterval) return; // Zaten çalıyor
+  
+  // İlk çalma
+  playNotificationSound('lateWarningAlarm');
+  
+  // Her 3 saniyede bir tekrarla (sürekli siren alarmı)
+  alarmInterval = setInterval(() => {
+    playNotificationSound('lateWarningAlarm');
+  }, 3000);
+}
+
+function stopAlarmLoop() {
+  if (alarmInterval) {
+    clearInterval(alarmInterval);
+    alarmInterval = null;
+  }
+}
+
 async function checkLatePosts() {
   const isEnabled = localStorage.getItem("lateWarningEnabled") === "true";
   const floatingBtn = document.getElementById("lateWarningFloatingBtn");
@@ -4259,6 +4285,8 @@ async function checkLatePosts() {
   if (!isEnabled) {
     if (floatingBtn) floatingBtn.style.display = "none";
     latePostIds = [];
+    previousLatePostIds = [];
+    stopAlarmLoop();
     return;
   }
 
@@ -4304,6 +4332,8 @@ async function checkLatePosts() {
       })
       .map(post => post.id);
 
+    previousLatePostIds = [...latePostIds];
+
     console.log(`Geciken post sayısı (Global): ${latePostIds.length}`, latePostIds);
 
     if (floatingBtn) {
@@ -4313,8 +4343,10 @@ async function checkLatePosts() {
         if (countEl) {
           countEl.textContent = latePostIds.length;
         }
+        startAlarmLoop();
       } else {
         floatingBtn.style.display = "none";
+        stopAlarmLoop();
       }
     }
   } catch (err) {
