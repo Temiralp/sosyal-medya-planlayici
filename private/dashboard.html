@@ -267,7 +267,7 @@
     <!-- Paylaşım Listesi -->
     <div class="card">
       <div class="posts-header">
-        <h2>📋 Paylaşım Listesi (<span id="postCount">0</span>)</h2>
+        <h2>📋 Paylaşım Listesi (<span id="postCount">0</span> / <span id="totalShareCount">0</span>)</h2>
         <div class="filter-controls">
           <input type="text" id="searchInput" placeholder="Ara..." />
           <button id="todayFilterBtn" class="btn btn-info btn-sm">
@@ -307,6 +307,9 @@
           </button>
           <button class="btn btn-secondary btn-sm" data-filter="daily">
             📅 Günlük Paylaşımlar
+          </button>
+          <button class="btn btn-secondary btn-sm" data-filter="hide-daily">
+            Günlükleri Gizle
           </button>
         </div>
         <div class="status-filter" style="margin-top: 10px;">

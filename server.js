@@ -274,7 +274,7 @@ setInterval(() => {
 
     const scheduledDateTime = moment(
       `${post.scheduledDate} ${post.scheduledTime}`,
-      "DD.MM.YYYY HH:mm"
+      "YYYY-MM-DD HH:mm"
     );
     const diffMinutes = scheduledDateTime.diff(now, "minutes");
 
@@ -457,7 +457,10 @@ app.get("/api/posts", (req, res) => {
     // plannerMode filtreleme (çoklu seçim desteği)
     if (plannerMode) {
       const allowedModes = plannerMode.split(",");
-      posts = posts.filter((p) => allowedModes.includes(p.plannerMode) || allowedModes.includes(p.planMode));
+      posts = posts.filter((p) => {
+        const mode = p.plannerMode || p.planMode || (p.planBatchId ? "daily" : "single");
+        return allowedModes.includes(mode);
+      });
     }
 
     // Status filtreleme (çoklu seçim desteği)
@@ -594,6 +597,19 @@ app.post(
         return res.status(400).json({
           success: false,
           message: "Tarih ve saat alanları zorunludur",
+        });
+      }
+
+      // Tarih ve saat en az 10 dakika sonrası olmalı kontrolü (İstanbul UTC+3, 1 dk pay bıraktık)
+      const scheduledDateTime = moment(`${scheduledDate} ${scheduledTime}`, "YYYY-MM-DD HH:mm").utcOffset(180, true);
+      const nowIstanbul = moment().utcOffset(180);
+      const diffMinutes = scheduledDateTime.diff(nowIstanbul, "minutes");
+
+      if (diffMinutes < 9) {
+        console.error("Planlama tarihi en az 10 dakika sonrası olmalıdır");
+        return res.status(400).json({
+          success: false,
+          message: "Planlama tarihi en az 10 dakika sonrası olmalıdır!",
         });
       }
 
@@ -806,6 +822,19 @@ app.put(
         return res.status(400).json({
           success: false,
           message: "Tarih ve saat alanları zorunludur",
+        });
+      }
+
+      // Tarih ve saat en az 10 dakika sonrası olmalı kontrolü (İstanbul UTC+3, 1 dk pay bıraktık)
+      const scheduledDateTime = moment(`${scheduledDate} ${scheduledTime}`, "YYYY-MM-DD HH:mm").utcOffset(180, true);
+      const nowIstanbul = moment().utcOffset(180);
+      const diffMinutes = scheduledDateTime.diff(nowIstanbul, "minutes");
+
+      if (diffMinutes < 9) {
+        console.error("Planlama tarihi en az 10 dakika sonrası olmalıdır");
+        return res.status(400).json({
+          success: false,
+          message: "Planlama tarihi en az 10 dakika sonrası olmalıdır!",
         });
       }
 

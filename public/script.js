@@ -3,22 +3,22 @@ const accountGroups = {
   ana: ["Özdilek Holding", "Özdilek AVM"],
   avm: [
     "Özdilek AVM",
-    "ÖzdilekPark M Geçit (Özdilek Geçit AVM)",
     "Özdilek İzmir",
     "Özdilek Eskişehir",
     "Özdilek Afyonkarahisar (Özdilek Afyon AVM)",
     "Özdilek Yalova",
     "Özdilek Kocaeli",
     "Özdilek Bolu",
-    "Özdilek Manisa Turgutlu",
-    "Özdilek Uşak",
     "Özdilek Bursa",
     "Özdilek Düzce",
   ],
   park: [
+    "ÖzdilekPark Bursa Geçit",
     "ÖzdilekPark Bursa Nilüfer",
     "ÖzdilekPark Antalya",
     "ÖzdilekPark İstanbul",
+    "ÖzdilekPark Manisa Turgutlu",
+    "ÖzdilekPark Uşak",
     "Wyndham Grand İstanbul Levent Hotel & Conference Center",
     "Wyndham Grand İzmir Özdilek Thermal & Spa",
   ],
@@ -43,6 +43,7 @@ const accountGroups = {
     "Safahat Bowl",
     "Gusto Plus Market",
     "Vertice Restaurant",
+    "Partly Cloudy Cafe",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -80,7 +81,7 @@ const accountPlatforms = {
   "ÖzdilekPark Bursa Nilüfer": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark Antalya": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark İstanbul": ["Facebook", "Instagram", "Twitter"],
-  "ÖzdilekPark M Geçit (Özdilek Geçit AVM)": [
+  "ÖzdilekPark Bursa Geçit": [
     "Facebook",
     "Instagram",
     "Twitter",
@@ -95,8 +96,8 @@ const accountPlatforms = {
   "Özdilek Yalova": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Kocaeli": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bolu": ["Facebook", "Instagram", "Twitter"],
-  "Özdilek Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
-  "Özdilek Uşak": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
+  "ÖzdilekPark Uşak": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bursa": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Düzce": ["Facebook", "Instagram", "Twitter"],
 
@@ -134,6 +135,7 @@ const accountPlatforms = {
   "Safahat Bowl": ["Facebook", "Instagram", "Twitter"],
   "Gusto Plus Market": ["Facebook", "Instagram", "Twitter"],
   "Vertice Restaurant": ["Facebook", "Instagram", "Twitter"],
+  "Partly Cloudy Cafe": ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
@@ -359,7 +361,7 @@ function setupEventListeners() {
       if (filter === "all") {
         // Tümü tıklanırsa, sadece Tümü aktif olsun, diğer tipler deaktif olsun
         contentTypeFilterBtns.forEach((b) => {
-          if (b.dataset.filter !== "daily") {
+          if (b.dataset.filter !== "daily" && b.dataset.filter !== "hide-daily") {
             b.classList.remove("active");
           }
         });
@@ -367,6 +369,17 @@ function setupEventListeners() {
       } else if (filter === "daily") {
         // Günlük plan filtresi toggle olsun
         btn.classList.toggle("active");
+        if (btn.classList.contains("active")) {
+          const hideDailyBtn = Array.from(contentTypeFilterBtns).find(b => b.dataset.filter === "hide-daily");
+          if (hideDailyBtn) hideDailyBtn.classList.remove("active");
+        }
+      } else if (filter === "hide-daily") {
+        // Günlükleri gizle filtresi toggle olsun
+        btn.classList.toggle("active");
+        if (btn.classList.contains("active")) {
+          const dailyBtn = Array.from(contentTypeFilterBtns).find(b => b.dataset.filter === "daily");
+          if (dailyBtn) dailyBtn.classList.remove("active");
+        }
       } else {
         // Bireysel tipler (post, story, combined) toggle olsun
         btn.classList.toggle("active");
@@ -378,7 +391,7 @@ function setupEventListeners() {
 
         // Eğer hiçbir bireysel tip aktif kalmadıysa, Tümü butonunu tekrar aktif et
         const anyTypeActive = Array.from(contentTypeFilterBtns).some(
-          (b) => b.classList.contains("active") && b.dataset.filter !== "all" && b.dataset.filter !== "daily"
+          (b) => b.classList.contains("active") && b.dataset.filter !== "all" && b.dataset.filter !== "daily" && b.dataset.filter !== "hide-daily"
         );
         if (!anyTypeActive && allBtn) {
           allBtn.classList.add("active");
@@ -387,12 +400,14 @@ function setupEventListeners() {
 
       // Seçili tipleri ve plan modunu toplayalım
       const activeTypes = [];
-      let isDailySelected = false;
+      let plannerModeValue = "";
 
       contentTypeFilterBtns.forEach((b) => {
         if (b.classList.contains("active")) {
           if (b.dataset.filter === "daily") {
-            isDailySelected = true;
+            plannerModeValue = "daily";
+          } else if (b.dataset.filter === "hide-daily") {
+            plannerModeValue = "single";
           } else if (b.dataset.filter !== "all") {
             activeTypes.push(b.dataset.filter);
           }
@@ -408,7 +423,7 @@ function setupEventListeners() {
         } else {
           searchInput.dataset.contentType = activeTypes.join(",");
         }
-        searchInput.dataset.plannerMode = isDailySelected ? "daily" : "";
+        searchInput.dataset.plannerMode = plannerModeValue;
       }
 
       // Postları yeniden yükle
@@ -594,6 +609,12 @@ function addCurrentDateToPlan() {
     return;
   }
 
+  const diffMinutes = checkScheduledTime(scheduledDate, scheduledTime);
+  if (diffMinutes < 10) {
+    showToast("⚠️ Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error", 4000);
+    return;
+  }
+
   const added = addSinglePlannedDate(scheduledDate, scheduledTime);
   if (added) {
     showToast("Tarih plan listesine eklendi", "success", 3000);
@@ -652,20 +673,29 @@ function generatePlanFromMode() {
   }
 
   let addedCount = 0;
+  let skippedCount = 0;
   generatedDates.forEach((entry) => {
-    if (addSinglePlannedDate(entry.date, entry.time)) {
-      addedCount++;
+    if (checkScheduledTime(entry.date, entry.time) >= 10) {
+      if (addSinglePlannedDate(entry.date, entry.time)) {
+        addedCount++;
+      }
+    } else {
+      skippedCount++;
     }
   });
 
   if (addedCount > 0) {
-    showToast(
-      `${addedCount} yeni tarih plan listesine eklendi`,
-      "success",
-      4000
-    );
+    let msg = `${addedCount} yeni tarih plan listesine eklendi.`;
+    if (skippedCount > 0) {
+      msg += ` (${skippedCount} tarih 10 dakikadan yakın/geçmiş olduğu için atlandı)`;
+    }
+    showToast(msg, "success", 4000);
   } else {
-    showToast("Yeni tarih eklenmedi, tüm tarihler listede vardı", "warning", 4000);
+    if (skippedCount > 0) {
+      showToast(`⚠️ Tarihler 10 dakikadan yakın veya geçmiş olduğu için eklenemedi!`, "error", 4000);
+    } else {
+      showToast("Yeni tarih eklenmedi, tüm tarihler listede vardı", "warning", 4000);
+    }
   }
 }
 
@@ -761,6 +791,40 @@ function createDateFromInput(value) {
     return null;
   }
   return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
+// Turkey/Istanbul (UTC+3) saat dilimine göre girilen tarih ve saatin en az 10 dakika sonrası olup olmadığını kontrol eder.
+// Fark dakika cinsinden döner (pozitif = gelecek, negatif = geçmiş)
+function checkScheduledTime(dateStr, timeStr) {
+  if (!dateStr || !timeStr) return 0;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  
+  // Turkey is UTC+3, so target UTC time is target time minus 3 hours
+  const targetUtc = Date.UTC(year, month - 1, day, hours - 3, minutes, 0);
+  const nowUtc = Date.now();
+  
+  return (targetUtc - nowUtc) / 60000;
+}
+
+// Eski hesap isimlerini veritabanını değiştirmeden arayüz ve listelemede yeni isimlerle dinamik olarak eşler.
+function normalizePostAccounts(post) {
+  if (!post) return post;
+  if (post.selectedAccounts && Array.isArray(post.selectedAccounts)) {
+    post.selectedAccounts = post.selectedAccounts.map(acc => 
+      acc.replace("Özdilek Manisa Turgutlu", "ÖzdilekPark Manisa Turgutlu")
+         .replace("Özdilek Uşak", "ÖzdilekPark Uşak")
+         .replace("ÖzdilekPark M Geçit (Özdilek Geçit AVM)", "ÖzdilekPark Bursa Geçit")
+    );
+  }
+  if (post.completedAccounts && Array.isArray(post.completedAccounts)) {
+    post.completedAccounts = post.completedAccounts.map(acc => 
+      acc.replace("Özdilek Manisa Turgutlu", "ÖzdilekPark Manisa Turgutlu")
+         .replace("Özdilek Uşak", "ÖzdilekPark Uşak")
+         .replace("ÖzdilekPark M Geçit (Özdilek Geçit AVM)", "ÖzdilekPark Bursa Geçit")
+    );
+  }
+  return post;
 }
 
 function formatDateForInput(date) {
@@ -1216,6 +1280,21 @@ async function handleFormSubmit(event) {
     schedulePlannerState.plannedDates.length > 0
       ? [...schedulePlannerState.plannedDates]
       : [{ date: scheduledDate, time: scheduledTime }];
+
+  // Tarih ve saat 10 dakika gelecek kontrolü (İstanbul UTC+3)
+  for (let i = 0; i < scheduleEntries.length; i++) {
+    const entry = scheduleEntries[i];
+    const diff = checkScheduledTime(entry.date, entry.time);
+    if (diff < 10) {
+      resetSubmitButton();
+      const errorMsg = scheduleEntries.length > 1 
+        ? `Planlanan tarihlerden biri (${entry.date} ${entry.time}) en az 10 dakika sonrası olmalıdır!`
+        : "Planlama tarihi en az 10 dakika sonrası olmalıdır!";
+      showMessage(errorMsg, "error");
+      showToast("⚠️ " + errorMsg, "error", 4000);
+      return;
+    }
+  }
 
   const isPlanBatch = schedulePlannerState.plannedDates.length > 0;
   const planBatchId = isPlanBatch
@@ -2007,7 +2086,13 @@ function createModernPostCard(post) {
 
     <!-- Status Header - En üst kısım -->
     <div class="post-status-header">
-      <span class="status-label">DURUM</span>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="status-label">DURUM</span>
+        ${post.selectedAccounts && post.selectedAccounts.length > 20
+          ? `<span class="bulk-share-badge" style="margin-left: 0;">📦 Toplu Paylaşım</span>`
+          : ""
+        }
+      </div>
       <div class="post-title-header">
         <strong>${escapeHtml(post.title)}</strong>
       </div>
@@ -2945,6 +3030,20 @@ async function savePost(postId) {
   }
 
   try {
+    const scheduledDate = form.querySelector('[name="scheduledDate"]').value;
+    const scheduledTime = form.querySelector('[name="scheduledTime"]').value;
+
+    const diff = checkScheduledTime(scheduledDate, scheduledTime);
+    if (diff < 10) {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.innerHTML = "💾 Kaydet";
+      }
+      showMessage("Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error");
+      showToast("⚠️ Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error", 4000);
+      return;
+    }
+
     const formData = new FormData();
 
     // Form verilerini topla
@@ -3414,6 +3513,16 @@ function removePostFromList(postId) {
     if (countElement) {
       countElement.textContent = allPosts.length;
     }
+    const totalShareCountElement = document.getElementById("totalShareCount");
+    if (totalShareCountElement) {
+      let totalShares = 0;
+      allPosts.forEach((p) => {
+        if (p.selectedAccounts && Array.isArray(p.selectedAccounts)) {
+          totalShares += p.selectedAccounts.length;
+        }
+      });
+      totalShareCountElement.textContent = totalShares;
+    }
 
     // Sayfalama bilgilerini güncelle
     totalPages = Math.ceil(allPosts.length / postsPerPage);
@@ -3440,6 +3549,7 @@ function removePostFromList(postId) {
 
 // Post'u dinamik olarak listede güncelle
 function updatePostInList(updatedPost) {
+  updatedPost = normalizePostAccounts(updatedPost);
   console.log("Post listede güncelleniyor:", updatedPost.id);
 
   // Aktif filtreleri kontrol et
@@ -3617,6 +3727,7 @@ async function loadPosts() {
 
     const response = await fetch(url);
     let posts = await response.json();
+    posts = posts.map(normalizePostAccounts);
     console.log(`${posts.length} post yüklendi`);
 
     // Tarih ve saat filtreleme (frontend'de)
@@ -3649,6 +3760,16 @@ async function loadPosts() {
     const countElement = document.getElementById("postCount");
     if (countElement) {
       countElement.textContent = posts.length;
+    }
+    const totalShareCountElement = document.getElementById("totalShareCount");
+    if (totalShareCountElement) {
+      let totalShares = 0;
+      posts.forEach((p) => {
+        if (p.selectedAccounts && Array.isArray(p.selectedAccounts)) {
+          totalShares += p.selectedAccounts.length;
+        }
+      });
+      totalShareCountElement.textContent = totalShares;
     }
     // Geciken paylaşımları kontrol et
     checkLatePosts();
