@@ -1,3 +1,12 @@
+// Process-level unhandled exception shields to prevent Puppeteer frame detachment crashes
+process.on("unhandledRejection", (reason, promise) => {
+  console.log("[Process] Yakalanamayan unhandledRejection yoksayıldı:", reason.message || reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.log("[Process] Yakalanamayan uncaughtException yoksayıldı:", error.message || error);
+});
+
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
@@ -21,9 +30,8 @@ app.use(cookieParser());
 // Authentication Middleware
 const isAuthenticated = (req, res, next) => {
   const token = req.cookies.auth_token;
-  if (token === "admin_logged_in") {
-    // Kayan oturum süresi (sliding session) - Her istekte çerezi 1 gün daha uzat
-    res.cookie("auth_token", "admin_logged_in", { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+  if (token === "admin" || token === "kut" || token === "admin_logged_in") {
+    res.cookie("auth_token", token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
     next();
   } else {
     if (req.path.startsWith("/api")) {
@@ -39,8 +47,8 @@ app.use(express.static("public"));
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if (username === "admin" && password === "ozdilek123!") {
-    res.cookie("auth_token", "admin_logged_in", { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }); // 1 day
+  if ((username === "admin" || username === "kut") && password === "ozdilek123!") {
+    res.cookie("auth_token", username, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }); // 1 day
     res.json({ success: true });
   } else {
     res.status(401).json({ success: false, message: "Hatalı kullanıcı adı veya şifre" });
@@ -249,6 +257,278 @@ const io = new Server(server, {
   },
 });
 
+// ============================================================================
+// WHATSAPP BOT ENTEGRASYONU (whatsapp-web.js)
+// ============================================================================
+const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
+const qrcode = require("qrcode");
+
+let whatsappState = {
+  status: "disconnected", // disconnected, connecting, connected
+  qr: "",
+  userInfo: null
+};
+
+let whatsappConfig = {
+  targetGroupId: ""
+};
+
+const configPath = path.join(__dirname, "data", "whatsapp_config.json");
+
+function loadWhatsappConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      whatsappConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    }
+  } catch (err) {
+    console.error("WhatsApp config okuma hatası:", err);
+  }
+}
+loadWhatsappConfig();
+
+function saveWhatsappConfig() {
+  try {
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(configPath, JSON.stringify(whatsappConfig, null, 2), "utf-8");
+  } catch (err) {
+    console.error("WhatsApp config yazma hatası:", err);
+  }
+}
+
+// WhatsApp Client oluştur
+// WhatsApp Client oluştur
+let client = new Client({
+  authStrategy: new LocalAuth({
+    dataPath: path.join(__dirname, ".wwebjs_auth")
+  }),
+  puppeteer: {
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox"
+    ]
+  }
+});
+
+function registerClientEvents(c) {
+  c.on("qr", (qr) => {
+    console.log("WhatsApp QR kodu üretildi");
+    qrcode.toDataURL(qr, (err, url) => {
+      if (err) {
+        console.error("QR kod oluşturma hatası:", err);
+        return;
+      }
+      whatsappState.status = "connecting";
+      whatsappState.qr = url;
+      whatsappState.userInfo = null;
+      io.emit("whatsappStatus", whatsappState);
+    });
+  });
+
+  c.on("ready", () => {
+    console.log("WhatsApp Bot hazır!");
+    whatsappState.status = "connected";
+    whatsappState.qr = "";
+    whatsappState.userInfo = c.info.pushname || c.info.wid.user;
+    io.emit("whatsappStatus", whatsappState);
+  });
+
+  c.on("authenticated", () => {
+    console.log("WhatsApp oturumu doğrulandı");
+  });
+
+  c.on("auth_failure", (msg) => {
+    console.error("WhatsApp doğrulama hatası:", msg);
+    whatsappState.status = "disconnected";
+    whatsappState.qr = "";
+    whatsappState.userInfo = null;
+    io.emit("whatsappStatus", whatsappState);
+  });
+
+  c.on("disconnected", (reason) => {
+    console.log("WhatsApp bağlantısı koptu:", reason);
+    whatsappState.status = "disconnected";
+    whatsappState.qr = "";
+    whatsappState.userInfo = null;
+    io.emit("whatsappStatus", whatsappState);
+  });
+
+  c.on("message_create", async (msg) => {
+    if (msg.body === "!grup" || msg.body === "!group" || msg.body.includes("!grup")) {
+      try {
+        const chatJid = msg.fromMe ? msg.to : msg.from;
+        latestDetectedGroupId = chatJid;
+        console.log("=========================================");
+        console.log("WHATSAPP HEDEF SOHBET/GRUP ID TESPİT EDİLDİ:", chatJid);
+        console.log("=========================================");
+        
+        try {
+          await c.sendMessage(chatJid, `Bu grubun ID'si: ${chatJid}\n\nBu ID'yi kopyalayıp paneldeki ilgili alana yapıştırabilir veya panelden "Gruptan ID'yi Çek" butonuna basabilirsiniz.`);
+        } catch (sendErr) {
+          console.log("Bot yanıt gönderemedi (mesaj iletilemedi):", sendErr.message || sendErr);
+        }
+      } catch (err) {
+        console.error("!grup komutu işlenirken hata:", err);
+      }
+    }
+  });
+}
+
+registerClientEvents(client);
+
+let latestDetectedGroupId = "";
+
+async function recreateWhatsappClient(clearSession = false) {
+  console.log(`[WhatsApp] Yeniden başlatma tetiklendi. Oturum temizleme: ${clearSession}`);
+  
+  whatsappState.status = "connecting";
+  whatsappState.qr = "";
+  whatsappState.userInfo = null;
+  io.emit("whatsappStatus", whatsappState);
+
+  try {
+    if (client) {
+      console.log("[WhatsApp] Eski istemci yok ediliyor...");
+      await client.destroy();
+      console.log("[WhatsApp] Eski istemci başarıyla yok edildi. 3 saniye bekleniyor...");
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+  } catch (err) {
+    console.log("[WhatsApp] Eski istemci yok edilirken hata (yoksayılıyor):", err.message || err);
+  }
+
+  // Arka plan Chrome süreçlerini temizle (dosya kilitlerini önlemek için) - Senkron bekleyelim
+  await new Promise((resolve) => {
+    try {
+      const { exec } = require("child_process");
+      exec('powershell "Get-CimInstance Win32_Process -Filter \\"Name = \'chrome.exe\'\\" | Where-Object { $_.CommandLine -like \'*wwebjs_auth*\' } | ForEach-Object { Stop-Process $_.ProcessId -Force }"', (err) => {
+        if (err) console.log("[WhatsApp] Arka plan Chrome temizleme hatası:", err.message);
+        resolve();
+      });
+    } catch (killErr) {
+      console.log("[WhatsApp] Arka plan Chrome temizleme hatası:", killErr.message);
+      resolve();
+    }
+  });
+
+  if (clearSession) {
+    try {
+      const fsExtra = require("fs");
+      const authPath = path.join(__dirname, ".wwebjs_auth");
+      const cachePath = path.join(__dirname, ".wwebjs_cache");
+      if (fsExtra.existsSync(authPath)) {
+        fsExtra.rmSync(authPath, { recursive: true, force: true });
+      }
+      if (fsExtra.existsSync(cachePath)) {
+        fsExtra.rmSync(cachePath, { recursive: true, force: true });
+      }
+      console.log("[WhatsApp] Oturum ve önbellek klasörleri silindi.");
+    } catch (fsErr) {
+      console.log("[WhatsApp] Oturum klasörleri silinirken hata:", fsErr.message);
+    }
+  }
+
+  client = new Client({
+    authStrategy: new LocalAuth({
+      dataPath: path.join(__dirname, ".wwebjs_auth")
+    }),
+    puppeteer: {
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox"
+      ]
+    }
+  });
+
+  registerClientEvents(client);
+
+  try {
+    client.initialize();
+  } catch (error) {
+    console.error("WhatsApp bot başlatma hatası:", error);
+  }
+}
+
+try {
+  client.initialize();
+} catch (error) {
+  console.error("WhatsApp bot başlatma hatası:", error);
+}
+
+// Socket bağlantılarını dinle
+io.on("connection", (socket) => {
+  console.log("Soket bağlantısı kuruldu:", socket.id);
+  // Bağlanan kullanıcıya güncel durum bilgisini hemen gönder
+  socket.emit("whatsappStatus", whatsappState);
+});
+
+// Helper function to send post via WhatsApp Web Bot
+async function sendPostToWhatsappBot(post) {
+  console.log(`[WhatsApp Bot] Gönderim başlatıldı. Hedef: ${whatsappConfig.targetGroupId}, Post ID: ${post.id}`);
+  if (whatsappState.status !== "connected") {
+    throw new Error("WhatsApp botu bağlı değil.");
+  }
+  if (!whatsappConfig.targetGroupId) {
+    throw new Error("Hedef WhatsApp grubu seçilmemiş.");
+  }
+
+  let text = `📢 *SOSYAL MEDYA PAYLAŞIM DETAYI*\n\n`;
+  text += `*Başlık:* ${post.title || "-"}\n`;
+  const typeStr = post.contentType === "story" ? "Story" : post.contentType === "combined" ? "Post ve Story" : "Post";
+  text += `*Tür:* ${typeStr}\n`;
+  text += `*Tarih:* ${post.scheduledDate} • ${post.scheduledTime}\n`;
+  if (post.content) {
+    text += `\n*Açıklama/İçerik:*\n${post.content}\n`;
+  }
+  if (post.notes) {
+    text += `\n*Notlar:*\n${post.notes}\n`;
+  }
+  if (post.storyLink) {
+    text += `\n*Story Link:* ${post.storyLink}\n`;
+    if (post.storyLinkTitle) {
+      text += `*Link Başlığı:* ${post.storyLinkTitle}\n`;
+    }
+  }
+  if (post.selectedAccounts && post.selectedAccounts.length > 0) {
+    text += `\n*Hesaplar:* ${post.selectedAccounts.join(", ")}\n`;
+  }
+
+  // Önce metin detayını gönder
+  await client.sendMessage(whatsappConfig.targetGroupId, text);
+  console.log("[WhatsApp Bot] Metin detayı gönderildi.");
+
+  // Files
+  let filesToSend = [];
+  if (post.files && post.files.length > 0) {
+    filesToSend = post.files;
+  } else if (post.fileName) {
+    filesToSend = [{ fileName: post.fileName }];
+  }
+
+  if (filesToSend.length > 0) {
+    let sentMediaCount = 0;
+    for (let i = 0; i < filesToSend.length; i++) {
+      const fileInfo = filesToSend[i];
+      const filePath = path.join(__dirname, "uploads", fileInfo.fileName);
+      if (fs.existsSync(filePath)) {
+        console.log(`[WhatsApp Bot] Medya dosyası gönderiliyor: ${fileInfo.fileName}`);
+        const media = MessageMedia.fromFilePath(filePath);
+        await client.sendMessage(whatsappConfig.targetGroupId, media, { sendMediaAsDocument: true });
+        sentMediaCount++;
+      } else {
+        console.log(`[WhatsApp Bot] Dosya uploads klasöründe bulunamadı: ${filePath}`);
+      }
+    }
+    if (sentMediaCount > 0) {
+      console.log(`[WhatsApp Bot] Toplam ${sentMediaCount} adet dosya peşinden gönderildi.`);
+    }
+  }
+}
+
 // Moment.js'i dahil et
 const moment = require("moment");
 
@@ -265,9 +545,10 @@ const parseNullableInt = (value) => {
 setInterval(() => {
   const posts = readPosts();
   const now = moment();
+  const nowIstanbul = moment().utcOffset(180);
+  const latePostsToNotify = [];
 
   posts.forEach((post) => {
-    // Eğer post zaten 'yapıldı' ise kontrol etme
     if (post.status === "yapıldı") {
       return;
     }
@@ -277,14 +558,11 @@ setInterval(() => {
       "YYYY-MM-DD HH:mm"
     );
     const diffMinutes = scheduledDateTime.diff(now, "minutes");
-
-    // Bu post için gönderilen bildirimleri kontrol et
     const sentNotifications = notifiedPosts.get(post.id) || new Set();
 
     let notificationMessage = "";
     let notificationType = "";
 
-    // 1 saat kala bildirim (55-65 dakika arası)
     if (
       diffMinutes > 0 &&
       diffMinutes <= 65 &&
@@ -294,7 +572,6 @@ setInterval(() => {
       notificationMessage = `DİKKAT: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 1 saat kaldı!`;
       notificationType = "1hour";
     }
-    // 30 dakika kala bildirim (25-35 dakika arası)
     else if (
       diffMinutes > 0 &&
       diffMinutes <= 35 &&
@@ -304,7 +581,6 @@ setInterval(() => {
       notificationMessage = `UYARI: '${post.title}' başlıklı paylaşımınızın planlanan zamanına 30 dakika kaldı!`;
       notificationType = "30min";
     }
-    // 15 dakika kala bildirim (10-20 dakika arası)
     else if (
       diffMinutes > 0 &&
       diffMinutes <= 20 &&
@@ -325,15 +601,46 @@ setInterval(() => {
       });
       console.log(`Bildirim gönderildi: ${notificationMessage}`);
 
-      // Bu bildirim türünü gönderildi olarak işaretle
       sentNotifications.add(notificationType);
       notifiedPosts.set(post.id, sentNotifications);
     }
+
+    const diffMinutesIstanbul = scheduledDateTime.clone().utcOffset(180, true).diff(nowIstanbul, "minutes");
+    if (
+      post.status === "planlandı" &&
+      post.scheduledDate === nowIstanbul.format("YYYY-MM-DD") &&
+      diffMinutesIstanbul < 0 &&
+      (!post.planBatchId || parseInt(post.planSequence, 10) === 1) &&
+      !sentNotifications.has("whatsappAlarm")
+    ) {
+      latePostsToNotify.push({ post, sentNotifications });
+    }
   });
+
+  if (latePostsToNotify.length > 0) {
+    if (whatsappState.status === "connected" && whatsappConfig.targetGroupId) {
+      const text = `🚨 *GECİKEN PAYLAŞIM UYARISI!*\n\nSistemde yayınlanması geciken *${latePostsToNotify.length}* adet paylaşım bulunmaktadır. Lütfen panelden kontrol ederek yayınlayınız.`;
+      client.sendMessage(whatsappConfig.targetGroupId, text)
+        .then(() => {
+          console.log(`WhatsApp toplu gecikme uyarısı gönderildi. Adet: ${latePostsToNotify.length}`);
+          latePostsToNotify.forEach(({ post, sentNotifications }) => {
+            sentNotifications.add("whatsappAlarm");
+            notifiedPosts.set(post.id, sentNotifications);
+          });
+        })
+        .catch((err) => {
+          console.error("WhatsApp toplu gecikme uyarısı gönderilemedi:", err);
+        });
+    }
+  }
 }, 60 * 1000); // Her 1 dakikada bir çalıştır (60 saniye * 1000 ms)
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/api/me", isAuthenticated, (req, res) => {
+  res.json({ success: true, username: req.cookies.auth_token });
 });
 
 // Son güncelleme zamanını ve aktif durumları getir (polling için)
@@ -350,8 +657,128 @@ app.get("/api/last-update", (req, res) => {
   res.json({ 
     lastUpdate: lastDataUpdate,
     activeEdits: edits,
-    activeViews: views
+    activeViews: views,
+    whatsapp: {
+      status: whatsappState.status,
+      userInfo: whatsappState.userInfo,
+      qr: whatsappState.qr,
+      targetGroupId: whatsappConfig.targetGroupId
+    }
   });
+});
+
+// ============================================================================
+// WHATSAPP BOT API YÖNETİMİ
+// ============================================================================
+
+app.get("/api/whatsapp/status", isAuthenticated, (req, res) => {
+  res.json({
+    success: true,
+    status: whatsappState.status,
+    userInfo: whatsappState.userInfo,
+    targetGroupId: whatsappConfig.targetGroupId
+  });
+});
+
+app.get("/api/whatsapp/groups", isAuthenticated, async (req, res) => {
+  if (whatsappState.status !== "connected") {
+    return res.status(400).json({ success: false, message: "WhatsApp botu bağlı değil." });
+  }
+  try {
+    const chats = await client.getChats();
+    const groups = chats
+      .filter(chat => chat.isGroup)
+      .map(chat => ({
+        id: chat.id._serialized,
+        name: chat.name || chat.id._serialized
+      }));
+    res.json({ success: true, groups });
+  } catch (err) {
+    console.log("WhatsApp grupları otomatik listelenemedi (tarayıcı senkronizasyonu bekleniyor veya uyumsuzluk var):", err.message || err);
+    res.status(500).json({ success: false, message: "Gruplar listelenirken hata oluştu." });
+  }
+});
+
+app.get("/api/whatsapp/latest-detected-group", isAuthenticated, (req, res) => {
+  res.json({ success: true, groupId: latestDetectedGroupId });
+});
+
+app.post("/api/whatsapp/disconnect", isAuthenticated, async (req, res) => {
+  if (req.cookies.auth_token !== "kut") {
+    return res.status(403).json({ success: false, message: "Yetkisiz işlem." });
+  }
+  res.json({ success: true, message: "Bağlantı kesiliyor ve oturum sıfırlanıyor..." });
+  recreateWhatsappClient(true).catch(err => console.error("Disconnect hatası:", err));
+});
+
+app.post("/api/whatsapp/reconnect", isAuthenticated, async (req, res) => {
+  if (req.cookies.auth_token !== "kut") {
+    return res.status(403).json({ success: false, message: "Yetkisiz işlem." });
+  }
+  res.json({ success: true, message: "WhatsApp botu yeniden başlatılıyor..." });
+  recreateWhatsappClient(false).catch(err => console.error("Reconnect hatası:", err));
+});
+
+app.post("/api/whatsapp/config", isAuthenticated, (req, res) => {
+  const { targetGroupId } = req.body;
+  whatsappConfig.targetGroupId = targetGroupId || "";
+  saveWhatsappConfig();
+  res.json({ success: true, message: "Hedef grup kaydedildi." });
+});
+
+app.post("/api/posts/:id/whatsapp-share", isAuthenticated, async (req, res) => {
+  console.log(`[HTTP POST] /api/posts/${req.params.id}/whatsapp-share çağrıldı`);
+  try {
+    const posts = readPosts();
+    const post = posts.find(p => p.id == req.params.id);
+    if (!post) {
+      return res.status(404).json({ success: false, message: "Paylaşım bulunamadı." });
+    }
+    await sendPostToWhatsappBot(post);
+    res.json({ success: true, message: "Paylaşım WhatsApp grubuna başarıyla gönderildi!" });
+  } catch (err) {
+    console.error("WhatsApp paylaşım hatası:", err);
+    res.status(500).json({ success: false, message: err.message || "WhatsApp ile paylaşılamadı." });
+  }
+});
+
+app.post("/api/whatsapp/share-late", isAuthenticated, async (req, res) => {
+  try {
+    const { latePostIds } = req.body;
+    if (!latePostIds || latePostIds.length === 0) {
+      return res.status(400).json({ success: false, message: "Geciken paylaşım listesi boş." });
+    }
+    if (whatsappState.status !== "connected") {
+      return res.status(400).json({ success: false, message: "WhatsApp botu bağlı değil." });
+    }
+    if (!whatsappConfig.targetGroupId) {
+      return res.status(400).json({ success: false, message: "Hedef WhatsApp grubu seçilmemiş." });
+    }
+
+    const posts = readPosts();
+    const latePosts = posts.filter(p => latePostIds.includes(p.id));
+
+    let text = `🚨 *GECİKEN SOSYAL MEDYA PAYLAŞIMLARI*\n\n`;
+    text += `Bugün planlanan ve saati geçen *${latePosts.length}* adet paylaşım henüz yayınlanmadı:\n\n`;
+
+    latePosts.forEach((post, index) => {
+      text += `${index + 1}) *${post.title || "Başlıksız"}*\n`;
+      text += `⏰ *Saat:* ${post.scheduledTime}\n`;
+      const accounts = post.selectedAccounts && post.selectedAccounts.length > 0 
+        ? post.selectedAccounts.join(", ") 
+        : "-";
+      text += `👤 *Mecralar:* ${accounts}\n`;
+      text += `\n`;
+    });
+
+    text += `Lütfen kontrol edip paylaşımları tamamlayınız.`;
+
+    await client.sendMessage(whatsappConfig.targetGroupId, text);
+    res.json({ success: true, message: "Gecikme uyarısı WhatsApp grubuna başarıyla gönderildi!" });
+  } catch (err) {
+    console.error("WhatsApp toplu gecikme paylaşım hatası:", err);
+    res.status(500).json({ success: false, message: err.message || "WhatsApp ile paylaşılamadı." });
+  }
 });
 
 // Post düzenleme durumunu güncelle

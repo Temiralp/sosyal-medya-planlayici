@@ -4531,3 +4531,106 @@ tr:hover {
   color: #121212;
   box-shadow: 0 2px 4px rgba(243, 156, 18, 0.3);
 }
+
+/* ============================================================================
+   WHATSAPP PAYLAŞIM VE ALARM STİLLERİ
+   ============================================================================ */
+
+.btn-success.whatsapp-btn {
+  background-color: #25d366 !important;
+  border-color: #25d366 !important;
+  color: white !important;
+}
+
+.btn-success.whatsapp-btn:hover {
+  background-color: #128c7e !important;
+  border-color: #128c7e !important;
+}
+
+.late-warning-container {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.late-warning-container .late-warning-floating-btn {
+  position: static !important;
+  bottom: auto !important;
+  right: auto !important;
+}
+
+.late-warning-whatsapp-btn {
+  background-color: #25d366;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 30px;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.late-warning-whatsapp-btn:hover {
+  background-color: #128c7e;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+}
+
+.late-warning-whatsapp-icon {
+  font-size: 1.1rem;
+}
+
+.late-warning-whatsapp-text {
+  font-size: 0.8rem;
+}
+
+/* WhatsApp Panel Stilleri */
+.whatsapp-status-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.whatsapp-status-badge.state-disconnected {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.whatsapp-status-badge.state-connecting {
+  background-color: #f39c12;
+  color: white;
+  animation: whatsappPulse 1.5s infinite ease-in-out;
+}
+
+.whatsapp-status-badge.state-connected {
+  background-color: #27ae60;
+  color: white;
+}
+
+.whatsapp-panel-card {
+  border-left: 5px solid #25d366 !important;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-panel-header {
+  user-select: none;
+}
+
+@keyframes whatsappPulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}

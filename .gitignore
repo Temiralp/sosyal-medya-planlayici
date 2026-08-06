@@ -130,3 +130,7 @@ data/
 *.zip
 *.tar.gz
 *.rar 
+
+# WhatsApp Bot files
+.wwebjs_auth/
+.wwebjs_cache/

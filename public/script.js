@@ -214,9 +214,31 @@ function setDefaultDate() {
   }
 }
 
+let isKutUser = false;
+
 // Sayfa yüklendiğinde
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM yüklendi, başlatılıyor...");
+document.addEventListener("DOMContentLoaded", async function () {
+  console.log("DOM yüklendi, yetki kontrolü yapılıyor...");
+  
+  try {
+    const meRes = await fetch("/api/me");
+    const meData = await meRes.json();
+    if (meData.success && meData.username === "kut") {
+      isKutUser = true;
+    }
+  } catch (err) {
+    console.error("Kullanıcı yetki kontrolü başarısız:", err);
+  }
+
+  // Eğer 'kut' kullanıcısı değilse WhatsApp panelini gizle
+  if (!isKutUser) {
+    const whatsappPanel = document.querySelector(".whatsapp-panel-card");
+    if (whatsappPanel) {
+      whatsappPanel.style.display = "none";
+    }
+  }
+
+  console.log("Başlatılıyor...");
 
   // Elementlerin varlığını kontrol et
   const requiredElements = [
@@ -2135,6 +2157,7 @@ function createModernPostCard(post) {
           <span class="post-card-id">#${post.id}</span>
         </div>
         <div class="post-card-actions">
+          ${isKutUser ? `<button class="btn btn-success btn-icon whatsapp-btn" onclick="event.stopPropagation(); sendPostToWhatsApp(${post.id})" title="WhatsApp ile Paylaş">🟢</button>` : ''}
           <button class="btn btn-warning btn-icon" onclick="event.stopPropagation(); startEditMode(${post.id
     })" title="Düzenle">✏️</button>
           <button class="btn btn-danger btn-icon" onclick="event.stopPropagation(); deletePost(${post.id
@@ -3910,6 +3933,9 @@ async function checkForUpdates() {
     if (result.activeViews) {
       updateActiveViewsUI(result.activeViews);
     }
+    if (result.whatsapp && isKutUser) {
+      updateWhatsAppPanelUI(result.whatsapp);
+    }
 
     if (result.lastUpdate > lastKnownUpdate) {
       console.log(
@@ -4300,6 +4326,14 @@ function initializeLateWarning() {
     });
   }
 
+  // WhatsApp alarm/rapor butonu click listener
+  const waBtn = document.getElementById("lateWarningWhatsappBtn");
+  if (waBtn) {
+    waBtn.addEventListener("click", () => {
+      sendLatePostsReportToWhatsApp();
+    });
+  }
+
   // Her 30 saniyede bir otomatik kontrol et
   if (lateWarningInterval) {
     clearInterval(lateWarningInterval);
@@ -4391,6 +4425,8 @@ async function checkLatePosts() {
   
   if (!isEnabled) {
     if (floatingBtn) floatingBtn.style.display = "none";
+    const waBtn = document.getElementById("lateWarningWhatsappBtn");
+    if (waBtn) waBtn.style.display = "none";
     latePostIds = [];
     previousLatePostIds = [];
     stopAlarmLoop();
@@ -4444,8 +4480,10 @@ async function checkLatePosts() {
     console.log(`Geciken post sayısı (Global): ${latePostIds.length}`, latePostIds);
 
     if (floatingBtn) {
+      const waBtn = document.getElementById("lateWarningWhatsappBtn");
       if (latePostIds.length > 0) {
         floatingBtn.style.display = "flex";
+        if (waBtn) waBtn.style.display = "flex";
         const countEl = document.getElementById("lateWarningCount");
         if (countEl) {
           countEl.textContent = latePostIds.length;
@@ -4453,10 +4491,312 @@ async function checkLatePosts() {
         startAlarmLoop();
       } else {
         floatingBtn.style.display = "none";
+        if (waBtn) waBtn.style.display = "none";
         stopAlarmLoop();
       }
     }
   } catch (err) {
     console.error("Geciken postları kontrol ederken hata oluştu:", err);
+  }
+}
+
+async function sendPostToWhatsApp(postId) {
+  showToast("⏳ WhatsApp'a gönderiliyor...", "info", 2000);
+  try {
+    const response = await fetch(`/api/posts/${postId}/whatsapp-share`, {
+      method: "POST"
+    });
+    const result = await response.json();
+    if (result.success) {
+      showToast("🟢 WhatsApp grubuna başarıyla gönderildi!", "success", 3000);
+    } else {
+      showToast(`❌ Hata: ${result.message}`, "error", 4000);
+    }
+  } catch (err) {
+    console.error("WhatsApp gönderim hatası:", err);
+    showToast("❌ WhatsApp gönderilemedi", "error", 4000);
+  }
+}
+
+async function sendLatePostsReportToWhatsApp() {
+  if (latePostIds.length === 0) {
+    showToast("Geciken paylaşım bulunmuyor", "info", 3000);
+    return;
+  }
+  showToast("⏳ Gecikme raporu WhatsApp'a gönderiliyor...", "info", 2000);
+  try {
+    const response = await fetch("/api/whatsapp/share-late", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ latePostIds })
+    });
+    const result = await response.json();
+    if (result.success) {
+      showToast("🚨 Gecikme raporu WhatsApp grubuna gönderildi!", "success", 3000);
+    } else {
+      showToast(`❌ Hata: ${result.message}`, "error", 4000);
+    }
+  } catch (err) {
+    console.error("WhatsApp gecikme raporu gönderim hatası:", err);
+    showToast("❌ WhatsApp raporu gönderilemedi", "error", 4000);
+  }
+}
+
+// ============================================================================
+// WHATSAPP BOT YÖNETİM PANELİ KODLARI
+// ============================================================================
+
+let isWhatsAppPanelOpen = false;
+let currentWhatsAppStatus = "disconnected";
+let isGroupsLoaded = false;
+
+function toggleWhatsAppPanel() {
+  const panelBody = document.getElementById("whatsappPanelBody");
+  if (!panelBody) return;
+  
+  isWhatsAppPanelOpen = !isWhatsAppPanelOpen;
+  panelBody.style.display = isWhatsAppPanelOpen ? "block" : "none";
+}
+
+function updateWhatsAppPanelUI(whatsapp) {
+  const statusBadge = document.getElementById("whatsappPanelStatusBadge");
+  const qrContainer = document.getElementById("whatsappQrContainer");
+  const qrImage = document.getElementById("whatsappQrImage");
+  const activeContainer = document.getElementById("whatsappActiveContainer");
+  const userInfoEl = document.getElementById("whatsappConnectedUserInfo");
+  
+  if (!statusBadge) return;
+  
+  // Durum rozetini ve renkleri güncelle
+  statusBadge.className = `whatsapp-status-badge state-${whatsapp.status}`;
+  
+  if (whatsapp.status === "disconnected") {
+    statusBadge.textContent = "Bağlı Değil";
+    if (qrContainer) qrContainer.style.display = "none";
+    if (activeContainer) activeContainer.style.display = "none";
+    isGroupsLoaded = false;
+  } 
+  else if (whatsapp.status === "connecting") {
+    statusBadge.textContent = "Bağlantı Aranıyor / QR Kod";
+    if (activeContainer) activeContainer.style.display = "none";
+    isGroupsLoaded = false;
+    
+    // QR kodu varsa göster
+    if (whatsapp.qr) {
+      if (qrContainer) qrContainer.style.display = "flex";
+      if (qrImage) {
+        qrImage.innerHTML = `<img src="${whatsapp.qr}" style="width:100%; height:100%; object-fit:contain;" alt="QR Code" />`;
+      }
+    } else {
+      if (qrContainer) qrContainer.style.display = "flex";
+      if (qrImage) qrImage.innerHTML = `<span>QR Kod bekleniyor...</span>`;
+    }
+  } 
+  else if (whatsapp.status === "connected") {
+    statusBadge.textContent = "Bağlandı";
+    if (qrContainer) qrContainer.style.display = "none";
+    if (activeContainer) activeContainer.style.display = "flex";
+    
+    if (userInfoEl) {
+      userInfoEl.textContent = `Kullanıcı: ${whatsapp.userInfo || "Bilinmiyor"}`;
+    }
+
+    const manualInput = document.getElementById("whatsappManualGroupId");
+    if (manualInput && !manualInput.value && whatsapp.targetGroupId) {
+      manualInput.value = whatsapp.targetGroupId;
+    }
+    
+    if (!isGroupsLoaded) {
+      loadWhatsAppGroups(whatsapp.targetGroupId);
+    }
+  }
+  
+  currentWhatsAppStatus = whatsapp.status;
+}
+
+async function loadWhatsAppGroups(savedGroupId) {
+  const groupSelect = document.getElementById("whatsappGroupSelect");
+  const manualInput = document.getElementById("whatsappManualGroupId");
+  if (!groupSelect) return;
+  
+  isGroupsLoaded = true;
+  try {
+    const response = await fetch("/api/whatsapp/groups");
+    const result = await response.json();
+    
+    if (result.success && result.groups) {
+      groupSelect.innerHTML = `<option value="">-- Hedef Grubu Seçin --</option>`;
+      result.groups.forEach(group => {
+        const option = document.createElement("option");
+        option.value = group.id;
+        option.textContent = group.name;
+        if (group.id === savedGroupId) {
+          option.selected = true;
+        }
+        groupSelect.appendChild(option);
+      });
+      isGroupsLoaded = true;
+      
+      if (savedGroupId && manualInput && !manualInput.value) {
+        manualInput.value = savedGroupId;
+      }
+    }
+  } catch (err) {
+    console.error("WhatsApp grupları yüklenirken hata oluştu:", err);
+  }
+}
+
+async function refreshWhatsAppGroupsClick() {
+  const refreshBtn = document.getElementById("refreshWhatsappGroupsBtn");
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "⌛...";
+  }
+  
+  showToast("⏳ Gruplar güncelleniyor...", "info", 2000);
+  isGroupsLoaded = false;
+  
+  const currentSelected = document.getElementById("whatsappGroupSelect").value || document.getElementById("whatsappManualGroupId").value;
+  await loadWhatsAppGroups(currentSelected);
+  
+  if (refreshBtn) {
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = "🔄 Yenile";
+  }
+  showToast("🟢 Gruplar yenilendi!", "success", 2000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveWhatsappGroupBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", async () => {
+      const groupSelect = document.getElementById("whatsappGroupSelect");
+      const manualInput = document.getElementById("whatsappManualGroupId");
+      
+      const targetGroupId = (groupSelect && groupSelect.value) || (manualInput && manualInput.value);
+      if (!targetGroupId) {
+        showToast("Lütfen bir grup seçin veya manuel ID girin!", "warning", 3000);
+        return;
+      }
+      
+      try {
+        const response = await fetch("/api/whatsapp/config", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ targetGroupId })
+        });
+        const result = await response.json();
+        if (result.success) {
+          showToast("🎯 WhatsApp hedef grubu kaydedildi!", "success", 3000);
+          if (groupSelect && !groupSelect.value && manualInput) {
+            const matchedOption = Array.from(groupSelect.options).find(opt => opt.value === targetGroupId);
+            if (matchedOption) matchedOption.selected = true;
+          }
+        } else {
+          showToast(`❌ Hata: ${result.message}`, "error", 4000);
+        }
+      } catch (err) {
+        console.error("WhatsApp grup kaydetme hatası:", err);
+        showToast("❌ Grup kaydedilemedi", "error", 4000);
+      }
+    });
+  }
+});
+
+async function fetchGroupJidFromBot() {
+  const fetchBtn = document.getElementById("fetchWhatsappGroupBtn");
+  if (fetchBtn) {
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = "⌛...";
+  }
+  
+  showToast("⏳ Son grup ID'si sunucudan alınıyor...", "info", 2000);
+  try {
+    const response = await fetch("/api/whatsapp/latest-detected-group");
+    const result = await response.json();
+    
+    if (result.success && result.groupId) {
+      const manualInput = document.getElementById("whatsappManualGroupId");
+      if (manualInput) {
+        manualInput.value = result.groupId;
+        showToast("🟢 Grup ID'si başarıyla çekildi!", "success", 3000);
+      }
+    } else {
+      showToast("❌ Gruptan henüz !grup mesajı algılanmadı.", "warning", 4000);
+    }
+  } catch (err) {
+    console.error("Grup ID çekme hatası:", err);
+    showToast("❌ ID çekilemedi", "error", 4000);
+  }
+  
+  if (fetchBtn) {
+    fetchBtn.disabled = false;
+    fetchBtn.innerHTML = "🔍 Gruptan Çek";
+  }
+}
+
+async function whatsappReconnect() {
+  const reconnectBtn = document.getElementById("whatsappReconnectBtn");
+  if (reconnectBtn) {
+    reconnectBtn.disabled = true;
+    reconnectBtn.textContent = "⌛ Yeniden Başlatılıyor...";
+  }
+  
+  showToast("⏳ WhatsApp botu yeniden başlatılıyor...", "info", 2000);
+  try {
+    const response = await fetch("/api/whatsapp/reconnect", { method: "POST" });
+    const result = await response.json();
+    if (result.success) {
+      showToast("🟢 Yeniden başlatma tetiklendi! QR kod veya bağlantı aranıyor...", "success", 4000);
+    } else {
+      showToast(`❌ Hata: ${result.message}`, "error", 4000);
+    }
+  } catch (err) {
+    console.error("Yeniden bağlanma tetikleme hatası:", err);
+    showToast("❌ İşlem başarısız oldu", "error", 4000);
+  }
+  
+  if (reconnectBtn) {
+    reconnectBtn.disabled = false;
+    reconnectBtn.innerHTML = "⚡ Tekrar Bağlan";
+  }
+}
+
+async function whatsappDisconnect() {
+  if (!confirm("WhatsApp bağlantısını tamamen kesmek ve tüm oturum bilgilerini sıfırlamak istediğinize emin misiniz? (Yeni QR kod okutmanız gerekecektir.)")) {
+    return;
+  }
+  
+  const disconnectBtn = document.getElementById("whatsappDisconnectBtn");
+  if (disconnectBtn) {
+    disconnectBtn.disabled = true;
+    disconnectBtn.textContent = "⌛ Bağlantı Kesiliyor...";
+  }
+  
+  showToast("⏳ Oturum temizleniyor ve sıfırlanıyor...", "info", 2000);
+  try {
+    const response = await fetch("/api/whatsapp/disconnect", { method: "POST" });
+    const result = await response.json();
+    if (result.success) {
+      showToast("🟢 Oturum başarıyla sıfırlandı! Yeni QR kod bekleniyor...", "success", 4000);
+      const qrContainer = document.getElementById("whatsappQrContainer");
+      if (qrContainer) qrContainer.style.display = "flex";
+      const activeContainer = document.getElementById("whatsappActiveContainer");
+      if (activeContainer) activeContainer.style.display = "none";
+    } else {
+      showToast(`❌ Hata: ${result.message}`, "error", 4000);
+    }
+  } catch (err) {
+    console.error("Bağlantı kesme tetikleme hatası:", err);
+    showToast("❌ İşlem başarısız oldu", "error", 4000);
+  }
+  
+  if (disconnectBtn) {
+    disconnectBtn.disabled = false;
+    disconnectBtn.innerHTML = "🔌 Bağlantıyı Kes";
   }
 }
