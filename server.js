@@ -16,6 +16,7 @@ const archiver = require("archiver");
 const http = require("http");
 const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
+const sharp = require("sharp");
 
 const app = express();
 const server = http.createServer(app);
@@ -131,6 +132,49 @@ const cleanExpiredLocks = () => {
     }
   }
 };
+
+// Görsellerden EXIF, XMP, IPTC ve Canva / AI (ContainsAiGeneratedContent vb.) meta verilerini temizler
+async function stripImageMetadata(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return;
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Sadece desteklenen görsel formatlarını işle
+    const supportedExts = [".jpg", ".jpeg", ".png", ".webp", ".tiff", ".avif", ".heif"];
+    if (!supportedExts.includes(ext)) {
+      return;
+    }
+
+    const tempFilePath = filePath + ".clean" + ext;
+    
+    // sharp varsayılan olarak withMetadata() çağrılmadığında TÜM EXIF, XMP, IPTC ve Canva AI etiketlerini sıfırlar
+    let pipeline = sharp(filePath);
+    
+    if (ext === ".jpg" || ext === ".jpeg") {
+      pipeline = pipeline.jpeg({ quality: 98, mozjpeg: true });
+    } else if (ext === ".png") {
+      pipeline = pipeline.png({ compressionLevel: 9 });
+    } else if (ext === ".webp") {
+      pipeline = pipeline.webp({ quality: 98 });
+    } else if (ext === ".avif") {
+      pipeline = pipeline.avif({ quality: 95 });
+    }
+
+    await pipeline.toFile(tempFilePath);
+
+    // Eski dosyanın üzerine temizlenmiş dosyayı yaz
+    fs.unlinkSync(filePath);
+    fs.renameSync(tempFilePath, filePath);
+    console.log(`[Metadata Temizleme] Görsel meta verileri ve AI etiketleri başarıyla silindi: ${path.basename(filePath)}`);
+  } catch (err) {
+    console.error(`[Metadata Temizleme Hatası] ${filePath}:`, err.message || err);
+    try {
+      const ext = path.extname(filePath).toLowerCase();
+      const tempFilePath = filePath + ".clean" + ext;
+      if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+    } catch (_) {}
+  }
+}
 
 // Veri okuma fonksiyonu
 const readPosts = () => {
@@ -974,7 +1018,7 @@ app.put("/api/posts/reorder", (req, res) => {
 app.post(
   "/api/posts",
   upload.fields([{ name: "files", maxCount: 500 }]),
-  (req, res) => {
+  async (req, res) => {
     try {
       console.log("POST /api/posts isteği alındı");
       console.log("Request body:", req.body);
@@ -1077,6 +1121,17 @@ app.post(
 
       // Dosya bilgilerini birden fazla dosya için hazırla
       const uploadedFiles = req.files && req.files.files ? req.files.files : [];
+
+      // Yüklenen görsellerden yapay zeka (Canva AI vb.) ve EXIF meta verilerini temizle
+      for (const file of uploadedFiles) {
+        const filePath = path.join(__dirname, "uploads", file.filename);
+        await stripImageMetadata(filePath);
+        try {
+          const stats = fs.statSync(filePath);
+          file.size = stats.size;
+        } catch (_) {}
+      }
+
       const files = uploadedFiles.map((file) => ({
         fileName: file.filename,
         originalName: file.originalname,
@@ -1193,7 +1248,7 @@ app.put("/api/posts/:id/status", (req, res) => {
 app.put(
   "/api/posts/:id",
   upload.fields([{ name: "files", maxCount: 500 }]),
-  (req, res) => {
+  async (req, res) => {
     try {
       console.log("PUT /api/posts/:id isteği alındı");
       console.log("Request body:", req.body);
@@ -1304,34 +1359,55 @@ app.put(
 
       // Dosya işlemleri
       let updatedFiles = [];
+      let keptFiles = null;
+      if (req.body.keptExistingFiles) {
+        try {
+          keptFiles = JSON.parse(req.body.keptExistingFiles);
+        } catch (_) {}
+      }
 
-      // Eğer yeni dosyalar yüklendiyse
+      // 1. Mevcut dosyalardan silinmeyenleri koru, silinenleri diskten kaldır
+      if (existingPost.files && Array.isArray(existingPost.files)) {
+        existingPost.files.forEach((file) => {
+          const shouldKeep = keptFiles === null ? (keepExistingFiles === "true") : keptFiles.includes(file.fileName);
+          if (shouldKeep) {
+            updatedFiles.push(file);
+          } else {
+            if (file.fileName && fs.existsSync(`uploads/${file.fileName}`)) {
+              try { fs.unlinkSync(`uploads/${file.fileName}`); } catch (_) {}
+              console.log(`Mevcut dosya düzenleme sırasında silindi: ${file.fileName}`);
+            }
+          }
+        });
+      } else if (existingPost.fileName) {
+        const shouldKeep = keptFiles === null ? (keepExistingFiles === "true") : keptFiles.includes(existingPost.fileName);
+        if (shouldKeep) {
+          updatedFiles.push({
+            fileName: existingPost.fileName,
+            originalName: existingPost.originalName,
+            mimetype: existingPost.mimetype || "application/octet-stream",
+            size: 0,
+          });
+        } else {
+          if (fs.existsSync(`uploads/${existingPost.fileName}`)) {
+            try { fs.unlinkSync(`uploads/${existingPost.fileName}`); } catch (_) {}
+            console.log(`Mevcut dosya düzenleme sırasında silindi: ${existingPost.fileName}`);
+          }
+        }
+      }
+
+      // 2. Eğer yeni dosyalar yüklendiyse, meta verilerini temizle ve listeye ekle
       if (req.files && req.files.files && req.files.files.length > 0) {
         console.log(`${req.files.files.length} yeni dosya yüklendi`);
 
-        // Eğer mevcut dosyalar korunmayacaksa, eski dosyaları sil
-        if (keepExistingFiles !== "true") {
-          if (existingPost.files && Array.isArray(existingPost.files)) {
-            existingPost.files.forEach((file) => {
-              if (file.fileName && fs.existsSync(`uploads/${file.fileName}`)) {
-                fs.unlinkSync(`uploads/${file.fileName}`);
-                console.log(`Eski dosya silindi: ${file.fileName}`);
-              }
-            });
-          }
-          // Eski format için geriye uyumluluk
-          if (
-            existingPost.fileName &&
-            fs.existsSync(`uploads/${existingPost.fileName}`)
-          ) {
-            fs.unlinkSync(`uploads/${existingPost.fileName}`);
-            console.log(`Eski dosya silindi: ${existingPost.fileName}`);
-          }
-        } else {
-          // Mevcut dosyaları koru
-          if (existingPost.files && Array.isArray(existingPost.files)) {
-            updatedFiles = [...existingPost.files];
-          }
+        // Yüklenen yeni görsellerden yapay zeka (Canva AI vb.) ve EXIF meta verilerini temizle
+        for (const file of req.files.files) {
+          const filePath = path.join(__dirname, "uploads", file.filename);
+          await stripImageMetadata(filePath);
+          try {
+            const stats = fs.statSync(filePath);
+            file.size = stats.size;
+          } catch (_) {}
         }
 
         // Yeni dosyaları ekle
@@ -1344,21 +1420,6 @@ app.put(
 
         updatedFiles = [...updatedFiles, ...newFiles];
         console.log(`Toplam dosya sayısı: ${updatedFiles.length}`);
-      } else {
-        // Yeni dosya yüklenmediyse mevcut dosyaları koru
-        if (existingPost.files && Array.isArray(existingPost.files)) {
-          updatedFiles = existingPost.files;
-        } else if (existingPost.fileName) {
-          // Eski format için geriye uyumluluk
-          updatedFiles = [
-            {
-              fileName: existingPost.fileName,
-              originalName: existingPost.originalName,
-              mimetype: existingPost.mimetype || "application/octet-stream",
-              size: 0,
-            },
-          ];
-        }
       }
 
       // Post'u güncelle
@@ -1393,10 +1454,9 @@ app.put(
           planGeneratedAt !== undefined
             ? planGeneratedAt || existingPost.planGeneratedAt || null
             : existingPost.planGeneratedAt || null,
-        files: updatedFiles.length > 0 ? updatedFiles : undefined,
-        // Eski alanları temizle
-        fileName: undefined,
-        originalName: undefined,
+        files: updatedFiles,
+        fileName: updatedFiles.length > 0 ? updatedFiles[0].fileName : null,
+        originalName: updatedFiles.length > 0 ? updatedFiles[0].originalName : null,
         // Updated timestamp ekle
         updatedAt: new Date().toLocaleString("tr-TR", {
           timeZone: "Europe/Istanbul",

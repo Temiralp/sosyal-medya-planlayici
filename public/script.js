@@ -316,6 +316,24 @@ function setupEventListeners() {
     console.log("File input listener eklendi");
   }
 
+  const filePreview = document.getElementById("filePreview");
+  if (filePreview && !filePreview.dataset.listenerAttached) {
+    filePreview.addEventListener("click", (event) => {
+      const removeBtn = event.target.closest(".file-remove-btn");
+      if (removeBtn) {
+        const index = Number(removeBtn.dataset.index);
+        removeSelectedFile(index);
+        return;
+      }
+      const clearBtn = event.target.closest(".clear-all-files-btn");
+      if (clearBtn) {
+        clearAllSelectedFiles();
+        return;
+      }
+    });
+    filePreview.dataset.listenerAttached = "true";
+  }
+
   // Export butonu
   const exportBtn = document.getElementById("exportBtn");
   if (exportBtn) {
@@ -583,7 +601,35 @@ function initializeSchedulePlanner() {
         removePlannedDate(index);
       }
     });
+
+    plannedDatesList.addEventListener("input", (event) => {
+      const timeInput = event.target.closest(".planned-date-time-input");
+      if (timeInput) {
+        const index = Number(timeInput.dataset.index);
+        const newTime = timeInput.value;
+        if (index >= 0 && index < schedulePlannerState.plannedDates.length && newTime) {
+          schedulePlannerState.plannedDates[index].time = newTime;
+          schedulePlannerState.plannedDates[index].key = `${schedulePlannerState.plannedDates[index].date}-${newTime}`;
+        }
+      }
+    });
+
     plannedDatesList.dataset.listenerAttached = "true";
+  }
+
+  const scheduledTimeInput = document.getElementById("scheduledTime");
+  if (scheduledTimeInput && !scheduledTimeInput.dataset.listenerAttached) {
+    scheduledTimeInput.addEventListener("input", (event) => {
+      const newTime = event.target.value;
+      if (newTime && schedulePlannerState.plannedDates.length > 0) {
+        schedulePlannerState.plannedDates.forEach((entry) => {
+          entry.time = newTime;
+          entry.key = `${entry.date}-${newTime}`;
+        });
+        updatePlannedDatesUI();
+      }
+    });
+    scheduledTimeInput.dataset.listenerAttached = "true";
   }
 
   const addManualDateBtn = document.getElementById("addManualDateBtn");
@@ -631,12 +677,6 @@ function addCurrentDateToPlan() {
     return;
   }
 
-  const diffMinutes = checkScheduledTime(scheduledDate, scheduledTime);
-  if (diffMinutes < 10) {
-    showToast("⚠️ Planlama tarihi en az 10 dakika sonrası olmalıdır!", "error", 4000);
-    return;
-  }
-
   const added = addSinglePlannedDate(scheduledDate, scheduledTime);
   if (added) {
     showToast("Tarih plan listesine eklendi", "success", 3000);
@@ -647,11 +687,14 @@ function addCurrentDateToPlan() {
 
 function addSinglePlannedDate(date, time) {
   const key = `${date}-${time}`;
-  const exists = schedulePlannerState.plannedDates.some(
-    (entry) => entry.key === key
+  const existingEntry = schedulePlannerState.plannedDates.find(
+    (entry) => entry.date === date
   );
-  if (exists) {
-    return false;
+  if (existingEntry) {
+    existingEntry.time = time;
+    existingEntry.key = key;
+    updatePlannedDatesUI();
+    return true;
   }
 
   schedulePlannerState.plannedDates.push({ date, time, key });
@@ -695,29 +738,16 @@ function generatePlanFromMode() {
   }
 
   let addedCount = 0;
-  let skippedCount = 0;
   generatedDates.forEach((entry) => {
-    if (checkScheduledTime(entry.date, entry.time) >= 10) {
-      if (addSinglePlannedDate(entry.date, entry.time)) {
-        addedCount++;
-      }
-    } else {
-      skippedCount++;
+    if (addSinglePlannedDate(entry.date, entry.time)) {
+      addedCount++;
     }
   });
 
   if (addedCount > 0) {
-    let msg = `${addedCount} yeni tarih plan listesine eklendi.`;
-    if (skippedCount > 0) {
-      msg += ` (${skippedCount} tarih 10 dakikadan yakın/geçmiş olduğu için atlandı)`;
-    }
-    showToast(msg, "success", 4000);
+    showToast(`${addedCount} tarih plan listesine eklendi.`, "success", 4000);
   } else {
-    if (skippedCount > 0) {
-      showToast(`⚠️ Tarihler 10 dakikadan yakın veya geçmiş olduğu için eklenemedi!`, "error", 4000);
-    } else {
-      showToast("Yeni tarih eklenmedi, tüm tarihler listede vardı", "warning", 4000);
-    }
+    showToast("Tüm tarihler zaten listede ekli", "warning", 4000);
   }
 }
 
@@ -770,9 +800,12 @@ function updatePlannedDatesUI() {
     list.innerHTML = schedulePlannerState.plannedDates
       .map(
         (entry, index) => `
-          <li class="planned-date-item">
-            <span>${formatPlannerDate(entry.date)} • ${entry.time}</span>
-            <button type="button" class="remove-date-btn" data-index="${index}">Sil</button>
+          <li class="planned-date-item" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+              <span style="font-weight: 600; min-width: 110px;">📅 ${formatPlannerDate(entry.date)}</span>
+              <input type="time" class="planned-date-time-input" data-index="${index}" value="${entry.time}" style="padding: 3px 8px; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color, #ccc); background: var(--bg-card, #fff); color: var(--text-primary, #333); width: auto;" />
+            </div>
+            <button type="button" class="remove-date-btn" data-index="${index}" style="margin-left: 8px;">Sil</button>
           </li>
         `
       )
@@ -1177,42 +1210,91 @@ function selectGroup(groupKey) {
   updateSelectedCount();
 }
 
-// Dosya seçimi
+// Dosya seçimi ve yönetimi
+let selectedUploadFiles = [];
+
 function handleFileSelect(event) {
   console.log("Dosya(lar) seçildi");
-  const files = event.target.files;
-  const preview = document.getElementById("filePreview");
+  const newFiles = Array.from(event.target.files || []);
+  if (newFiles.length > 0) {
+    newFiles.forEach((file) => {
+      const alreadyExists = selectedUploadFiles.some(
+        (f) => f.name === file.name && f.size === file.size
+      );
+      if (!alreadyExists) {
+        selectedUploadFiles.push(file);
+      }
+    });
+    syncFileInputFiles();
+  }
+  renderFilePreview();
+}
 
-  if (files && files.length > 0) {
-    // Birden fazla dosya için önizleme oluştur
+function removeSelectedFile(index) {
+  if (index >= 0 && index < selectedUploadFiles.length) {
+    selectedUploadFiles.splice(index, 1);
+    syncFileInputFiles();
+    renderFilePreview();
+  }
+}
+
+function clearAllSelectedFiles() {
+  selectedUploadFiles = [];
+  syncFileInputFiles();
+  renderFilePreview();
+}
+
+function syncFileInputFiles() {
+  const fileInput = document.getElementById("fileInput");
+  if (!fileInput) return;
+  try {
+    const dt = new DataTransfer();
+    selectedUploadFiles.forEach((file) => dt.items.add(file));
+    fileInput.files = dt.files;
+  } catch (err) {
+    console.error("DataTransfer sync hatası:", err);
+  }
+}
+
+function renderFilePreview() {
+  const preview = document.getElementById("filePreview");
+  if (!preview) return;
+
+  if (selectedUploadFiles && selectedUploadFiles.length > 0) {
     let previewHTML = '<div class="file-list">';
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB cinsinden
-      const fileType = file.type.includes("image") ? "🖼️" : "🎬";
+    for (let i = 0; i < selectedUploadFiles.length; i++) {
+      const file = selectedUploadFiles[i];
+      const fileSize = (file.size / 1024 / 1024).toFixed(2);
+      const fileType = file.type && file.type.includes("image") ? "🖼️" : "🎬";
 
       previewHTML += `
-        <div class="file-item">
-          <span class="file-icon">${fileType}</span>
-          <span class="file-name">${file.name}</span>
-          <span class="file-size">(${fileSize} MB)</span>
+        <div class="file-item" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+            <span class="file-icon">${fileType}</span>
+            <span class="file-name" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</span>
+            <span class="file-size" style="flex-shrink: 0;">(${fileSize} MB)</span>
+          </div>
+          <button type="button" class="file-remove-btn" data-index="${i}" title="Dosyayı kaldır" style="background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 15px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">🗑️</button>
         </div>
       `;
     }
 
     previewHTML += "</div>";
-    previewHTML += `<div class="file-count">📎 Toplam ${files.length} dosya seçildi</div>`;
+    previewHTML += `
+      <div class="file-count" style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+        <span>📎 Toplam ${selectedUploadFiles.length} dosya seçildi</span>
+        <button type="button" class="clear-all-files-btn" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 2px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;">Tümünü Kaldır</button>
+      </div>
+    `;
 
     preview.innerHTML = previewHTML;
     preview.style.display = "block";
-
-    console.log(
-      `${files.length} dosya seçildi:`,
-      Array.from(files).map((f) => f.name)
-    );
   } else {
+    preview.innerHTML = "";
     preview.style.display = "none";
+    const fileInput = document.getElementById("fileInput");
+    if (fileInput) fileInput.value = "";
   }
 }
 
@@ -1550,6 +1632,7 @@ function resetForm() {
   selectedAccounts = [];
   clearAll();
   resetPlannerState();
+  clearAllSelectedFiles();
 
   // Post/Story alanlarını sıfırla
   const postContent = document.getElementById("postContent");
@@ -2710,28 +2793,33 @@ function createEditForm(post) {
         <div class="edit-form-group">
           <label class="edit-form-label">📎 Dosyalar</label>
           <div class="edit-file-upload-section">
-            <input type="file" name="files" class="edit-file-input" multiple accept="image/*,video/*">
-            <p style="margin: 8px 0; font-size: 0.85rem; color: #6c757d;">Yeni dosyalar seçin (mevcut dosyalar korunacak)</p>
+            <input type="file" name="files" id="edit-file-input-${post.id}" class="edit-file-input" multiple accept="image/*,video/*" onchange="handleEditFileSelect(${post.id}, event)">
+            <p style="margin: 8px 0 4px 0; font-size: 0.85rem; color: #6c757d;">Yeni dosyalar eklemek için seçin:</p>
+            <div id="edit-new-files-preview-${post.id}" style="margin-top: 5px;"></div>
           </div>
           
           ${existingFiles.length > 0
-      ? `
-            <div class="edit-existing-files">
-              <div class="edit-existing-files-title">Mevcut Dosyalar:</div>
+            ? `
+            <div class="edit-existing-files" style="margin-top: 10px;">
+              <div class="edit-existing-files-title" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px;">Mevcut Dosyalar:</div>
               ${existingFiles
-        .map(
-          (file) => `
-                <div class="edit-existing-file-item">
-                  <span>📎</span>
-                  <span>${file.originalName || file.fileName}</span>
+                .map(
+                  (file, index) => `
+                <div class="edit-existing-file-item" id="edit-file-${post.id}-${index}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--bg-card, #fff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; margin-bottom: 6px;">
+                  <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+                    <span>📎</span>
+                    <span class="file-name" style="font-weight: 500; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.originalName || file.fileName}</span>
+                  </div>
+                  <input type="hidden" name="existingFile" value="${escapeHtml(file.fileName)}" class="existing-file-input" />
+                  <button type="button" class="btn-text" onclick="removeExistingFileFromEdit(${post.id}, ${index})" title="Bu mevcut dosyayı kaldır" style="color: #e74c3c; cursor: pointer; border: none; background: none; font-size: 15px; padding: 2px 6px;">🗑️</button>
                 </div>
               `
-        )
-        .join("")}
+                )
+                .join("")}
             </div>
           `
-      : ""
-    }
+            : ""
+          }
         </div>
 
         <!-- Account Selection -->
@@ -3010,6 +3098,94 @@ function cancelEditMode(postId) {
     }
 
     console.log(`Post ${postId} edit mode'dan çıktı`);
+    editFormSelectedFiles.delete(postId);
+  }
+}
+
+// Edit Formu Dosya Yönetimi
+const editFormSelectedFiles = new Map();
+
+function handleEditFileSelect(postId, event) {
+  const newFiles = Array.from(event.target.files || []);
+  if (!editFormSelectedFiles.has(postId)) {
+    editFormSelectedFiles.set(postId, []);
+  }
+  const currentFiles = editFormSelectedFiles.get(postId);
+  newFiles.forEach((file) => {
+    const alreadyExists = currentFiles.some(
+      (f) => f.name === file.name && f.size === file.size
+    );
+    if (!alreadyExists) {
+      currentFiles.push(file);
+    }
+  });
+  syncEditFileInput(postId);
+  renderEditNewFilesPreview(postId);
+}
+
+function removeEditNewFile(postId, index) {
+  if (editFormSelectedFiles.has(postId)) {
+    const currentFiles = editFormSelectedFiles.get(postId);
+    if (index >= 0 && index < currentFiles.length) {
+      currentFiles.splice(index, 1);
+      syncEditFileInput(postId);
+      renderEditNewFilesPreview(postId);
+    }
+  }
+}
+
+function syncEditFileInput(postId) {
+  const input = document.getElementById(`edit-file-input-${postId}`);
+  if (!input) return;
+  try {
+    const dt = new DataTransfer();
+    const currentFiles = editFormSelectedFiles.get(postId) || [];
+    currentFiles.forEach((file) => dt.items.add(file));
+    input.files = dt.files;
+  } catch (err) {
+    console.error("Edit DataTransfer sync hatası:", err);
+  }
+}
+
+function renderEditNewFilesPreview(postId) {
+  const preview = document.getElementById(`edit-new-files-preview-${postId}`);
+  if (!preview) return;
+  const currentFiles = editFormSelectedFiles.get(postId) || [];
+  if (currentFiles.length > 0) {
+    let html = '<div class="file-list" style="margin-top: 5px;">';
+    for (let i = 0; i < currentFiles.length; i++) {
+      const file = currentFiles[i];
+      const fileSize = (file.size / 1024 / 1024).toFixed(2);
+      const fileType = file.type && file.type.includes("image") ? "🖼️" : "🎬";
+      html += `
+        <div class="file-item" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; background: rgba(52, 152, 219, 0.08); border: 1px dashed #3498db; border-radius: 6px; margin-bottom: 4px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;">
+            <span>${fileType}</span>
+            <span style="font-size: 0.85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</span>
+            <span style="font-size: 0.75rem; color: #666; flex-shrink: 0;">(${fileSize} MB - Yeni)</span>
+          </div>
+          <button type="button" onclick="removeEditNewFile(${postId}, ${i})" title="Yeni seçilen dosyayı kaldır" style="background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 14px; padding: 2px 6px;">🗑️</button>
+        </div>
+      `;
+    }
+    html += '</div>';
+    preview.innerHTML = html;
+  } else {
+    preview.innerHTML = "";
+    const input = document.getElementById(`edit-file-input-${postId}`);
+    if (input) input.value = "";
+  }
+}
+
+function removeExistingFileFromEdit(postId, index) {
+  const fileElem = document.getElementById(`edit-file-${postId}-${index}`);
+  if (fileElem) {
+    fileElem.remove();
+    const container = document.querySelector(`#edit-form-data-${postId} .edit-existing-files`);
+    const remaining = container ? container.querySelectorAll(".edit-existing-file-item") : [];
+    if (remaining.length === 0 && container) {
+      container.innerHTML = '<div style="font-size: 0.85rem; color: #888; font-style: italic; padding: 4px 0;">Mevcut dosya kalmadı (Tümü kaldırılacak).</div>';
+    }
   }
 }
 
@@ -3076,7 +3252,7 @@ async function savePost(postId) {
           if (element.checked) {
             formData.append(element.name, element.value);
           }
-        } else {
+        } else if (element.name !== "existingFile") {
           formData.append(element.name, element.value);
         }
       }
@@ -3092,10 +3268,16 @@ async function savePost(postId) {
     });
     formData.append("selectedAccounts", JSON.stringify(selectedAccounts));
 
-    // Mevcut dosyaları koru flag'i
-    formData.append("keepExistingFiles", "true");
+    // Mevcut dosyalardan silinmeyenleri (kalanları) topla
+    const existingFileInputs = form.querySelectorAll('input.existing-file-input');
+    const keptExistingFiles = [];
+    existingFileInputs.forEach(input => {
+      if (input.value) keptExistingFiles.push(input.value);
+    });
+    formData.append("keptExistingFiles", JSON.stringify(keptExistingFiles));
+    formData.append("keepExistingFiles", keptExistingFiles.length > 0 ? "true" : "false");
 
-    console.log("Edit formu gönderiliyor:", postId);
+    console.log("Edit formu gönderiliyor:", postId, "Kalan mevcut dosyalar:", keptExistingFiles);
 
     const response = await fetch(`/api/posts/${postId}`, {
       method: "PUT",
