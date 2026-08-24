@@ -264,6 +264,17 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (allElementsExist) {
     setDefaultDate(); // Varsayılan tarihi ayarla
     initializeAccountSelection();
+
+    // Sistemi ilk açışta bugünün paylaşımları gözüksün
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      searchInput.dataset.filter = "today";
+    }
+    const todayFilterBtn = document.getElementById("todayFilterBtn");
+    if (todayFilterBtn) {
+      todayFilterBtn.classList.add("active");
+    }
+
     loadPosts();
     setupEventListeners();
     initializeDarkMode(); // Dark mode başlat
@@ -1320,7 +1331,11 @@ async function handleFormSubmit(event) {
     'input[name="contentType"]:checked'
   ).value;
   const title = document.getElementById("title").value;
-  const content = document.getElementById("content").value;
+  let content = document.getElementById("content").value;
+  const isAiGenerated = document.getElementById("isAiGenerated")?.checked;
+  if (isAiGenerated && content.trim()) {
+    content = content.trim() + "\n\u2800\n\u2800\n\u2800\nBu içerikte yapay zekâ teknolojilerinden faydalanılmıştır. Ürünlerin orijinalliğine tamamen sadık kalınmıştır.";
+  }
   const notes = document.getElementById("notes").value;
   const storyLink = document.getElementById("storyLink").value;
   const storyLinkTitle = document.getElementById("storyLinkTitle").value;
@@ -1463,7 +1478,6 @@ async function handleFormSubmit(event) {
         if (result.lastUpdate) {
           lastKnownUpdate = result.lastUpdate;
         }
-        addNewPostToList(result.post);
       }
     }
 
@@ -1477,9 +1491,8 @@ async function handleFormSubmit(event) {
     playNotificationSound('newPost');
     resetForm();
 
-    setTimeout(() => {
-      loadPosts();
-    }, 800);
+    currentPage = 1;
+    await loadPosts();
   } catch (error) {
     console.error("Planlama hatası:", error);
     showMessage(error.message || "Sunucu hatası!", "error");
@@ -1633,6 +1646,8 @@ function resetForm() {
   clearAll();
   resetPlannerState();
   clearAllSelectedFiles();
+  const isAiGenerated = document.getElementById("isAiGenerated");
+  if (isAiGenerated) isAiGenerated.checked = false;
 
   // Post/Story alanlarını sıfırla
   const postContent = document.getElementById("postContent");
@@ -1794,13 +1809,19 @@ function updateSelectedAccountsDisplay() {
   }
 }
 
-// Hesap tamamlama (menü kapanmasını engelle)
 async function toggleAccountComplete(postId, accountKey, checkbox, event) {
-  // Event propagation'ı durdur (menü kapanmasın)
   if (event) {
     event.stopPropagation();
     event.preventDefault();
   }
+
+  // Checkbox'ın yanındaki etiketten veya accountKey'den hesap adını al
+  const accountLabel = checkbox.closest ? checkbox.closest('label') : null;
+  const accountName = accountLabel ? accountLabel.textContent.trim() : accountKey.split("-")[0];
+  const targetCompleted = !checkbox.checked; // Tıklamadan sonra olması gereken durum
+
+  // Optimistik Güncelleme: UI'da kutucuğu hemen işaretle
+  checkbox.checked = targetCompleted;
 
   try {
     const response = await fetch(`/api/posts/${postId}/complete`, {
@@ -1810,7 +1831,7 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
       },
       body: JSON.stringify({
         accountKey: accountKey,
-        completed: checkbox.checked,
+        completed: targetCompleted,
       }),
     });
 
@@ -1824,17 +1845,17 @@ async function toggleAccountComplete(postId, accountKey, checkbox, event) {
       updatePostInList(result.post);
 
       // Hesap durumuna göre toast mesajı
-      const message = checkbox.checked
-        ? `✅ ${accountName} hesabı tamamlandı olarak işaretlendi!`
-        : `⏳ ${accountName} hesabı beklemede olarak işaretlendi!`;
+      const message = targetCompleted
+        ? `✅ ${accountName} tamamlandı olarak işaretlendi!`
+        : `⏳ ${accountName} beklemede olarak işaretlendi!`;
       showToast(message, "success", 2000);
       playNotificationSound('statusChange');
     } else {
-      checkbox.checked = !checkbox.checked; // Geri al
+      checkbox.checked = !targetCompleted; // Hata durumunda geri al
       showMessage("Hata: " + result.message, "error");
     }
   } catch (error) {
-    checkbox.checked = !checkbox.checked; // Geri al
+    checkbox.checked = !targetCompleted; // Hata durumunda geri al
     console.error("Error:", error);
     showMessage("Güncelleme hatası!", "error");
   }
@@ -3595,6 +3616,23 @@ function showErrorState(button) {
 // Durum güncelle
 async function updateStatus(postId, newStatus) {
   console.log(`Post ${postId} durumu güncelleniyor: ${newStatus}`);
+
+  // Optimistik Güncelleme: Dropdown rengini anında değiştir
+  const statusDropdown = document.querySelector(
+    `#post-card-${postId} .status-dropdown-header`
+  );
+  let oldStatus = "";
+  if (statusDropdown) {
+    const statusClasses = ['status-planlandı', 'status-yapılıyor', 'status-yapıldı', 'status-beklemede', 'status-iptal'];
+    statusClasses.forEach(cls => {
+      if (statusDropdown.classList.contains(cls)) {
+        oldStatus = cls.replace("status-", "");
+        statusDropdown.classList.remove(cls);
+      }
+    });
+    statusDropdown.classList.add(`status-${newStatus}`);
+  }
+
   try {
     const response = await fetch(`/api/posts/${postId}/status`, {
       method: "PUT",
@@ -3618,29 +3656,21 @@ async function updateStatus(postId, newStatus) {
       updatePostInList(result.post);
     } else {
       showMessage("Hata: " + result.message, "error");
-      // Status dropdown'ını eski haline döndür
-      const statusDropdown = document.querySelector(
-        `#post-card-${postId} .status-dropdown-header`
-      );
-      if (statusDropdown) {
-        const originalPost = allPosts.find((post) => post.id == postId);
-        if (originalPost) {
-          statusDropdown.value = originalPost.status;
-        }
+      // Status'u eski haline döndür
+      if (statusDropdown && oldStatus) {
+        statusDropdown.classList.remove(`status-${newStatus}`);
+        statusDropdown.classList.add(`status-${oldStatus}`);
+        statusDropdown.value = oldStatus;
       }
     }
   } catch (error) {
     console.error("Durum güncelleme hatası:", error);
     showMessage("Durum güncellenemedi!", "error");
-    // Status dropdown'ını eski haline döndür
-    const statusDropdown = document.querySelector(
-      `#post-card-${postId} .status-dropdown-header`
-    );
-    if (statusDropdown) {
-      const originalPost = allPosts.find((post) => post.id == postId);
-      if (originalPost) {
-        statusDropdown.value = originalPost.status;
-      }
+    // Status'u eski haline döndür
+    if (statusDropdown && oldStatus) {
+      statusDropdown.classList.remove(`status-${newStatus}`);
+      statusDropdown.classList.add(`status-${oldStatus}`);
+      statusDropdown.value = oldStatus;
     }
   }
 }

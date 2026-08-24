@@ -48,7 +48,7 @@ app.use(express.static("public"));
 
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  if ((username === "admin" || username === "kut") && password === "ozdilek123!") {
+  if ((username === "admin" || username === "kut") && password === "ozd12345!") {
     res.cookie("auth_token", username, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }); // 1 day
     res.json({ success: true });
   } else {
