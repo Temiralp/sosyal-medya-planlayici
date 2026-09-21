@@ -10,7 +10,6 @@ const accountGroups = {
     "Özdilek Kocaeli",
     "Özdilek Bolu",
     "Özdilek Bursa",
-    "Özdilek Düzce",
   ],
   park: [
     "ÖzdilekPark Bursa Geçit",
@@ -19,6 +18,7 @@ const accountGroups = {
     "ÖzdilekPark İstanbul",
     "ÖzdilekPark Manisa Turgutlu",
     "ÖzdilekPark Uşak",
+    "ÖzdilekPark Düzce",
     "Wyndham Grand İstanbul Levent Hotel & Conference Center",
     "Wyndham Grand İzmir Özdilek Thermal & Spa",
   ],
@@ -44,6 +44,7 @@ const accountGroups = {
     "Gusto Plus Market",
     "Vertice Restaurant",
     "Partly Cloudy Cafe",
+    "Crony Pet",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -99,9 +100,9 @@ const accountPlatforms = {
   "ÖzdilekPark Manisa Turgutlu": ["Facebook", "Instagram", "Twitter"],
   "ÖzdilekPark Uşak": ["Facebook", "Instagram", "Twitter"],
   "Özdilek Bursa": ["Facebook", "Instagram", "Twitter"],
-  "Özdilek Düzce": ["Facebook", "Instagram", "Twitter"],
 
   // Park/Otel Grubu
+  "ÖzdilekPark Düzce": ["Facebook", "Instagram", "Twitter"],
   "Wyndham Grand İstanbul Levent Hotel & Conference Center": [
     "Facebook",
     "Instagram",
@@ -136,6 +137,7 @@ const accountPlatforms = {
   "Gusto Plus Market": ["Facebook", "Instagram", "Twitter"],
   "Vertice Restaurant": ["Facebook", "Instagram", "Twitter"],
   "Partly Cloudy Cafe": ["Facebook", "Instagram", "Twitter"],
+  "Crony Pet": ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
@@ -280,6 +282,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     initializeDarkMode(); // Dark mode başlat
     initializeHoldingChecklist(); // Holding Checklist'i başlat
     initializeLateWarning(); // Geç kalmış paylaşım uyarısını başlat
+    initRealtimeSync(); // Anlık gerçek zamanlı güncellemeleri başlat
 
     // Content type filter'da "Tümü" butonunu varsayılan olarak aktif yap
     const allFilterBtn = document.querySelector(
@@ -289,14 +292,40 @@ document.addEventListener("DOMContentLoaded", async function () {
       allFilterBtn.classList.add("active");
     }
 
-    // Gerçek zamanlı güncelleme kaldırıldı - HTTP istekleri ile çalışıyor
-
     console.log("Başlatma tamamlandı");
   } else {
     console.error("Gerekli HTML elementleri bulunamadı!");
     showMessage("Sayfa yüklenirken hata oluştu!", "error");
   }
 });
+
+let appSocket = null;
+function initRealtimeSync() {
+  if (typeof io !== "undefined") {
+    try {
+      appSocket = io();
+      console.log("⚡ Real-time Socket.IO bağlantısı kuruldu.");
+      
+      appSocket.on("postsUpdated", (data) => {
+        console.log("⚡ [Realtime] Anlık paylaşım güncellemesi alındı:", data);
+        if (data && data.lastUpdate) {
+          lastKnownUpdate = data.lastUpdate;
+        }
+        loadPosts();
+      });
+
+      appSocket.on("whatsappStatus", (whatsappData) => {
+        if (typeof updateWhatsAppPanelUI === "function" && isKutUser) {
+          updateWhatsAppPanelUI(whatsappData);
+        }
+      });
+    } catch (err) {
+      console.error("Socket.IO başlatılırken hata:", err);
+    }
+  } else {
+    console.warn("Socket.IO kütüphanesi bulunamadı, varsayılan mod aktif.");
+  }
+}
 
 // Event listeners
 function setupEventListeners() {
@@ -3654,6 +3683,8 @@ async function updateStatus(postId, newStatus) {
 
       // Post'u dinamik olarak güncelle (accordion durumunu koruyarak)
       updatePostInList(result.post);
+      // Geciken paylaşımları ve alarmı anında kontrol et
+      checkLatePosts();
     } else {
       showMessage("Hata: " + result.message, "error");
       // Status'u eski haline döndür

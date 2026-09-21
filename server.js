@@ -286,13 +286,6 @@ const writePosts = (posts) => {
 // Başlangıçta klasörleri oluştur
 createDirectories();
 
-// Gerçek zamanlı güncelleme kaldırıldı - HTTP istekleri ile çalışıyor
-const notifyPostUpdate = () => {
-  // Socket.IO kaldırıldı - bu fonksiyon artık boş
-  // Ancak güncelleme zamanını güncelleyelim
-  lastDataUpdate = Date.now();
-};
-
 // Ana sayfa
 const io = new Server(server, {
   cors: {
@@ -300,6 +293,14 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+// Gerçek zamanlı bildirim fonksiyonu
+const notifyPostUpdate = () => {
+  lastDataUpdate = Date.now();
+  if (io) {
+    io.emit("postsUpdated", { lastUpdate: lastDataUpdate });
+  }
+};
 
 // ============================================================================
 // WHATSAPP BOT ENTEGRASYONU (whatsapp-web.js)
@@ -508,6 +509,7 @@ io.on("connection", (socket) => {
   console.log("Soket bağlantısı kuruldu:", socket.id);
   // Bağlanan kullanıcıya güncel durum bilgisini hemen gönder
   socket.emit("whatsappStatus", whatsappState);
+  socket.emit("postsUpdated", { lastUpdate: lastDataUpdate });
 });
 
 // Helper function to send post via WhatsApp Web Bot
