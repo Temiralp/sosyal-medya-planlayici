@@ -1963,6 +1963,32 @@ function renderPostsTable(posts) {
   currentPagePosts.forEach((post) => {
     const postCard = createModernPostCard(post);
     postsContainer.appendChild(postCard);
+
+    // Kart daha önce açık bırakıldıysa (accordion expanded) durumunu koru
+    const isExpanded =
+      expandedPostIds.has(post.id) ||
+      expandedPostIds.has(String(post.id)) ||
+      expandedPostIds.has(Number(post.id));
+
+    if (isExpanded) {
+      postCard.classList.add("expanded");
+      const topButton = postCard.querySelector(`#accordion-toggle-top-${post.id}`);
+      const bottomButton = postCard.querySelector(`#accordion-toggle-bottom-${post.id}`);
+      if (topButton) topButton.style.display = "none";
+      if (bottomButton) bottomButton.style.display = "flex";
+    }
+
+    // Kart daha önce düzenleme modundaysa durumunu koru
+    if (currentEditPostId == post.id) {
+      postCard.classList.add("edit-mode");
+      postCard.setAttribute("data-edit-mode", "true");
+      const editForm = postCard.querySelector(`#edit-form-${post.id}`);
+      const accordionContent = postCard.querySelector(`#accordion-content-${post.id}`);
+      const editIndicator = postCard.querySelector(`#edit-indicator-${post.id}`);
+      if (editForm) editForm.style.display = "block";
+      if (accordionContent) accordionContent.style.display = "none";
+      if (editIndicator) editIndicator.style.display = "block";
+    }
   });
 
   console.log("Modern post kartları güncellendi");
@@ -3899,10 +3925,10 @@ function updateSinglePostCard(
   // Eski durumları geri yükle
   if (wasExpanded) {
     newCard.classList.add("expanded");
-    const toggleText = newCard.querySelector(
-      ".accordion-toggle span:first-child"
-    );
-    if (toggleText) toggleText.textContent = "Detayları gizle";
+    const topButton = newCard.querySelector(`#accordion-toggle-top-${post.id}`);
+    const bottomButton = newCard.querySelector(`#accordion-toggle-bottom-${post.id}`);
+    if (topButton) topButton.style.display = "none";
+    if (bottomButton) bottomButton.style.display = "flex";
   }
 
   if (wasEditMode) {
