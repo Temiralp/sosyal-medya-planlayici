@@ -45,6 +45,7 @@ const accountGroups = {
     "Vertice Restaurant",
     "Partly Cloudy Cafe",
     "Crony Pet",
+    "SafahatRoll",
   ],
   markalar: [
     "Cottons& Clouds",
@@ -138,6 +139,7 @@ const accountPlatforms = {
   "Vertice Restaurant": ["Facebook", "Instagram", "Twitter"],
   "Partly Cloudy Cafe": ["Facebook", "Instagram", "Twitter"],
   "Crony Pet": ["Facebook", "Instagram", "Twitter"],
+  "SafahatRoll": ["Facebook", "Instagram", "Twitter"],
 
   // Markalar Grubu
   "Cottons& Clouds": ["Facebook", "Instagram", "Twitter", "LinkedIn"],
